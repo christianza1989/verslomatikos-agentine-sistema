@@ -1,0 +1,61 @@
+{
+  "business_id": "niche_directories",
+  "business_name": "MeistraiPRO / Niche Directory Network",
+  "website_url": "https://meistraipro.lt",
+  "industry": "Specializuoti B2B paslaugų katalogai ir tiesioginių klientų užklausų generavimas",
+  "business_type": "b2b_saas",
+  "target_market": "Lietuva (visi didieji miestai ir rajonai)",
+  "brand_voice": "Dalykiškas, aiškus, vertę kuriantis, garantuojantis realius klientų užsakymus specialistams",
+  
+  "core_offer": {
+    "name": "PRO Narystė Specialistui (Mėnesinis)",
+    "price": 25.00,
+    "currency": "EUR",
+    "specs": "Patvirtintas specialisto profilis kataloge, TOP pozicija savo mieste, tiesioginis kliento telefono ir užklausos gavimas į WhatsApp/SMS akimirksniu, jokių tarpininkavimo procentų nuo užsakymo.",
+    "supplier_cost": 1.20
+  },
+
+  "pricing_tiers": [
+    {
+      "tier": "Nemokamas (Free Listing)",
+      "price": 0.00,
+      "features": "Bazinis profilis kataloge, mato gautų užklausų skaičių, bet nemato kliento kontaktų"
+    },
+    {
+      "tier": "PRO Narys (Mėnesinis)",
+      "price": 25.00,
+      "features": "Tiesioginiai klientų kontaktai į WhatsApp/SMS, TOP matomumas mieste, tiesioginis skambučio mygtukas"
+    },
+    {
+      "tier": "PRO Metinis (VIP)",
+      "price": 199.00,
+      "features": "Visi metai (sutaupo 101 €), 'Patikrintas meistras' ženklelis, asmeninis interviu straipsnis SEO srautui"
+    }
+  ],
+
+  "target_audiences": [
+    {
+      "name": "Statybų ir apdailos meistrai (elektrikai, santechnikai, plytelių meistrai)",
+      "pain_point": "Nemoka daryti reklamos, skelbimų portalai brangūs, o užsakymų reikia nuolat savo mieste."
+    },
+    {
+      "name": "Vestuvių ir švenčių paslaugų teikėjai (fotografai, vedėjai, dekoratoriai)",
+      "pain_point": "Didelė konkurencija socialiniuose tinkluose; reikalingos konkrečios poros su patvirtintomis datomis ir biudžetais."
+    },
+    {
+      "name": "Privatūs korepetitoriai ir treneriai",
+      "pain_point": "Nori užpildyti savo savaitės tvarkaraštį mokiniais be agentūrų 40% komisinių mokesčio."
+    }
+  ],
+
+  "objections_and_answers": {
+    "ar_tikrai_bus_klientu": "Iš kur kataloge atsiranda klientai? -> AI agentai kuria šimtus SEO optimizuotų nusileidimo puslapių kiekvienam miestui ir paslaugai (pvz. 'santechnikas Vilniuje skubiai'), kurie užima pirmąsias Google vietas be jokio mokamo Google Ads biudžeto.",
+    "kodel_moketi_25_eur": "Kodėl turėčiau mokėti 25 € kas mėnesį? -> Vienas santechniko ar elektriko iškvietimas kainuoja 50–150 €. Gavus vos 1 klientą per mėnesį, narystė atsiperka 200–500% pelnu."
+  },
+
+  "ai_sales_agent_strategy": {
+    "lead_source": "Socialinių tinklų ir skelbimų portalų skeneris: surenkami specialistai ir automatiškai sukuriami nemokami profiliai",
+    "hook": "'Claim your profile' (Patvirtinkite savo profilį): parodoma, kad profilis jau sukurtas ir sulaukė peržiūrų",
+    "call_to_action": "Aktyvuokite PRO statusą ir gaukite pirmąją kliento užklausą tiesiai į savo telefoną jau šiandien"
+  }
+}

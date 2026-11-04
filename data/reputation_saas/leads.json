@@ -1,0 +1,24 @@
+[
+  {
+    "id": "reputation_saas-lead-01",
+    "name": "Baltic Horizon Partners",
+    "contact_person": "Marius Jankauskas",
+    "email": "marius@baltichorizon.example.com",
+    "phone": "+370 600 11223",
+    "market": "Lietuva (Vilnius, Kaunas, Klaipėda) ir DACH regionas",
+    "status": "ready_for_outreach",
+    "signal": "Aktyviai ieško kokybiškų sprendimų Vietinio verslo reputacija, Google Reviews 5 žvaigždučių surinkimas ir AI atsakiklis srityje.",
+    "created_at": "2026-10-27T14:22:10.067968"
+  },
+  {
+    "id": "reputation_saas-lead-02",
+    "name": "Nordic Solutions Oü",
+    "contact_person": "Erik Lindqvist",
+    "email": "erik@nordicsolutions.example.com",
+    "phone": "+372 555 99881",
+    "market": "Skandinavija / Baltija",
+    "status": "ready_for_outreach",
+    "signal": "Reikalingas patikimas tiesioginis tiekėjas su garantija.",
+    "created_at": "2026-10-27T14:22:10.067968"
+  }
+]

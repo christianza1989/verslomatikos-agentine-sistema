@@ -1,0 +1,106 @@
+[
+  {
+    "quote_id": "Q-eu-lead-101",
+    "company_name": "Schwarzwald Glamping Resort & Chalets",
+    "contact_person": "Hans-Peter Meyer",
+    "country": "Vokietija (DE)",
+    "model_name": "Baltic Premium 200 cm (Integruota krosnelė)",
+    "model_specs": "Stiklo pluošto įdėklas, AISI 304 nerūdijančio plieno integruota krosnelė, ThermoWood apdaila, 14 hidromasažo purkštukų, 12 oro burbulų, LED šviesos terapija, termo-izoliuotas odinis dangtis.",
+    "tub_price_eur": 3850.0,
+    "doorstep_delivery_eur": 350.0,
+    "total_client_price_eur": 4200.0,
+    "supplier_cost_eur": 1950.0,
+    "net_profit_eur": 1900.0,
+    "profit_margin_percent": 45.2,
+    "lead_type": "Commercial Hospitality",
+    "followup_schedule": [
+      {
+        "day": 3,
+        "action": "Follow-up el. laiškas: ar peržiūrėjote PDF techninius brėžinius?"
+      },
+      {
+        "day": 7,
+        "action": "Follow-up žinutė: pranešimas apie planuojamą vilkiko išvykimą iš Lietuvos į jūsų regioną."
+      }
+    ],
+    "created_at": "2026-10-27T13:38:15.192647"
+  },
+  {
+    "quote_id": "Q-eu-lead-102",
+    "company_name": "Wellness & Gartenwelt GmbH",
+    "contact_person": "Stefan Schneider",
+    "country": "Vokietija (DE)",
+    "model_name": "Baltic Square Deluxe 200x200 cm (Kvadratinis)",
+    "model_specs": "Prabangus kvadratinis kubilas su integruotais gultais ir galvos atramomis, 24 masažo purkštukai, integruota krosnelė, tinka glampingams ir SPA.",
+    "tub_price_eur": 3250.0,
+    "doorstep_delivery_eur": 350.0,
+    "total_client_price_eur": 3600.0,
+    "supplier_cost_eur": 2350.0,
+    "net_profit_eur": 900.0,
+    "profit_margin_percent": 25.0,
+    "lead_type": "B2B Wholesale",
+    "followup_schedule": [
+      {
+        "day": 3,
+        "action": "Follow-up el. laiškas: ar peržiūrėjote PDF techninius brėžinius?"
+      },
+      {
+        "day": 7,
+        "action": "Follow-up žinutė: pranešimas apie planuojamą vilkiko išvykimą iš Lietuvos į jūsų regioną."
+      }
+    ],
+    "created_at": "2026-10-27T13:38:15.192647"
+  },
+  {
+    "quote_id": "Q-eu-lead-103",
+    "company_name": "Veluwe Luxe Lodges & Buitenleven",
+    "contact_person": "Jeroen van Dijk",
+    "country": "Olandija (NL)",
+    "model_name": "Baltic Premium 200 cm (Integruota krosnelė)",
+    "model_specs": "Stiklo pluošto įdėklas, AISI 304 nerūdijančio plieno integruota krosnelė, ThermoWood apdaila, 14 hidromasažo purkštukų, 12 oro burbulų, LED šviesos terapija, termo-izoliuotas odinis dangtis.",
+    "tub_price_eur": 3850.0,
+    "doorstep_delivery_eur": 380.0,
+    "total_client_price_eur": 4230.0,
+    "supplier_cost_eur": 1950.0,
+    "net_profit_eur": 1900.0,
+    "profit_margin_percent": 44.9,
+    "lead_type": "Commercial Hospitality",
+    "followup_schedule": [
+      {
+        "day": 3,
+        "action": "Follow-up el. laiškas: ar peržiūrėjote PDF techninius brėžinius?"
+      },
+      {
+        "day": 7,
+        "action": "Follow-up žinutė: pranešimas apie planuojamą vilkiko išvykimą iš Lietuvos į jūsų regioną."
+      }
+    ],
+    "created_at": "2026-10-27T13:38:15.193647"
+  },
+  {
+    "quote_id": "Q-eu-lead-104",
+    "company_name": "Chalet & Spa Mont Blanc Evasion",
+    "contact_person": "Claire Dubois",
+    "country": "Prancūzija (FR)",
+    "model_name": "Baltic Classic 200 cm (Išorinė krosnelė)",
+    "model_specs": "Daugiau erdvės viduje (iki 8 asmenų), galinga išorinė krosnelė, greitas įkaitimas (~1.5 val.), ThermoWood mediena, LED ir burbulų sistema.",
+    "tub_price_eur": 3450.0,
+    "doorstep_delivery_eur": 430.0,
+    "total_client_price_eur": 3880.0,
+    "supplier_cost_eur": 1750.0,
+    "net_profit_eur": 1700.0,
+    "profit_margin_percent": 43.8,
+    "lead_type": "Commercial Hospitality",
+    "followup_schedule": [
+      {
+        "day": 3,
+        "action": "Follow-up el. laiškas: ar peržiūrėjote PDF techninius brėžinius?"
+      },
+      {
+        "day": 7,
+        "action": "Follow-up žinutė: pranešimas apie planuojamą vilkiko išvykimą iš Lietuvos į jūsų regioną."
+      }
+    ],
+    "created_at": "2026-10-27T13:38:15.193647"
+  }
+]

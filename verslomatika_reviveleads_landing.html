@@ -1,0 +1,1142 @@
+<!DOCTYPE html>
+<html lang="lt">
+<head>
+  <meta charset="UTF-8">
+  <link rel="canonical" href="https://verslomatika.lt/reviveleads/">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ReviveLeads AI • Miegančių Klientų Bazių Prikėlimo Autopilotas • Verslomatika</title>
+  <meta name="description" content="Oficialus Verslomatika ReviveLeads AI įrankis: automatinis miegančių CRM ir Excel kontaktų prikėlimas per 2-way SMS ir el. paštą su tiesioginiu vizitų rezervavimu į kalendorių.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #ffffff;
+      --card-bg: #ffffff;
+      --card-inner: #f8fafc;
+      --card-border: #e2e8f0;
+      --card-border-hover: #a89af5;
+      --primary: #5636e8;
+      --primary-dark: #4324d6;
+      --primary-glow: rgba(86, 54, 232, 0.12);
+      --mint: #157a57;
+      --mint-bg: #eaf7ef;
+      --mint-border: #b7e3c8;
+      --text: #0f172a;
+      --text-muted: #475569;
+      --text-dim: #64748b;
+      --font-main: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: var(--font-main);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Container */
+    .container {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* Header */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(255, 255, 255, 0.96);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--card-border);
+      padding: 16px 0;
+    }
+    .header-inner {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: var(--text);
+    }
+    .brand-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .brand-text {
+      font-weight: 800;
+      font-size: 19px;
+      letter-spacing: -0.02em;
+    }
+    .brand-text span {
+      color: var(--primary);
+    }
+    .badge-holding {
+      background: #f5f3ff;
+      border: 1px solid #ded8fd;
+      color: var(--primary-dark);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 28px;
+    }
+    .nav-link {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 600;
+      transition: color 0.15s ease;
+    }
+    .nav-link:hover { color: var(--primary); }
+    .btn-header {
+      background: var(--primary);
+      color: #fff !important;
+      padding: 10px 18px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 700;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 14px rgba(86, 54, 232, 0.25);
+    }
+    .btn-header:hover {
+      background: var(--primary-dark);
+      transform: translateY(-1px);
+    }
+
+    /* Hero Section */
+    .hero {
+      padding: 70px 0 50px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -100px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 600px;
+      height: 400px;
+      background: radial-gradient(circle, rgba(86, 54, 232, 0.08) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: #f5f3ff;
+      border: 1px solid #ded8fd;
+      color: var(--primary-dark);
+      padding: 6px 14px;
+      border-radius: 100px;
+      font-size: 12px;
+      font-weight: 700;
+      margin-bottom: 24px;
+      letter-spacing: 0.02em;
+    }
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--mint);
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(21, 122, 87, 0.4); }
+      70% { box-shadow: 0 0 0 8px rgba(21, 122, 87, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(21, 122, 87, 0); }
+    }
+    .hero h1 {
+      font-size: 52px;
+      font-weight: 800;
+      line-height: 1.15;
+      letter-spacing: -0.03em;
+      margin-bottom: 20px;
+      max-width: 900px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .hero h1 .highlight {
+      color: var(--primary);
+    }
+    .hero p.lead {
+      font-size: 20px;
+      color: var(--text-muted);
+      max-width: 740px;
+      margin: 0 auto 36px;
+      line-height: 1.55;
+    }
+    .hero-actions {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 36px;
+    }
+    .btn-main {
+      background: var(--primary);
+      color: #fff !important;
+      padding: 16px 32px;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 700;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      box-shadow: 0 6px 20px rgba(86, 54, 232, 0.3);
+    }
+    .btn-main:hover {
+      background: var(--primary-dark);
+      transform: translateY(-2px);
+    }
+    .btn-secondary {
+      background: #f8fafc;
+      color: var(--text);
+      border: 1px solid var(--card-border);
+      padding: 16px 28px;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.2s ease;
+    }
+    .btn-secondary:hover {
+      background: #f1f5f9;
+      border-color: #cbd5e1;
+    }
+    .hero-trust {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 24px;
+      font-size: 13px;
+      color: var(--text-dim);
+      font-weight: 500;
+    }
+    .hero-trust span { display: flex; align-items: center; gap: 6px; }
+
+    /* Interactive Simulator Section */
+    .section-sim {
+      padding: 70px 0;
+      background: #f8fafc;
+      border-top: 1px solid var(--card-border);
+      border-bottom: 1px solid var(--card-border);
+    }
+    .section-title {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+    .section-title h2 {
+      font-size: 36px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 12px;
+    }
+    .section-title p {
+      font-size: 17px;
+      color: var(--text-muted);
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    /* Phone Mockup */
+    .sim-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 40px;
+      align-items: center;
+    }
+    .phone-wrapper {
+      display: flex;
+      justify-content: center;
+    }
+    .phone-frame {
+      width: 360px;
+      background: #ffffff;
+      border-radius: 36px;
+      border: 12px solid #0f172a;
+      box-shadow: 0 25px 60px -15px rgba(15, 23, 42, 0.25);
+      overflow: hidden;
+      position: relative;
+    }
+    .phone-top-bar {
+      height: 24px;
+      background: #0f172a;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .phone-notch {
+      width: 120px;
+      height: 14px;
+      background: #000;
+      border-radius: 0 0 10px 10px;
+    }
+    .chat-header {
+      background: #f8fafc;
+      border-bottom: 1px solid #e2e8f0;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .chat-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 14px;
+    }
+    .chat-meta h4 { font-size: 14px; font-weight: 700; }
+    .chat-meta span { font-size: 11px; color: var(--mint); font-weight: 600; }
+    .chat-body {
+      padding: 18px 14px;
+      background: #f1f5f9;
+      height: 420px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .msg {
+      max-width: 82%;
+      padding: 10px 14px;
+      border-radius: 16px;
+      font-size: 13px;
+      line-height: 1.45;
+      animation: fadeIn 0.4s ease;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .msg-bot {
+      background: #ffffff;
+      color: var(--text);
+      align-self: flex-start;
+      border-bottom-left-radius: 4px;
+      border: 1px solid #e2e8f0;
+    }
+    .msg-user {
+      background: var(--primary);
+      color: #ffffff;
+      align-self: flex-end;
+      border-bottom-right-radius: 4px;
+    }
+    .msg-calendar-badge {
+      background: #eaf7ef;
+      border: 1px solid #b7e3c8;
+      color: #157a57;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 6px;
+    }
+
+    /* Simulator Controls */
+    .sim-controls {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+    .niche-selector {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .niche-btn {
+      background: #ffffff;
+      border: 1px solid var(--card-border);
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .niche-btn.active {
+      background: #f5f3ff;
+      border-color: var(--primary);
+      color: var(--primary-dark);
+    }
+    .feature-card {
+      background: #ffffff;
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 20px;
+    }
+    .feature-card h3 {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .feature-card p {
+      font-size: 14px;
+      color: var(--text-muted);
+      line-height: 1.55;
+    }
+
+    /* ROI Calculator Section */
+    .section-roi {
+      padding: 80px 0;
+    }
+    .roi-box {
+      background: #ffffff;
+      border: 2px solid #ded8fd;
+      border-radius: 20px;
+      padding: 40px;
+      box-shadow: 0 10px 40px rgba(86, 54, 232, 0.06);
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      gap: 40px;
+      align-items: center;
+    }
+    .calc-sliders {
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
+    }
+    .slider-group label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+    .slider-group label span {
+      color: var(--primary);
+      font-size: 18px;
+    }
+    .slider-group input[type="range"] {
+      width: 100%;
+      height: 8px;
+      background: #e2e8f0;
+      border-radius: 4px;
+      outline: none;
+      -webkit-appearance: none;
+      cursor: pointer;
+    }
+    .slider-group input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--primary);
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(86, 54, 232, 0.4);
+    }
+    .calc-result-panel {
+      background: #f5f3ff;
+      border: 1px solid #ded8fd;
+      border-radius: 16px;
+      padding: 32px 24px;
+      text-align: center;
+    }
+    .calc-result-panel p.subhead {
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--primary-dark);
+      margin-bottom: 8px;
+    }
+    .calc-revenue {
+      font-size: 48px;
+      font-weight: 800;
+      color: var(--primary-dark);
+      line-height: 1;
+      margin-bottom: 12px;
+    }
+    .calc-breakdown {
+      font-size: 14px;
+      color: var(--text-muted);
+      margin-bottom: 24px;
+    }
+    .roi-multiplier {
+      display: inline-block;
+      background: #eaf7ef;
+      border: 1px solid #b7e3c8;
+      color: #157a57;
+      padding: 6px 14px;
+      border-radius: 100px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    /* 3 Steps Section */
+    .section-steps {
+      padding: 70px 0;
+      background: #f8fafc;
+      border-top: 1px solid var(--card-border);
+    }
+    .steps-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+    }
+    .step-card {
+      background: #ffffff;
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 28px 24px;
+      position: relative;
+    }
+    .step-number {
+      font-size: 32px;
+      font-weight: 800;
+      color: #cbd5e1;
+      line-height: 1;
+      margin-bottom: 14px;
+    }
+    .step-card h3 {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .step-card p {
+      font-size: 14px;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    /* Pricing Section */
+    .section-pricing {
+      padding: 80px 0;
+    }
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      align-items: stretch;
+    }
+    .price-card {
+      background: #ffffff;
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 36px 28px;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      transition: all 0.2s ease;
+    }
+    .price-card:hover {
+      border-color: var(--card-border-hover);
+      box-shadow: 0 10px 30px rgba(86, 54, 232, 0.08);
+    }
+    .price-card.featured {
+      background: #fbfaff;
+      border: 2px solid var(--primary);
+      box-shadow: 0 15px 40px rgba(86, 54, 232, 0.15);
+      transform: translateY(-6px);
+    }
+    .popular-tag {
+      position: absolute;
+      top: -12px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--primary);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 12px;
+      border-radius: 100px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .price-header h3 {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+    .price-desc {
+      font-size: 13px;
+      color: var(--text-muted);
+      min-height: 38px;
+      margin-bottom: 20px;
+    }
+    .price-amount {
+      display: flex;
+      align-items: baseline;
+      gap: 4px;
+      margin-bottom: 24px;
+    }
+    .price-amount .num {
+      font-size: 44px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+    .price-amount .period {
+      font-size: 14px;
+      color: var(--text-dim);
+    }
+    .price-features {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      font-size: 14px;
+      color: var(--text-muted);
+      margin-bottom: 32px;
+      flex-grow: 1;
+    }
+    .price-features li {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+    .price-features li strong { color: var(--text); }
+    .check-icon {
+      color: var(--primary);
+      font-weight: 700;
+    }
+    .btn-plan {
+      background: #f1f5f9;
+      color: var(--text);
+      border: 1px solid var(--card-border);
+      padding: 14px;
+      border-radius: 10px;
+      text-align: center;
+      font-weight: 700;
+      text-decoration: none;
+      transition: all 0.2s ease;
+    }
+    .btn-plan:hover {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+    }
+    .btn-plan.featured {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+      box-shadow: 0 4px 14px rgba(86, 54, 232, 0.3);
+    }
+    .btn-plan.featured:hover {
+      background: var(--primary-dark);
+    }
+
+    /* FAQ Section */
+    .section-faq {
+      padding: 70px 0;
+      background: #f8fafc;
+      border-top: 1px solid var(--card-border);
+    }
+    .faq-grid {
+      max-width: 800px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .faq-item {
+      background: #ffffff;
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 22px 24px;
+    }
+    .faq-item h4 {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: var(--text);
+    }
+    .faq-item p {
+      font-size: 14px;
+      color: var(--text-muted);
+      line-height: 1.55;
+    }
+
+    /* Footer */
+    footer {
+      background: #ffffff;
+      border-top: 1px solid var(--card-border);
+      padding: 40px 0 30px;
+      font-size: 13px;
+      color: var(--text-dim);
+    }
+    .footer-inner {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+    .footer-brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .footer-links {
+      display: flex;
+      gap: 20px;
+    }
+    .footer-links a {
+      color: var(--text-dim);
+      text-decoration: none;
+    }
+    .footer-links a:hover { color: var(--primary); }
+
+    /* Responsive */
+    @media (max-width: 900px) {
+      .hero h1 { font-size: 38px; }
+      .sim-grid { grid-template-columns: 1fr; }
+      .roi-box { grid-template-columns: 1fr; }
+      .steps-grid { grid-template-columns: 1fr; }
+      .pricing-grid { grid-template-columns: 1fr; }
+      .nav-links { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header>
+    <div class="container header-inner">
+      <a href="https://verslomatika.lt" class="brand">
+        <div class="brand-icon">
+          <svg width="28" height="29" viewBox="0 0 31 32" aria-hidden="true">
+            <path d="M3 6L14 16 3 26M14 16L24 6M14 16L24 26" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="25" cy="6" r="3.5" fill="#5636e8"/>
+            <circle cx="25" cy="26" r="3.5" fill="#157a57"/>
+          </svg>
+        </div>
+        <div class="brand-text">Verslomatika <span>ReviveLeads</span></div>
+        <span class="badge-holding">Holdingo Įrankis</span>
+      </a>
+
+      <nav class="nav-links">
+        <a href="#kaip-veikia" class="nav-link">Kaip veikia</a>
+        <a href="#simuliatorius" class="nav-link">SMS Simuliatorius</a>
+        <a href="#skaiciuokle" class="nav-link">ROI Skaičiuoklė</a>
+        <a href="#kainodara" class="nav-link">Kainodara</a>
+        <a href="#duk" class="nav-link">DUK</a>
+      </nav>
+
+      <a href="https://reviveleads.verslomatika.lt/checkout" class="btn-header">14 d. Bandymas ↗</a>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="container">
+      <div class="status-pill">
+        <div class="status-dot"></div>
+        <span>AUTONOMIŠKAS VERSLOMATIKOS AI HOLDINGO ĮRANKIS</span>
+      </div>
+
+      <h1>Prikelkite miegančių klientų bazę.<br><span class="highlight">+3 000 € – 10 000 € pajamų</span> be jokios reklamos.</h1>
+      
+      <p class="lead">
+        Autonominis AI agentas per mandagų 2-way SMS ir el. paštą pakviečia buvusius klientus sugrįžti profilaktikai, pakartotinei procedūrai ar patikrinimui – ir <strong>pats suderina laiką bei įrašo vizitą tiesiai į Jūsų kalendorių</strong>.
+      </p>
+
+      <div class="hero-actions">
+        <a href="https://reviveleads.verslomatika.lt/checkout" class="btn-main">Pradėti 14 dienų nemokamą bandymą ↗</a>
+        <a href="#simuliatorius" class="btn-secondary">Išbandyti gyvą SMS demonstraciją ↘</a>
+      </div>
+
+      <div class="hero-trust">
+        <span>✓ Nulis reklamos biudžeto</span>
+        <span>✓ 100% BDAR atitiktis</span>
+        <span>✓ Užtrunka vos 5 minutes</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Interactive Simulator Section -->
+  <section class="section-sim" id="simuliatorius">
+    <div class="container">
+      <div class="section-title">
+        <h2>Kaip AI agentas suderina vizitą be darbuotojo</h2>
+        <p>Išbandykite realų 2-way SMS scenarijų. Nulis šabloninio spamo – tik mandagus, žmogiškas pokalbis.</p>
+      </div>
+
+      <div class="sim-grid">
+        <!-- Phone Mockup -->
+        <div class="phone-wrapper">
+          <div class="phone-frame">
+            <div class="phone-top-bar"><div class="phone-notch"></div></div>
+            <div class="chat-header">
+              <div class="chat-avatar">R</div>
+              <div class="chat-meta">
+                <h4 id="clinic-name">Vilniaus Odontologijos Klinika</h4>
+                <span>● ReviveLeads AI Autopilotas</span>
+              </div>
+            </div>
+            <div class="chat-body" id="chat-stream">
+              <div class="msg msg-bot">
+                Laba diena, Laura! Pastebėjome, kad Jūsų paskutinis profilaktinis vizitas klinikoje vyko prieš 10 mėn. Gyd. Rūta šią savaitę turi kelis laisvus laikus burnos higienai. Ar norėtumėte pasitikrinti laiką?
+              </div>
+              <div class="msg msg-user">
+                Laba diena. O ar turėtumėte ketvirtadienį po 17:00 val.?
+              </div>
+              <div class="msg msg-bot">
+                Taip, ketvirtadienį turime laisvą 17:30 arba 18:15. Kuris laikas Jums būtų patogesnis?
+              </div>
+              <div class="msg msg-user">
+                17:30 būtų tobula.
+              </div>
+              <div class="msg msg-bot">
+                Puiku! Užregistravome Jus ketvirtadieniui 17:30 pas gyd. Rūtą. Priminimą atsiųsime SMS žinute išvakarėse. Iki malonaus!
+                <div class="msg-calendar-badge">
+                  ✓ Įrašyta į Google Calendar (Ketv. 17:30)
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="sim-controls">
+          <div>
+            <h4 style="font-size: 14px; text-transform: uppercase; color: var(--text-dim); margin-bottom: 12px; font-weight: 700;">Pasirinkite verslo nišą:</h4>
+            <div class="niche-selector">
+              <button class="niche-btn active" onclick="switchNiche('dental')">Odontologija</button>
+              <button class="niche-btn" onclick="switchNiche('auto')">Autoservisas</button>
+              <button class="niche-btn" onclick="switchNiche('beauty')">Grožio salonas</button>
+              <button class="niche-btn" onclick="switchNiche('gifts')">Dovanos / Memocasting</button>
+            </div>
+          </div>
+
+          <div class="feature-card">
+            <h3>⚡ Nulinis administratorės laiko eikvojimas</h3>
+            <p>Užuot registratūros darbuotoja valandų valandas skambinusi šimtams žmonių (kurie dažnai nekelia ragelio), AI agentas lygiagrečiai aptarnauja 500 kontaktų per dieną ir į kalendorių įrašo tik patvirtintus atvykimus.</p>
+          </div>
+
+          <div class="feature-card">
+            <h3>🧠 Išmanus atsakymų supratimas</h3>
+            <p>Jei klientas parašo „Šį mėnesį negaliu, parašykite lapkritį“, agentas supranta kontekstą, mandagiai padėkoja ir automatiškai suplanuoja priminimą lapkričio mėnesiui.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ROI Calculator Section -->
+  <section class="section-roi" id="skaiciuokle">
+    <div class="container">
+      <div class="section-title">
+        <h2>Apskaičiuokite savo miegančios bazės vertę</h2>
+        <p>Pamatysite, kiek papildomų grynųjų pajamų atneša Jūsų esamas kontaktų sąrašas.</p>
+      </div>
+
+      <div class="roi-box">
+        <div class="calc-sliders">
+          <div class="slider-group">
+            <label>
+              <span>Miegančių kontaktų skaičius (CRM / Excel)</span>
+              <span id="label-contacts">1 500</span>
+            </label>
+            <input type="range" id="input-contacts" min="200" max="5000" step="100" value="1500" oninput="updateRoi()">
+          </div>
+
+          <div class="slider-group">
+            <label>
+              <span>Vidutinė vieno vizito / pirkimo vertė (€)</span>
+              <span id="label-ticket">120 €</span>
+            </label>
+            <input type="range" id="input-ticket" min="30" max="400" step="10" value="120" oninput="updateRoi()">
+          </div>
+
+          <p style="font-size: 13px; color: var(--text-dim);">
+            *Skaičiavimas pagrįstas konservatyviu 4.5% klientų sugrįžimo rodikliu, patikrintu Lietuvos klinikose ir servisuose.
+          </p>
+        </div>
+
+        <div class="calc-result-panel">
+          <p class="subhead">Prognozuojamos naujos pajamos:</p>
+          <div class="calc-revenue" id="res-revenue">8 160 €</div>
+          <div class="calc-breakdown">
+            Apytiksliai <strong id="res-visits">68 sugrįžę klientai</strong> į Jūsų kalendorių.
+          </div>
+          <div class="roi-multiplier" id="res-roi">
+            Investicija: 49 €/mėn. • Grąža: 166x
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3 Steps Section -->
+  <section class="section-steps" id="kaip-veikia">
+    <div class="container">
+      <div class="section-title">
+        <h2>3 paprasti žingsniai iki pilno kalendoriaus</h2>
+        <p>Jokių sudėtingų IT diegimų. Sistema pradeda veikti per 5 minutes.</p>
+      </div>
+
+      <div class="steps-grid">
+        <div class="step-card">
+          <div class="step-number">01</div>
+          <h3>Įkelkite kontaktų failą</h3>
+          <p>Eksportuokite buvusių klientų sąrašą (Excel, CSV) iš savo CRM, apskaitos programos ar pacientų kortelių. Sistema automatiškai išvalo dublikatus ir neteisingus numerius.</p>
+        </div>
+
+        <div class="step-card">
+          <div class="step-number">02</div>
+          <h3>Pasirinkite AI scenarijų</h3>
+          <p>Pasirinkite paruoštą, psichologiškai patikrintą šabloną savo nišai (profilaktinis patikrinimas, ratų keitimo sezonas, dovanų pasiūlymas) arba pritaikykite savo firminį toną.</p>
+        </div>
+
+        <div class="step-card">
+          <div class="step-number">03</div>
+          <h3>Stebėkite užpildytą grafiką</h3>
+          <p>Agentas pradeda mandagius pokalbius. Visi patvirtinti vizitai automatiškai atsiranda Jūsų „Google Calendar“ arba registratūros kalendoriuje realiu laiku.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pricing Section -->
+  <section class="section-pricing" id="kainodara">
+    <div class="container">
+      <div class="section-title">
+        <h2>Skaidri kainodara pagal Verslomatikos protokolą</h2>
+        <p>14 dienų nemokamas bandymas be jokios banko kortelės. Nulis ilgalaikių įsipareigojimų.</p>
+      </div>
+
+      <div class="pricing-grid">
+        <!-- Starter Plan -->
+        <div class="price-card">
+          <div class="price-header">
+            <h3>Starter</h3>
+            <p class="price-desc">Mažoms studijoms ar meistrams, norintiems išbandyti bazės prikėlimą.</p>
+          </div>
+          <div class="price-amount">
+            <span class="num">29 €</span>
+            <span class="period">/ mėn. + PVM</span>
+          </div>
+          <ul class="price-features">
+            <li><span class="check-icon">✓</span> <span>Iki <strong>250 kontaktų</strong> per mėnesį</span></li>
+            <li><span class="check-icon">✓</span> <span>1-way ir 2-way SMS pranešimai</span></li>
+            <li><span class="check-icon">✓</span> <span>Baziniai reaktivavimo šablonai</span></li>
+            <li><span class="check-icon">✓</span> <span>El. pašto palaikymas</span></li>
+            <li><span class="check-icon">✓</span> <span>14 dienų nemokamas bandymas</span></li>
+          </ul>
+          <a href="https://reviveleads.verslomatika.lt/checkout?plan=starter" class="btn-plan">Pasirinkti Starter ↗</a>
+        </div>
+
+        <!-- Pro Plan -->
+        <div class="price-card featured">
+          <div class="popular-tag">Populiariausias pasirinkimas</div>
+          <div class="price-header">
+            <h3>Pro</h3>
+            <p class="price-desc">Klinikoms, servisams ir salonams su aktyviu pacientų srautu.</p>
+          </div>
+          <div class="price-amount">
+            <span class="num">49 €</span>
+            <span class="period">/ mėn. + PVM</span>
+          </div>
+          <ul class="price-features">
+            <li><span class="check-icon">✓</span> <span>Iki <strong>1 000 kontaktų</strong> per mėnesį</span></li>
+            <li><span class="check-icon">✓</span> <span><strong>Pilnas 2-way AI pokalbių agentas</strong></span></li>
+            <li><span class="check-icon">✓</span> <span><strong>Tiesioginis Google Calendar įrašymas</strong></span></li>
+            <li><span class="check-icon">✓</span> <span>Automatinis atsakymų ir prieštaravimų filtravimas</span></li>
+            <li><span class="check-icon">✓</span> <span>Prioritetinis palaikymas telefonu</span></li>
+            <li><span class="check-icon">✓</span> <span>14 dienų nemokamas bandymas</span></li>
+          </ul>
+          <a href="https://reviveleads.verslomatika.lt/checkout?plan=pro" class="btn-plan featured">Pradėti 14 d. Bandymą ↗</a>
+        </div>
+
+        <!-- Annual Plan -->
+        <div class="price-card">
+          <div class="price-header">
+            <h3>Metinis</h3>
+            <p class="price-desc">Didelėms bazėms su pilnu automatizavimu ir maksimaliu sutaupymu.</p>
+          </div>
+          <div class="price-amount">
+            <span class="num">290 €</span>
+            <span class="period">/ metams + PVM</span>
+          </div>
+          <ul class="price-features">
+            <li><span class="check-icon">✓</span> <span>Iki <strong>5 000 kontaktų</strong> per mėnesį</span></li>
+            <li><span class="check-icon">✓</span> <span><strong>Sutaupote virš 50%</strong> (mėnesio kaina vos 24 €)</span></li>
+            <li><span class="check-icon">✓</span> <span>Nemokama asmeninė CRM integracija ir sąranka</span></li>
+            <li><span class="check-icon">✓</span> <span>Dedikuotas Verslomatikos paskyros vadovas</span></li>
+            <li><span class="check-icon">✓</span> <span>Neriboti scenarijai ir A/B testai</span></li>
+          </ul>
+          <a href="https://reviveleads.verslomatika.lt/checkout?plan=annual" class="btn-plan">Pasirinkti Metinį ↗</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ Section -->
+  <section class="section-faq" id="duk">
+    <div class="container">
+      <div class="section-title">
+        <h2>Dažniausiai užduodami klausimai</h2>
+      </div>
+
+      <div class="faq-grid">
+        <div class="faq-item">
+          <h4>Ar tai atitinka BDAR ir Reklamos įstatymo reikalavimus?</h4>
+          <p>Taip, 100%. Kreipiamasi tik į Jūsų esamus ir buvusius klientus, su kuriais verslas turi teisėtą interesą (pvz., priminimas apie periodinę apžiūrą ar techninį patikrinimą). Kiekvienoje žinutėje pateikiamas aiškus ir nemokamas atsisakymo būdas, o atsisakiusieji iškart pažymimi sistemoje.</p>
+        </div>
+
+        <div class="faq-item">
+          <h4>Ką daryti, jei klientas užduoda sudėtingą klausimą?</h4>
+          <p>AI agentas apmokytas atpažinti klausimus, reikalaujančius gydytojo ar meistro įsikišimo (pvz., kainos už sudėtingą remontą). Tokiu atveju agentas mandagiai informuoja: „Perduosiu Jūsų klausimą vadovui, netrukus susisieksime“ ir akimirksniu nusiunčia pranešimą Jūsų administracijai.</p>
+        </div>
+
+        <div class="faq-item">
+          <h4>Ar reikia diegti programinę įrangą į registratūros kompiuterį?</h4>
+          <p>Ne, nieko diegti nereikia. ReviveLeads AI veikia debesyje ir tiesiogiai jungiasi su Jūsų „Google Calendar“ arba siunčia patvirtinimus el. paštu bei SMS.</p>
+        </div>
+
+        <div class="faq-item">
+          <h4>Kaip pradėti nemokamą 14 dienų bandymą?</h4>
+          <p>Užsiregistruokite be jokios banko kortelės, įkelkite 50–100 bandomųjų kontaktų ir pažiūrėkite, kaip per pirmąsias 48 valandas į Jūsų kalendorių įkrenta pirmieji sugrįžę vizitai.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container footer-inner">
+      <div class="footer-brand">
+        <svg width="22" height="23" viewBox="0 0 31 32" aria-hidden="true">
+          <path d="M3 6L14 16 3 26M14 16L24 6M14 16L24 26" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="25" cy="6" r="3.5" fill="#5636e8"/>
+          <circle cx="25" cy="26" r="3.5" fill="#157a57"/>
+        </svg>
+        <span>Verslomatika • ReviveLeads AI</span>
+      </div>
+
+      <div class="footer-links">
+        <a href="https://verslomatika.lt">Pagrindinis</a>
+        <a href="https://verslomatika.lt/verslo-augimo-irankiai/">Visi Įrankiai</a>
+        <a href="https://verslomatika.lt/reputacija/">ReputationPro</a>
+        <a href="mailto:tomas@verslomatika.lt">Pagalba</a>
+      </div>
+
+      <div>
+        MB Pinet • Įm. k. 306067365 • Vilnius, Lietuva
+      </div>
+    </div>
+  </footer>
+
+  <!-- Interactive Scripts -->
+  <script>
+    function updateRoi() {
+      const contacts = parseInt(document.getElementById('input-contacts').value);
+      const ticket = parseInt(document.getElementById('input-ticket').value);
+
+      document.getElementById('label-contacts').innerText = contacts.toLocaleString('lt-LT');
+      document.getElementById('label-ticket').innerText = ticket + ' €';
+
+      const visits = Math.round(contacts * 0.045);
+      const revenue = visits * ticket;
+      const roiRatio = Math.round(revenue / 49);
+
+      document.getElementById('res-revenue').innerText = revenue.toLocaleString('lt-LT') + ' €';
+      document.getElementById('res-visits').innerText = visits + ' sugrįžę klientai';
+      document.getElementById('res-roi').innerText = 'Investicija: 49 €/mėn. • Grąža: ' + roiRatio + 'x';
+    }
+
+    const nicheData = {
+      dental: {
+        name: 'Vilniaus Odontologijos Klinika',
+        messages: [
+          { type: 'bot', text: 'Laba diena, Laura! Pastebėjome, kad Jūsų paskutinis profilaktinis vizitas klinikoje vyko prieš 10 mėn. Gyd. Rūta šią savaitę turi kelis laisvus laikus burnos higienai. Ar norėtumėte pasitikrinti laiką?' },
+          { type: 'user', text: 'Laba diena. O ar turėtumėte ketvirtadienį po 17:00 val.?' },
+          { type: 'bot', text: 'Taip, ketvirtadienį turime laisvą 17:30 arba 18:15. Kuris laikas Jums būtų patogesnis?' },
+          { type: 'user', text: '17:30 būtų tobula.' },
+          { type: 'bot', text: 'Puiku! Užregistravome Jus ketvirtadieniui 17:30 pas gyd. Rūtą. Priminimą atsiųsime SMS žinute išvakarėse. Iki malonaus!', badge: '✓ Įrašyta į Google Calendar (Ketv. 17:30)' }
+        ]
+      },
+      auto: {
+        name: 'Vilniaus Autoservisas Kemi',
+        messages: [
+          { type: 'bot', text: 'Sveiki, Andriau! Artėja žiemos sezonas – pastebėjome, kad pernai pas mus keitėte ratų komplektą. Šią savaitę priimame išankstinei ratų montavimo registracijai be eilių. Ar norėtumėte rezervuoti laiką?' },
+          { type: 'user', text: 'Sveiki, ar šeštadienį ryte turite laisvą keltuvą?' },
+          { type: 'bot', text: 'Šeštadienį turime 09:30 arba 11:00. Kurį laiką rezervuojame?' },
+          { type: 'user', text: '09:30 tinka, ačiū.' },
+          { type: 'bot', text: 'Užregistruota! Šeštadienis 09:30. Lauksime atvykstant.', badge: '✓ Įrašyta į Serviso Kalendorių (Šešt. 09:30)' }
+        ]
+      },
+      beauty: {
+        name: 'Sugihara Grožio Centras',
+        messages: [
+          { type: 'bot', text: 'Laba diena, Karolina! Po Jūsų paskutinės odos procedūros praėjo 3 mėnesiai. Kosmetologė Elena rekomenduoja atlikti palaikomąjį drėkinimą prieš žiemos šalčius. Ar norėtumėte rezervuoti vizitą?' },
+          { type: 'user', text: 'Sveiki! Labai norėčiau, ar turite penktadienį?' },
+          { type: 'bot', text: 'Penktadienį kosmetologė Elena turi 14:00 ir 16:30. Kuris variantas patogesnis?' },
+          { type: 'user', text: '16:30 būtų puiku!' },
+          { type: 'bot', text: 'Nuostabu, laikas patvirtintas penktadieniui 16:30. Iki susitikimo!', badge: '✓ Rezervuota Kalendoriuje (Penkt. 16:30)' }
+        ]
+      },
+      gifts: {
+        name: 'Memocasting Lietuva',
+        messages: [
+          { type: 'bot', text: 'Sveiki, Tomai! Praėjusiais metais pirkote porų rankų liejimo rinkinį. Artėjant didžiosioms šventėms, lojaliems klientams dovanojame 20% nuolaidos kodą šeimos rinkiniams arba dovanų kuponams. Ar norėtumėte gauti kodą?' },
+          { type: 'user', text: 'Sveiki, taip! Norėčiau padovanoti tėvams Kalėdoms.' },
+          { type: 'bot', text: 'Puiku! Jūsų asmeninis kodas KALE20 taikomas visam krepšeliui. Siunčiame tiesioginę nuorodą į šeimos rinkinius su nemokamu pristatymu.', badge: '✓ Nuolaidos kodas išsiųstas' }
+        ]
+      }
+    };
+
+    function switchNiche(nicheKey) {
+      document.querySelectorAll('.niche-btn').forEach(btn => btn.classList.remove('active'));
+      event.target.classList.add('active');
+
+      const data = nicheData[nicheKey];
+      document.getElementById('clinic-name').innerText = data.name;
+
+      const chatBody = document.getElementById('chat-stream');
+      chatBody.innerHTML = '';
+
+      data.messages.forEach((msg, idx) => {
+        setTimeout(() => {
+          const div = document.createElement('div');
+          div.className = 'msg ' + (msg.type === 'bot' ? 'msg-bot' : 'msg-user');
+          div.innerText = msg.text;
+          if (msg.badge) {
+            const badgeDiv = document.createElement('div');
+            badgeDiv.className = 'msg-calendar-badge';
+            badgeDiv.innerText = msg.badge;
+            div.appendChild(badgeDiv);
+          }
+          chatBody.appendChild(div);
+          chatBody.scrollTop = chatBody.scrollHeight;
+        }, idx * 120);
+      });
+    }
+
+    // Inicializavimas
+    updateRoi();
+  </script>
+</body>
+</html>

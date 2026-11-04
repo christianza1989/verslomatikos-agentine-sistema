@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="lt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ReputationPro: klientų atsiliepimų demonstracija | Verslomatika</title>
+  <meta name="description" content="Susipažinkite su kuriamu ReputationPro įrankiu ir klientų atsiliepimų demonstracija. Mokėjimai dar neįjungti.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #07090E;
+      --card-bg: #0D111A;
+      --card-inner: #121824;
+      --card-border: #1E2638;
+      --card-border-hover: #334155;
+      --primary: #5636E8;
+      --primary-hover: #4324D6;
+      --primary-light: #F4F1FD;
+      --accent-mint: #157A57;
+      --accent-green: #10B981;
+      --accent-amber: #F59E0B;
+      --text: #F8FAFC;
+      --text-muted: #94A3B8;
+      --text-dim: #64748B;
+      --radius-lg: 18px;
+      --radius-md: 12px;
+      --radius-sm: 8px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
+    body { background-color: var(--bg); color: var(--text); line-height: 1.6; overflow-x: hidden; }
+    h1, h2, h3, h4 { font-family: 'Manrope', sans-serif; }
+
+    .container { max-width: 1240px; margin: 0 auto; padding: 0 24px; }
+    .section-space { padding: 85px 0; }
+
+    /* Header */
+    header {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(7, 9, 14, 0.88); backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--card-border);
+    }
+    .nav-wrap { display: flex; justify-content: space-between; align-items: center; height: 80px; }
+    .brand-logo { display: flex; align-items: center; gap: 12px; text-decoration: none; color: var(--text); }
+    .brand-svg { vertical-align: middle; }
+    .brand-title { display: inline-flex; align-items: center; gap: 8px; font-size: 19px; font-weight: 800; letter-spacing: -0.5px; }
+    .brand-title span.dot { color: var(--primary); }
+    .brand-title span.sep { color: var(--card-border-hover); font-weight: 300; }
+    .brand-title span.sub { color: #A78BFA; font-weight: 700; }
+
+    .nav-links { display: flex; gap: 28px; list-style: none; font-size: 14px; font-weight: 600; }
+    .nav-links a { color: var(--text-muted); text-decoration: none; transition: 0.2s; }
+    .nav-links a:hover { color: var(--text); }
+    .btn-nav {
+      background: var(--primary); color: white; padding: 10px 20px;
+      border-radius: var(--radius-sm); font-size: 13.5px; font-weight: 700;
+      text-decoration: none; transition: 0.2s; display: inline-flex; align-items: center; gap: 8px;
+    }
+    .btn-nav:hover { background: var(--primary-hover); transform: translateY(-1px); }
+
+    /* Hero */
+    .hero { padding: 80px 0 60px; display: grid; grid-template-columns: 1.1fr 1fr; gap: 60px; align-items: center; }
+    .badge-pill {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(86, 54, 232, 0.12); border: 1px solid rgba(86, 54, 232, 0.35);
+      padding: 6px 16px; border-radius: 30px; font-size: 12.5px; font-weight: 700;
+      color: #A78BFA; margin-bottom: 20px;
+    }
+    .pulse-dot { width: 8px; height: 8px; border-radius: 50%; background: #A78BFA; box-shadow: 0 0 10px #A78BFA; }
+    .hero h1 { font-size: clamp(38px, 4.3vw, 56px); font-weight: 800; line-height: 1.18; letter-spacing: -1.5px; }
+    .hero h1 span.highlight { color: #A78BFA; }
+    .hero p.lead { font-size: 16.5px; color: var(--text-muted); margin: 22px 0 32px; line-height: 1.7; }
+    
+    .hero-actions { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 24px; }
+    .btn-main {
+      background: var(--primary); color: white; font-weight: 800; font-size: 14.5px;
+      padding: 14px 28px; border-radius: var(--radius-sm); text-decoration: none;
+      display: inline-flex; align-items: center; gap: 8px; transition: 0.2s;
+    }
+    .btn-main:hover { background: var(--primary-hover); transform: translateY(-2px); }
+    .btn-ghost {
+      background: transparent; color: var(--text); font-weight: 700; font-size: 14px;
+      padding: 14px 22px; border-radius: var(--radius-sm); border: 1px solid var(--card-border);
+      text-decoration: none; display: inline-flex; align-items: center; gap: 8px; transition: 0.2s;
+    }
+    .btn-ghost:hover { background: rgba(255,255,255,0.05); border-color: var(--card-border-hover); }
+
+    .trust-checks { display: flex; gap: 20px; font-size: 12px; color: var(--text-dim); flex-wrap: wrap; }
+    .trust-checks span { color: var(--primary); font-weight: 700; }
+
+    /* Hero Mockup / Simulator */
+    .hero-simulator-wrap {
+      background: var(--card-bg); border: 1px solid var(--card-border);
+      border-radius: var(--radius-lg); padding: 30px; position: relative;
+      box-shadow: 0 20px 60px -20px rgba(86, 54, 232, 0.25);
+    }
+    .sim-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid var(--card-border); }
+    .sim-badge { font-size: 11px; font-weight: 700; color: #A78BFA; background: rgba(86, 54, 232, 0.12); padding: 4px 10px; border-radius: 20px; }
+    .stars-interactive { display: flex; justify-content: center; gap: 10px; margin: 20px 0; }
+    .star-btn { background: none; border: none; font-size: 34px; color: #334155; cursor: pointer; transition: 0.15s; }
+    .star-btn:hover, .star-btn.active { color: #F59E0B; transform: scale(1.15); }
+    
+    .outcome-box { border-radius: var(--radius-md); padding: 18px; margin-top: 16px; font-size: 13px; line-height: 1.6; }
+    .outcome-5star { background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); }
+    .outcome-5star strong { color: #34D399; display: block; margin-bottom: 4px; }
+    .outcome-lowstar { background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); }
+    .outcome-lowstar strong { color: #FBBF24; display: block; margin-bottom: 4px; }
+
+    /* Trust Stats Grid */
+    .stats-bar { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; padding: 34px; background: var(--card-bg); border-radius: var(--radius-lg); border: 1px solid var(--card-border); margin: 40px 0 80px; }
+    .stat-item { text-align: center; }
+    .stat-item strong { display: block; font-size: 36px; font-weight: 800; color: #A78BFA; line-height: 1.1; margin-bottom: 6px; }
+    .stat-item p { font-size: 12.5px; color: var(--text-muted); }
+
+    /* Workflow Steps */
+    .section-title { text-align: center; max-width: 700px; margin: 0 auto 50px; }
+    .section-title h2 { font-size: 36px; font-weight: 800; letter-spacing: -1px; margin-bottom: 12px; }
+    .section-title p { font-size: 15px; color: var(--text-muted); }
+
+    .workflow-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; }
+    .step-card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: var(--radius-lg); padding: 28px; position: relative; }
+    .step-num { font-size: 18px; font-weight: 800; color: #A78BFA; margin-bottom: 14px; }
+    .step-card h3 { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+    .step-card p { font-size: 13px; color: var(--text-muted); line-height: 1.6; }
+
+    /* Sectors */
+    .sector-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-top: 36px; }
+    .sector-item { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: var(--radius-md); padding: 24px; }
+    .sector-icon { width: 44px; height: 44px; border-radius: 10px; background: rgba(86, 54, 232, 0.12); color: #A78BFA; display: flex; align-items: center; justify-content: center; font-size: 20px; margin-bottom: 14px; }
+    .sector-item h4 { font-size: 16px; margin-bottom: 6px; }
+    .sector-item p { font-size: 12.5px; color: var(--text-muted); }
+
+    /* ROI Banner */
+    .roi-card {
+      background: linear-gradient(135deg, #13112E 0%, #1E1B4B 100%);
+      border: 1px solid rgba(86, 54, 232, 0.35); border-radius: var(--radius-lg);
+      padding: 50px; margin: 80px 0; display: grid; grid-template-columns: 1.2fr 1fr; gap: 50px; align-items: center;
+    }
+    .roi-card h2 { font-size: 32px; font-weight: 800; margin-bottom: 14px; }
+    .roi-card p { font-size: 14.5px; color: #C4B5FD; line-height: 1.7; }
+    .roi-table { background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: var(--radius-md); padding: 24px; }
+    .roi-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.08); font-size: 13.5px; }
+    .roi-row:last-child { border: none; padding-top: 14px; font-weight: 800; font-size: 16px; color: #34D399; }
+
+    /* Pricing Section */
+    .pricing-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; margin-top: 40px; }
+    .price-box {
+      background: var(--card-bg); border: 1px solid var(--card-border);
+      border-radius: var(--radius-lg); padding: 36px 30px; display: flex; flex-direction: column; position: relative;
+    }
+    .price-box.featured {
+      border: 2px solid var(--primary); transform: translateY(-8px);
+      box-shadow: 0 20px 50px -15px rgba(86, 54, 232, 0.35);
+    }
+    .popular-tag {
+      position: absolute; top: -13px; left: 50%; transform: translateX(-50%);
+      background: var(--primary); color: white; font-size: 10.5px; font-weight: 800;
+      padding: 4px 14px; border-radius: 20px; letter-spacing: 0.5px;
+    }
+    .price-val { font-size: 48px; font-weight: 800; margin: 18px 0 6px; }
+    .price-val span { font-size: 14px; color: var(--text-dim); font-weight: 400; }
+    .price-cycle { font-size: 11.5px; color: var(--text-dim); margin-bottom: 24px; }
+    .feature-list { list-style: none; margin-bottom: 30px; flex: 1; display: flex; flex-direction: column; gap: 10px; font-size: 13px; color: var(--text-muted); }
+    .feature-list li { display: flex; align-items: center; gap: 8px; }
+    .feature-list li span.check { color: #34D399; font-weight: 700; }
+
+    /* FAQ */
+    .faq-list { max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
+    .faq-item { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: var(--radius-md); padding: 20px 24px; }
+    .faq-item summary { font-size: 15px; font-weight: 700; cursor: pointer; list-style: none; display: flex; justify-content: space-between; align-items: center; }
+    .faq-item summary::-webkit-details-marker { display: none; }
+    .faq-item p { font-size: 13.5px; color: var(--text-muted); margin-top: 12px; line-height: 1.7; }
+
+    /* Footer */
+    footer { border-top: 1px solid var(--card-border); padding: 50px 0 30px; margin-top: 100px; font-size: 13px; color: var(--text-dim); }
+    .footer-inner { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px; }
+
+    @media (max-width: 960px) {
+      .hero, .roi-card { grid-template-columns: 1fr; gap: 40px; }
+      .pricing-grid, .workflow-grid, .stats-bar, .sector-grid { grid-template-columns: 1fr; }
+      .nav-links { display: none; }
+      .price-box.featured { transform: none; }
+    }
+  </style>
+<link rel="canonical" href="https://verslomatika.lt/reputacija/">
+<style>
+  :root { --bg:#fff; --card-bg:#fff; --card-inner:#f8fafc; --card-border:#e2e8f0; --card-border-hover:#a89af5; --text:#0f172a; --text-muted:#475569; --text-dim:#64748b; }
+  header {background:rgba(255,255,255,.97)} .brand-title span.sub,.hero h1 span.highlight,.step-num {color:#5636e8}
+  .container.hero,.container.section-space {padding-left:24px;padding-right:24px}
+  .badge-pill,.sim-badge {color:#4324d6;background:#f5f3ff;border-color:#ddd6fe} .hero-simulator-wrap {background:#f8fafc;box-shadow:none}
+  .star-btn {color:#64748b} .star-btn:hover,.star-btn.active {color:#a15c00} .price-box.featured {background:#13112e;color:white;box-shadow:none}
+  .btn-ghost:hover {background:#f5f3ff} footer a {color:#4324d6}
+  .demo-notice { padding: 18px 20px; background:#fff8e9; border:1px solid #e5c17d; border-radius:12px; color:#433217; margin-top:22px; line-height:1.6 }
+  .note { color:#475569; font-size:14px; line-height:1.65 } .section-space { padding-top:70px; padding-bottom:70px }
+  .calculator { max-width:760px; margin:0 auto; padding:28px; border:1px solid #e2e8f0; border-radius:14px; background:#fff }
+  .calc-inputs { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px; margin:20px 0 }
+  .calculator label { display:grid; gap:8px; font-weight:700; font-size:14px } .calculator input { width:100%; padding:12px; border:1px solid #94a3b8; border-radius:8px; font:inherit }
+  .calculator output { display:block; font-size:21px; font-weight:800; color:#5636e8; margin:14px 0 }
+  .star-btn:focus-visible, a:focus-visible, input:focus-visible { outline:3px solid #5636e8; outline-offset:3px }
+  .star-btn { cursor:pointer } .sim-result { min-height:60px; color:#334155; line-height:1.6 }
+  .price-box.featured a {color:white} .price-cycle {line-height:1.6} .footer-inner {gap:18px;flex-wrap:wrap}
+  @media(max-width:650px) { .calc-inputs {grid-template-columns:1fr} .hero {padding-top:48px} .hero-simulator-wrap {padding:22px} }
+</style></head>
+<body><header><div class="container nav-wrap">
+<a href="https://verslomatika.lt/" class="brand-logo" aria-label="Verslomatika pradžia"><svg class="brand-svg" width="28" height="29" viewBox="0 0 31 32" aria-hidden="true"><path d="M3 6L14 16 3 26M14 16L24 6M14 16L24 26" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="25" cy="6" r="3.5" fill="#5636e8"/><circle cx="25" cy="26" r="3.5" fill="#157a57"/></svg><span class="brand-title"><span>verslomatika<span class="dot">.</span></span><span class="sep">|</span><span class="sub">ReputationPro</span></span></a>
+<nav aria-label="Puslapio navigacija"><ul class="nav-links"><li><a href="/verslo-augimo-irankiai/">Visi įrankiai</a></li><li><a href="#kaip-veikia">Kaip veikia</a></li><li><a href="#kainos">Kainos</a></li><li><a href="#duk">DUK</a></li></ul></nav>
+<a href="mailto:tomas@verslomatika.lt?subject=ReputationPro" class="btn-nav">Susisiekti ↗</a></div></header>
+<main><section class="container hero"><div><div class="badge-pill"><span>DEMONSTRACINĖ VERSIJA</span></div>
+<h1>Klientų atsiliepimai, <span class="highlight">kuriuos lengva išgirsti.</span></h1>
+<p class="lead">ReputationPro demonstracija pristato paciento atsiliepimo puslapį ir privačių pastabų peržiūrą vadovo skydelyje. Sprendimas dar rengiamas naudojimui.</p>
+<div class="hero-actions"><a href="https://reputacija.verslomatika.lt/" class="btn-main">Atverti demonstraciją ↗</a><a href="#kaip-veikia" class="btn-ghost">Sužinoti daugiau</a></div>
+<div class="demo-notice"><strong>Svarbu prieš naudojimą:</strong> dabartinė demonstracija nukreipia lankytojus pagal žvaigždučių įvertinimą. „Google“ draudžia atrankinį viešų atsiliepimų prašymą, todėl ši funkcija turi būti pakeista prieš naudojant su tikrais klientais.</div></div>
+<div class="hero-simulator-wrap"><div class="sim-header"><span class="sim-badge">ILIUSTRACINĖ SIMULIACIJA</span></div><h2 style="font-size:20px;text-align:center">Kaip praėjo Jūsų vizitas?</h2><p class="note" style="text-align:center">Pasirinkite įvertinimą. Tai demonstracija be duomenų siuntimo.</p>
+<div class="stars-interactive" id="simStars"><button class="star-btn" data-rating="1" aria-label="1 žvaigždutė">★</button><button class="star-btn" data-rating="2" aria-label="2 žvaigždutės">★</button><button class="star-btn" data-rating="3" aria-label="3 žvaigždutės">★</button><button class="star-btn" data-rating="4" aria-label="4 žvaigždutės">★</button><button class="star-btn" data-rating="5" aria-label="5 žvaigždutės">★</button></div><p id="simOutcome" class="sim-result" aria-live="polite">Jūsų nuomonė svarbi nepriklausomai nuo įvertinimo.</p></div></section>
+<section id="kaip-veikia" class="container section-space"><div class="section-title"><h2>Kaip atrodo demonstracija</h2><p>Įrankis skirtas parodyti, kaip klientas galėtų pateikti grįžtamąjį ryšį.</p></div>
+<div class="workflow-grid"><div class="step-card"><div class="step-num">01</div><h3>Nuoroda</h3><p>Klientas atveria puslapį telefono ar kompiuterio naršyklėje.</p></div><div class="step-card"><div class="step-num">02</div><h3>Įvertinimas</h3><p>Klientas pasirenka įvertinimą ir gali pateikti privačią pastabą.</p></div><div class="step-card"><div class="step-num">03</div><h3>Vadovo skydelis</h3><p>Demonstracijoje vadovas gali peržiūrėti pateiktas pastabas.</p></div><div class="step-card"><div class="step-num">04</div><h3>Tolimesnis parengimas</h3><p>Prieš komercinį naudojimą bus peržiūrėtos atsiliepimų taisyklės, privatumas ir mokėjimai.</p></div></div></section>
+<section class="container section-space" style="padding-top:0"><div class="section-title"><h2>Apskaičiuokite hipotetinį scenarijų</h2><p>Įveskite savo prielaidas. Skaičiuoklė nerodo prognozės ar garantuojamos naudos.</p></div><div class="calculator"><div class="calc-inputs"><label>Klientų skaičius per mėnesį<input id="count" type="number" min="0" max="100000" value="1" inputmode="numeric"></label><label>Vieno kliento vertė (€)<input id="value" type="number" min="0" max="1000000" value="100" inputmode="decimal"></label></div><p class="note">Hipotetinis skirtumas = klientų skaičius × kliento vertė − 49 € planuojamas mėnesio mokestis. Neįtraukiamos kitos išlaidos ir mokesčiai.</p><output id="result" aria-live="polite"></output></div></section>
+<section id="kainos" class="container section-space"><div class="section-title"><h2>Planuojami pasiūlymai</h2><p>Registracija ir mokėjimai dar neaktyvūs. Funkcijos, kainos bei 14 dienų bandymo sąlygos dar derinamos.</p></div><div class="pricing-grid">
+<div class="price-box"><h3>Startas</h3><div class="price-val">29 € <span>/ mėn.</span></div><div class="price-cycle">Svarstomas planas</div><p class="note">Dėl funkcijų ir prieinamumo teiraukitės.</p><a href="mailto:tomas@verslomatika.lt?subject=ReputationPro%20Startas" class="btn-ghost">Teirautis ↗</a></div>
+<div class="price-box featured"><h3>Pro</h3><div class="price-val" style="color:white">49 € <span style="color:#ddd6fe">/ mėn.</span></div><div class="price-cycle" style="color:#ddd6fe">Planuojamas 14 dienų bandymas</div><p style="color:#ddd6fe">Bandomasis laikotarpis ir prenumerata dar neįjungti.</p><a href="mailto:tomas@verslomatika.lt?subject=ReputationPro%20Pro" class="btn-main">Teirautis ↗</a></div>
+<div class="price-box"><h3>Metinis</h3><div class="price-val">290 € <span>/ metus</span></div><div class="price-cycle">Svarstomas planas</div><p class="note">Dėl funkcijų ir prieinamumo teiraukitės.</p><a href="mailto:tomas@verslomatika.lt?subject=ReputationPro%20metinis" class="btn-ghost">Teirautis ↗</a></div></div></section>
+<section id="duk" class="container section-space" style="padding-top:0"><div class="section-title"><h2>Dažniausi klausimai</h2></div><div class="faq-list"><details class="faq-item"><summary>Ar galima užsiregistruoti ir mokėti? <span>▼</span></summary><p>Kol kas ne. Mokėjimai ir prenumeratos dar neįjungti.</p></details><details class="faq-item"><summary>Ar dabartinis demonstracinis srautas atitinka „Google“ taisykles? <span>▼</span></summary><p>Ne. Atrankinis prašymas palikti viešą atsiliepimą pagal įvertinimą draudžiamas. Funkcija turi būti pakeista prieš naudojant su tikrais klientais.</p></details><details class="faq-item"><summary>Ar galiu jau išbandyti paciento puslapį? <span>▼</span></summary><p>Galite peržiūrėti demonstraciją. Nesiųskite tikrų pacientų ar sveikatos duomenų.</p></details></div></section></main>
+<footer><div class="container footer-inner"><span>verslomatika. | ReputationPro</span><span>Operatorius: MB Pinet • Vilnius, Lietuva • info@pinet.lt</span><a href="/verslo-augimo-irankiai/">Visi įrankiai</a><a href="mailto:tomas@verslomatika.lt">Susisiekti</a></div></footer>
+<script>
+const result=document.getElementById('result'), count=document.getElementById('count'), value=document.getElementById('value');
+function calculate(){const n=Number(count.value),v=Number(value.value); if(count.value===''||value.value===''||!Number.isFinite(n)||!Number.isFinite(v)||n<0||v<0||n>100000||v>1000000){result.textContent='Įveskite leistinas neneigiamas reikšmes.';return;} result.textContent='Hipotetinis skirtumas: '+new Intl.NumberFormat('lt-LT',{style:'currency',currency:'EUR'}).format(n*v-49)+' / mėn.';}
+count.addEventListener('input',calculate);value.addEventListener('input',calculate);calculate();
+document.querySelectorAll('#simStars button').forEach(button=>button.addEventListener('click',()=>{const n=Number(button.dataset.rating);document.querySelectorAll('#simStars button').forEach((s,i)=>{s.classList.toggle('active',i<n);s.setAttribute('aria-pressed',String(i===n-1));});document.getElementById('simOutcome').textContent='Pasirinkote '+n+' iš 5. Visų įvertinimų nuomonė yra svarbi; viešo atsiliepimo galimybė turi būti vienoda.';}));
+</script></body></html>

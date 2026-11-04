@@ -1,0 +1,29 @@
+{
+  "business_id": "sablonas_naujas_verslas",
+  "business_name": "Naujo Verslo Pavadinimas",
+  "origin_country": "Lietuva",
+  "export_regions": ["Vokietija", "Lenkija", "Skandinavija"],
+  "currency": "EUR",
+  "models": [
+    {
+      "id": "preke-1",
+      "name": "Pagrindinė prekė / paslauga",
+      "specs": "Techninis aprašymas ir savybės",
+      "supplier_cost_lt": 100.0,
+      "b2b_dealer_price": 180.0,
+      "b2c_retail_eu_price": 250.0,
+      "b2b_margin_eur": 80.0,
+      "b2c_margin_eur": 150.0
+    }
+  ],
+  "shipping_costs_per_tub": {
+    "Vokietija (DE)": 50.0
+  },
+  "target_categories": [
+    {
+      "category_id": "dealers",
+      "name": "Perpardavėjai ir dileriai",
+      "pain_point": "Reikalingas patikimas ES tiekėjas su aukšta marža."
+    }
+  ]
+}

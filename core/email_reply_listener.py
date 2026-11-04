@@ -1,0 +1,213 @@
+import json
+import os
+import sys
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if BASE_DIR not in sys.path:
+    sys.path.insert(0, BASE_DIR)
+
+import time
+import email
+from email.header import decode_header
+from email.utils import parseaddr
+import imaplib
+import ssl
+import sqlite3
+import uuid
+import re
+from datetime import datetime
+from core.reputation_sales_agent import ReputationSalesAgent
+from core.accounting_pipeline import AccountingPipeline
+
+# UTF-8 terminale
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8', errors='replace', line_buffering=True)
+
+DB_PATH = os.path.join(BASE_DIR, 'apps', 'reputationpro', 'data', 'reputation.db')
+
+def record_inbound_reply(sender_email: str, body_text: str):
+    try:
+        if not os.path.exists(DB_PATH):
+            return
+        conn = sqlite3.connect(DB_PATH, timeout=5.0)
+        c = conn.cursor()
+        c.execute("SELECT id, business_name FROM campaign_leads WHERE LOWER(email) = LOWER(?)", (sender_email.strip(),))
+        row = c.fetchone()
+        now = datetime.now().isoformat()
+        if row:
+            lead_id, b_name = row
+            c.execute("""UPDATE campaign_leads SET 
+                status = CASE WHEN status != 'converted' THEN 'replied' ELSE status END,
+                replied_at = ?,
+                last_reply_text = ?,
+                updated_at = ?
+                WHERE id = ?""", (now, body_text, now, lead_id))
+            event_id = str(uuid.uuid4())
+            c.execute("INSERT INTO campaign_events (id, lead_id, event_type, details) VALUES (?, ?, 'reply', ?)",
+                      (event_id, lead_id, body_text[:500]))
+            conn.commit()
+            print(f"[{datetime.now().strftime('%H:%M:%S')}] 💾 [Tracking] Atnaujintas leadas {b_name} ({sender_email}) reputacija.db: status='replied'!")
+        conn.close()
+    except Exception as e:
+        print(f"[DB Reply Record Error] {e}")
+
+def get_campaign_lead_emails():
+    try:
+        if not os.path.exists(DB_PATH):
+            return set()
+        conn = sqlite3.connect(DB_PATH, timeout=5.0)
+        c = conn.cursor()
+        c.execute("SELECT LOWER(email) FROM campaign_leads")
+        emails = {r[0] for r in c.fetchall()}
+        conn.close()
+        return emails
+    except Exception:
+        return set()
+
+def get_accounting_emails():
+    try:
+        if not os.path.exists(DB_PATH):
+            return set()
+        conn = sqlite3.connect(DB_PATH, timeout=5.0)
+        c = conn.cursor()
+        c.execute("SELECT LOWER(client_email) FROM accounting_cases")
+        emails = {r[0] for r in c.fetchall()}
+        conn.close()
+        return emails
+    except Exception:
+        return set()
+
+def run_listener(target_sender: str = "lilijazap@gmail.com", poll_interval: int = 5):
+    agent = ReputationSalesAgent()
+    accounting_pipe = AccountingPipeline()
+    print(f"[{datetime.now().strftime('%H:%M:%S')}] 🎧 Pradedamas IMAP klausymasis dėžutėje {agent.email_user}...")
+    print(f"[{datetime.now().strftime('%H:%M:%S')}] Stebimi gavėjai: {target_sender}, apskaitos klientai ir B2B kampanijos.")
+    
+    seen_ids = set()
+    
+    # Pradžioje pažymime esamus laiškus
+    context = ssl.create_default_context()
+    try:
+        with imaplib.IMAP4_SSL(agent.imap_host, agent.imap_port, ssl_context=context) as mail:
+            mail.login(agent.email_user, agent.email_pass)
+            mail.select("INBOX")
+            status, msgs = mail.search(None, "ALL")
+            if status == "OK" and msgs[0]:
+                for mid in msgs[0].split():
+                    seen_ids.add(mid.decode())
+    except Exception as e:
+        print(f"[IMAP Init Warning] {e}")
+
+    print(f"[{datetime.now().strftime('%H:%M:%S')}] Pasiruošęs! Esami laiškai: {len(seen_ids)}. Laukiami nauji laiškai...")
+
+    while True:
+        try:
+            with imaplib.IMAP4_SSL(agent.imap_host, agent.imap_port, ssl_context=context) as mail:
+                mail.login(agent.email_user, agent.email_pass)
+                mail.select("INBOX")
+                status, msgs = mail.search(None, "ALL")
+                if status == "OK" and msgs[0]:
+                    current_ids = [m.decode() for m in msgs[0].split()]
+                    for mid in current_ids:
+                        if mid not in seen_ids:
+                            seen_ids.add(mid)
+                            # Parsisiunčiame naują laišką
+                            status, data = mail.fetch(mid.encode(), "(RFC822)")
+                            raw_email = data[0][1]
+                            parsed_msg = email.message_from_bytes(raw_email)
+                            
+                            from_hdr = parsed_msg.get("From", "")
+                            subject, enc = decode_header(parsed_msg.get("Subject", ""))[0]
+                            if isinstance(subject, bytes):
+                                subject = subject.decode(enc or "utf-8", errors="ignore")
+                                
+                            body = ""
+                            attachments = []
+                            if parsed_msg.is_multipart():
+                                for part in parsed_msg.walk():
+                                    ctype = part.get_content_type()
+                                    disposition = str(part.get("Content-Disposition", ""))
+                                    filename = part.get_filename()
+                                    
+                                    if filename or "attachment" in disposition:
+                                        # Decode filename
+                                        fname_decoded = ""
+                                        for s, e in decode_header(filename or "file"):
+                                            if isinstance(s, bytes):
+                                                fname_decoded += s.decode(e or "utf-8", errors="ignore")
+                                            else:
+                                                fname_decoded += str(s)
+                                        payload_bytes = part.get_payload(decode=True)
+                                        if payload_bytes:
+                                            attachments.append({
+                                                "filename": fname_decoded,
+                                                "data": payload_bytes
+                                            })
+                                    elif ctype == "text/plain" and not body:
+                                        payload = part.get_payload(decode=True)
+                                        if payload:
+                                            body = payload.decode(part.get_content_charset() or "utf-8", errors="ignore")
+                                    elif ctype == "text/html" and not body:
+                                        payload = part.get_payload(decode=True)
+                                        if payload:
+                                            raw_html = payload.decode(part.get_content_charset() or "utf-8", errors="ignore")
+                                            body = re.sub(r'<[^>]+>', ' ', raw_html).strip()
+                            else:
+                                payload = parsed_msg.get_payload(decode=True)
+                                if payload:
+                                    body = payload.decode(parsed_msg.get_content_charset() or "utf-8", errors="ignore")
+                            
+                            print(f"\n[{datetime.now().strftime('%H:%M:%S')}] 📬 GAUTAS NAUJAS LAIŠKAS!")
+                            print(f"Nuo: {from_hdr}")
+                            print(f"Tema: {subject}")
+                            print(f"Prikabinti failai: {[a['filename'] for a in attachments]}")
+                            print(f"Tekstas:\n{body.strip()[:200]}...\n")
+                            
+                            sender_email = parseaddr(from_hdr)[1].lower()
+                            subj_low = (subject or "").lower()
+                            body_low = (body or "").lower()
+
+                            # 0. Apsauga nuo automatinių atostogų pranešimų (Out of Office / Auto-reply loop guard)
+                            is_auto_reply = any(k in subj_low or k in body_low for k in [
+                                "automatinis atsakymas", "out of office", "auto-reply", "autoreply",
+                                "nedirbu iki", "atostogauju", "esu atostogose", "šiuo metu atostogauju",
+                                "automated response", "delivery status notification", "mail delivery subsystem"
+                            ])
+                            if is_auto_reply:
+                                print(f"[{datetime.now().strftime('%H:%M:%S')}] 🛑 [AUTO-REPLY / VACATION] Praleidžiamas automatinis atsakymas iš {sender_email}.")
+                                continue
+                            
+                            # 1. Tikriname ar tai Apskaitos klientas arba nauja buhalterinė užklausa / dokumentai
+                            accounting_leads = get_accounting_emails() | {"lilijazap@gmail.com"}
+                            is_accounting_query = (
+                                sender_email in accounting_leads
+                                or any(k in (subj_low + " " + body_low) for k in [
+                                    "apskait", "buhalter", "deklarac", "balans", "vmi", "mokesč", "mokest",
+                                    "pln204", "sąskait", "saskait", "audit", "mb ", "uab ", "kaina", "įkain",
+                                    "accounting", "tax return", "financial statements", "cit", "vat"
+                                ])
+                                or any(a["filename"].lower().endswith(ext) for a in attachments for ext in [".xlsx", ".xls", ".csv", ".xml", ".pdf", ".zip"])
+                            )
+
+                            if is_accounting_query and sender_email != agent.email_user.lower():
+                                print(f"[{datetime.now().strftime('%H:%M:%S')}] 🎯 [BUHALTERIJOS UŽKLAUSA / KLIENTAS] Apdorojamas atsakymas iš {sender_email}!")
+                                accounting_pipe.process_inbound_reply(sender_email, subject, body.strip(), attachments)
+                                continue
+
+                            # 2. Tikriname ar tai B2B kampanijos atsiliepimų leadas
+                            campaign_emails = get_campaign_lead_emails()
+                            allowed_senders = {target_sender.lower(), "phengwey5@gmail.com", "memocasting.lt@gmail.com"} | campaign_emails
+                            
+                            if sender_email in allowed_senders and sender_email != agent.email_user.lower():
+                                record_inbound_reply(sender_email, body.strip())
+                                print(f"[{datetime.now().strftime('%H:%M:%S')}] 🔥 [HOT REPUTATION LEAD] Gautas atsakymas iš {sender_email}!")
+                            else:
+                                print(f"[{datetime.now().strftime('%H:%M:%S')}] Laiškas iš {sender_email} praleidžiamas.")
+        except Exception as e:
+            print(f"[{datetime.now().strftime('%H:%M:%S')}] [Klaida cikle] {e}")
+
+        time.sleep(poll_interval)
+
+if __name__ == "__main__":
+    target = sys.argv[1] if len(sys.argv) > 1 else "lilijazap@gmail.com"
+    run_listener(target)

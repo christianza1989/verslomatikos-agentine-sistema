@@ -1,0 +1,4 @@
+# Sistema veikia be jokių papildomų priklausomybių naudojant standartinę Python 3.12 biblioteką!
+# Jei norite papildomų patogumų:
+requests>=2.31.0
+pydantic>=2.0.0

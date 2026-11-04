@@ -1,0 +1,61 @@
+{
+  "business_id": "missed_call_ai",
+  "business_name": "CallGuard AI (Praleistų Skambučių Gelbėtojas)",
+  "website_url": "https://callguard.ai",
+  "industry": "Praleistų skambučių atstatymas, momentinis SMS/balso atsakas, automatinė vizitų registracija",
+  "business_type": "b2b_saas",
+  "target_market": "Lietuva, Baltijos šalys, DACH regionas",
+  "brand_voice": "Greitas, nepriekaištingai patikimas, gelbėjantis kiekvieną prarastą kliento eurą",
+  
+  "core_offer": {
+    "name": "CallGuard Business Tier (1 telefono linija)",
+    "price": 99.00,
+    "currency": "EUR",
+    "specs": "Momentinis SMS atsakymas per 5 sek. po praleisto skambučio, dvipusis AI susirašinėjimas/skambutis, kliento problemos išsiaiškinimas, vizito rezervacija į kalendorių, tiesioginis vadovo informavimas.",
+    "supplier_cost": 8.00
+  },
+
+  "pricing_tiers": [
+    {
+      "tier": "Solo Meistras / Gydytojas",
+      "price": 99.00,
+      "features": "1 telefono numeris, momentinis SMS atsakas, iki 300 pokalbių/mėn., kalendoriaus integracija"
+    },
+    {
+      "tier": "Servisas / Klinika Pro",
+      "price": 179.00,
+      "features": "Iki 3 telefono linijų, Vapi/Retell balso AI atskambinimas, integracija su CRM, savaitinis prarastų/atgautų skambučių auditas"
+    },
+    {
+      "tier": "24/7 Avarinė Tarnyba",
+      "price": 299.00,
+      "features": "Neriboti skambučiai, naktinis balso AI dispečeris, momentinis avarijos vietos nustatymas ir meistro iškvietimas"
+    }
+  ],
+
+  "target_audiences": [
+    {
+      "name": "Avariniai meistrai (santechnikai, spynų meistrai, elektrikai)",
+      "pain_point": "Kai meistras lenda po kriaukle ar keičia laidus, negali kelti telefono. Paskambinęs žmogus po 5 sek. skambina kitam meistrui iš Google."
+    },
+    {
+      "name": "Autoservisai ir padangų montavimo centrai",
+      "pain_point": "Triukšmas dirbtuvėse, meistrai tepaluotomis rankomis nekelia telefono. Per dieną prarandama 5–10 skambučių (500–1,500 € negautų pajamų)."
+    },
+    {
+      "name": "Privatūs gydytojai, kineziterapeutai, masažistai",
+      "pain_point": "Procedūros metu negali kalbėti. Pacientas nori registruotis dabar – AI agentas suderina laiką per SMS neatitraukdamas specialisto."
+    }
+  ],
+
+  "objections_and_answers": {
+    "ar_reikia_keisti_telefono_numeri": "Ar man reikės keisti savo telefono numerį? -> Jokiu būdu. Jūs liekate su savo dabartiniu numeriu; įjungiamas paprastas automatinis skambučių nukreipimas praleisto skambučio atveju (užtrunka 2 minutes).",
+    "kodel_tiesiog_ne_balso_pastas": "Kodėl tiesiog nenaudoti balso pašto? -> Statistika rodo, kad 85% žmonių numeta ragelį išgirdę balso paštą. Tačiau 98% žmonių perskaito SMS žinutę ir 60% atrašo per pirmąsias 2 minutes."
+  },
+
+  "ai_sales_agent_strategy": {
+    "lead_source": "Google Maps skeneris: atrenkami servisai ir meistrai. Agentas atlieka testinį skambutį darbo pabaigoje; jei nekelia – siunčia personalizuotą pasiūlymą.",
+    "hook": "'Mes jums ką tik skambinome kaip potencialus klientas, tačiau niekas nepakėlė. Štai kiek klientų prarandate kiekvieną savaitę.'",
+    "call_to_action": "Aktyvuokite 7 dienų nemokamą CallGuard testą be jokių įsipareigojimų"
+  }
+}

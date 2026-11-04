@@ -1,0 +1,24 @@
+{
+  "business_id": "azuolo_baldai",
+  "business_name": "Azuolo Baldai",
+  "industry": "Ranku darbo azuoliniai stalai",
+  "business_type": "B2B ir B2C",
+  "target_market": "Vokietija ir Lietuva",
+  "brand_voice": "Profesionalus, patikimas, orientuotas į kliento vertę",
+  "core_offer": {
+    "name": "Valgomojo stalas 220cm",
+    "price": 1200.0,
+    "specs": "Pagrindinis Valgomojo stalas 220cm sprendimas Ranku darbo azuoliniai stalai srityje.",
+    "supplier_cost": 600.0
+  },
+  "target_audiences": [
+    {
+      "name": "Pagrindiniai B2B ar B2C pirkėjai",
+      "pain_point": "Ieško kokybiško Valgomojo stalas 220cm už konkurencingą kainą tiesiai iš patikimo šaltinio."
+    }
+  ],
+  "objections_and_answers": {
+    "trust": "Kodėl verta pasitikėti? Teikiame kokybės garantiją ir pilną palaikymą.",
+    "price": "Kodėl verta investuoti? Valgomojo stalas 220cm greitai atsiperka ir padeda pasiekti geresnių rezultatų."
+  }
+}

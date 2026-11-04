@@ -1,0 +1,57 @@
+{
+  "business_id": "llm_geo_agency",
+  "business_name": "PromptRank AI (Generative Engine Optimization - GEO)",
+  "website_url": "https://promptrank.agency",
+  "industry": "Generatyvinis SEO (GEO), prekių ženklų optimizavimas ChatGPT, Perplexity, Gemini ir Claude paieškoms",
+  "business_type": "b2b_saas_and_agency",
+  "target_market": "Globali rinka ir Baltijos šalys (B2B SaaS, e-komercija, privačios klinikos, gamintojai)",
+  "brand_voice": "Futuristinis, autoritetingas, matematiškai tikslus, atveriantis ateities paieškos srautą",
+  
+  "core_offer": {
+    "name": "GEO Brand Audit & LLM Authority Package",
+    "price": 490.00,
+    "currency": "EUR",
+    "specs": "Patikrinimas, kaip ChatGPT, Perplexity ir Gemini atsako į jūsų pramonės klausimus (ar rekomenduoja jus, ar konkurentus). Sukuriamas struktūrizuotų duomenų (Schema.org / JSON-LD) paketas, Wikidata / Wikipedia šaltinių tinklelis, cituojamo autoritetingo turinio injekcija, kad AI modeliai cituotų jūsų verslą kaip #1 pasirinkimą.",
+    "supplier_cost": 22.00
+  },
+
+  "pricing_tiers": [
+    {
+      "tier": "LLM Visibility Audit (Vienkartinis)",
+      "price": 190.00,
+      "features": "50 tikslinių promptų testas ChatGPT/Perplexity/Gemini, konkurentų citavimo analizė, spragų ataskaita"
+    },
+    {
+      "tier": "GEO Authority Autopilot (Mėnesinis)",
+      "price": 490.00,
+      "features": "Nuolatinis optimizavimas, autoritetą keliančių straipsnių sindikavimas, Schema.org atnaujinimai, kasmėnesinė citavimo ataskaita"
+    },
+    {
+      "tier": "Market Monopoly Tier",
+      "price": 1200.00,
+      "features": "Pilnas rinkos dominavimas: užtikrinama, kad 8 iš 10 AI paieškų jūsų nišoje rekomenduotų jūsų produktą"
+    }
+  ],
+
+  "target_audiences": [
+    {
+      "name": "E-komercijos prekių ženklai ir gamintojai (pvz. baldai, kubilai, kosmetika)",
+      "pain_point": "Pirkėjai klausia Perplexity ir ChatGPT: 'Kokie geriausi rankų darbo ąžuolo baldai Baltijos šalyse?'. Jei prekės ženklo nėra AI atsakyme – prarandami turtingiausi pirkėjai."
+    },
+    {
+      "name": "B2B SaaS ir technologijų startuoliai",
+      "pain_point": "Google tradicinis SEO miršta; visas naujas programinės įrangos srautas ateina iš ChatGPT rekomendacijų."
+    }
+  ],
+
+  "objections_and_answers": {
+    "kaip_imanoma_paveikti_chatgpt": "Kaip įmanoma paveikti tai, ką atsako ChatGPT ar Perplexity? -> LLM modeliai remiasi autoritetingais žinių grafais (Wikidata, Reddit diskusijomis, Schema.org semantika, cituojamais pramonės šaltiniais). Mūsų sistema sukuria tiksliai tokią semantinę struktūrą, kurią LLM modeliai naudoja faktų patikrai, todėl jūsų įmonė tampa pagrindiniu rekomenduojamu šaltiniu.",
+    "kodel_dabar": "Kodėl verta pradėti dabar? -> Ši niša yra visiškai nauja (2025–2026 m.). Dabar užėmus autoriteto poziciją AI modelių atmintyje, konkurentams jus išstumti po metų bus beveik neįmanoma."
+  },
+
+  "ai_sales_agent_strategy": {
+    "lead_source": "Tradicinio Google SEO lyderiai, kurie dar nėra optimizuoti AI paieškoms",
+    "hook": "'Paklausėme ChatGPT ir Perplexity: \"Kas geriausias [jūsų paslauga] [jūsų mieste]?\" – AI rekomendavo jūsų 2 konkurentus, o jūsų net nepaminėjo. Štai 3 min. video įrodymas.'",
+    "call_to_action": "Gaukite nemokamą savo prekės ženklo AI matomumo auditą"
+  }
+}

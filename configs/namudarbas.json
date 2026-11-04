@@ -1,0 +1,63 @@
+{
+  "business_id": "namudarbas",
+  "business_name": "Namudarbas.lt / Mokytoja AI (Superiora)",
+  "website_url": "https://namudarbas.lt",
+  "industry": "Švietimo technologijos (EdTech), AI mokytojas vaikams, mokymosi pagalba šeimai ir namų darbų asistentas",
+  "business_type": "b2c_saas",
+  "target_market": "Lietuva (tėvai, globėjai ir 1-12 klasių mokiniai)",
+  "brand_voice": "Šiltas, palaikantis, pedagogiškas, kantrybę ir savarankiškumą skatinantis",
+  "public_contact": "info@pinet.lt",
+  "associated_brand": "Superiora",
+  
+  "core_offer": {
+    "name": "Mokytoja AI šeimos prenumerata",
+    "price": 9.99,
+    "currency": "EUR",
+    "specs": "AI mokytojo asistentas vaikui: užduoties fotografavimas telefonu, klaidos atpažinimas, paaiškinimas žingsnis po žingsnio neatliekant darbo už vaiką. Tėvams skirti praktiniai gidai (/mokymosi-gidai), kaip padėti vaikui mokytis be streso ir pykčių.",
+    "supplier_cost": 0.80
+  },
+
+  "pricing_tiers": [
+    {
+      "tier": "Nemokamas bandomasis / Bazinis",
+      "price": 0.00,
+      "features": "3 užduočių paaiškinimai per dieną, prieiga prie viešų mokymosi gidų"
+    },
+    {
+      "tier": "Šeimos Pro Mėnesinis",
+      "price": 9.99,
+      "features": "Neribotas užduočių fotografavimas ir analizė, visi mokomieji dalykai (matematika, lietuvių k., anglų k., fizika, chemija), tėvų pažangos ataskaitos"
+    },
+    {
+      "tier": "Metinė Mokslo Metų Narystė",
+      "price": 79.00,
+      "features": "Visi mokslo metai (taupote 40 €), individualūs testai, pasiruošimas PUPP ir egzaminams"
+    }
+  ],
+
+  "target_audiences": [
+    {
+      "name": "Pavargę tėvai po ilgos darbo dienos",
+      "pain_point": "Vakarais tenka sėdėti 2-3 valandas prie vaiko namų darbų, kyla konfliktai, tėvai patys nebepamena 7-9 klasės matematikos ar fizikos formulių."
+    },
+    {
+      "name": "Mokiniai (ypač 5-10 klasių), bijantys suklysti ar nesuprantantys mokytojo mokykloje",
+      "pain_point": "Gėda paklausti mokytojo pamokoje, nesupranta vadovėlio sausos teorijos, nori paaiškinimo paprasta kalba be pajuokos."
+    },
+    {
+      "name": "Šeimos, kurioms privatus korepetitorius (20-30 €/val.) yra per brangi prabanga",
+      "pain_point": "Reikalinga pastovi, kasdienė pagalba, tačiau biudžetas 200-300 €/mėn. korepetitoriams yra nepakeliamas."
+    }
+  ],
+
+  "objections_and_answers": {
+    "ar_vaikas_tik_nenurasines": "Ar vaikas tiesiog nenusirašys atsakymo? -> Mokytoja AI sukurta pedagoginiu sokratiško metodo principu: ji neduoda gatavo atsakymo, o užduoda nukreipiamuosius klausimus ir paaiškina kiekvieną žingsnį, kad vaikas suprastų esmę pats.",
+    "ar_tinka_lietuvos_programai": "Ar sistema supranta lietuviškus vadovėlius ir uždavinius? -> Taip, sistema apmokyta analizuoti lietuviškas užduotis tiesiai iš nuotraukos ir pateikia taisykles pagal bendrąsias ugdymo programas lietuvių kalba."
+  },
+
+  "ai_sales_agent_strategy": {
+    "lead_source": "SEO srautas iš edukacinių gidų ('kaip padėti vaikui ruošti namų darbus', 'vaikas nesupranta matematikos'), tėvų Facebook grupės, bendradarbiavimas su mokyklų tėvų tarybomis",
+    "hook": "Nemokamas gidas ir galimybė nufotografuoti bet kurį sunkiausią šio vakaro uždavinį ir pamatyti, kaip AI paaiškina vaikui be pykčių",
+    "call_to_action": "Išbandykite nemokamai šiandien – ramūs vakarai jūsų šeimai prasideda čia"
+  }
+}

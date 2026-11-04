@@ -1,0 +1,57 @@
+{
+  "business_id": "airbnb_concierge_ai",
+  "business_name": "HostGenie AI (Airbnb Konsjeržas & Papildomi Pardavimai)",
+  "website_url": "https://hostgenie.ai",
+  "industry": "Trumpalaikės nuomos (Airbnb / Booking) automatizavimas, 24/7 svečių aptarnavimas, papildomų paslaugų (Upsell) pardavimas",
+  "business_type": "b2b_saas",
+  "target_market": "Lietuva (Vilnius, Palanga, Druskininkai), Ispanija, Italija, Prancūzija (Airbnb šeimininkai)",
+  "brand_voice": "Šiltas, svetingas, daugiakalbis (EN, LT, DE, PL, FR), generuojantis papildomas pajamas šeimininkui",
+  
+  "core_offer": {
+    "name": "HostGenie Pro (Už 1 būstą / mėn.)",
+    "price": 19.00,
+    "currency": "EUR",
+    "specs": "24/7 daugiakalbis atsakinėjimas į svečių klausimus (Wi-Fi, raktai, taisyklės) per Airbnb žinutes ir WhatsApp, automatinis papildomų paslaugų siūlymas (ankstyvas atvykimas +20 €, vėlyvas išvykimas +25 €, pirties/kubilo iškūrenimas +70 €, tarpinis valymas +35 €), Stripe atsiskaitymo nuorodos.",
+    "supplier_cost": 1.50
+  },
+
+  "pricing_tiers": [
+    {
+      "tier": "Solo Host (1-2 būstai)",
+      "price": 19.00,
+      "features": "1 būstas, 24/7 svečių atsakiklis, automatinis Wi-Fi/rakto siuntimas, pagrindinis upsell"
+    },
+    {
+      "tier": "Portfolio Host (3-10 būstų)",
+      "price": 15.00,
+      "features": "Kaina už 1 būstą: 15 €/mėn. Integracija su Guesty, Hostaway, iCal, automatinis valytojų koordinavimas"
+    },
+    {
+      "tier": "Property Management Agency (10+ būstų)",
+      "price": 9.90,
+      "features": "Didmeninė kaina agentūroms, individualūs vietiniai gidai svečiams, WhatsApp White-label"
+    }
+  ],
+
+  "target_audiences": [
+    {
+      "name": "Užimti Airbnb/Booking butų savininkai",
+      "pain_point": "Svečiai rašo 23:30 nakties klausdami, kaip įjungti karštą vandenį ar kur rasti raktus. Šeimininkai pavargo būti pririšti prie telefono."
+    },
+    {
+      "name": "Sodybų, glampingų ir namelių gamtoje nuomotojai",
+      "pain_point": "Praleidžia milžiniškas papildomas pajamas, nes nepasiūlo kubilo, malkų, pirties ar vėlyvo išvykimo laiku."
+    }
+  ],
+
+  "objections_and_answers": {
+    "ar_airbnb_tai_leidzia": "Ar galima naudoti išorinį botą Airbnb platformoje? -> Taip, HostGenie jungiasi per oficialius PMS partnerius arba el. pašto/iCal pranešimų integraciją, kuri 100% atitinka Airbnb ir Booking taisykles.",
+    "kaip_sistema_uzdirba_pinigu_man": "Kaip tai atsiperka? -> Mūsų sistema automatiškai prieš atvykimą pasiūlo: 'Norite atvykti 2 val. anksčiau už 15 €?'. Vidutiniškai 3 iš 10 svečių sutinka. Vienas butas sugeneruoja 60–120 € papildomo gryno pelno per mėnesį, todėl 19 € kaina atsiperka trigubai."
+  },
+
+  "ai_sales_agent_strategy": {
+    "lead_source": "Airbnb ir Booking skelbimų peržiūra populiariuose regionuose (Palanga, Vilnius, Druskininkai, Costa del Sol)",
+    "hook": "'Pastebėjome jūsų gražų namelį/butą. Mūsų AI konsjeržas per pirmą mėnesį jums atneša vidutiniškai +85 € papildomų pajamų iš ankstyvo atvykimo ir pirties pardavimų, visiškai be jūsų laiko.'",
+    "call_to_action": "Išbandykite 1 mėnesį nemokamai ir stebėkite papildomus užsakymus"
+  }
+}

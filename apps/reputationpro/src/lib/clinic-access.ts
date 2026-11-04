@@ -1,0 +1,62 @@
+import { createHash, randomBytes, scryptSync, timingSafeEqual } from 'node:crypto';
+import { db } from './db.ts';
+
+export type Principal = {role:'owner'} | {role:'clinic';clientId:string};
+export function canAccessClient(principal: Principal | null, clientId:string) {
+  return !!principal && (principal.role==='owner' || principal.clientId===clientId);
+}
+export function validClinicPassword(password:string) {
+  return password.length>=8 && password.length<=128 && Buffer.byteLength(password,'utf8')<=512;
+}
+function digest(password:string,salt:Buffer) { return scryptSync(password,salt,64); }
+function tokenHash(token:string) { return createHash('sha256').update(token).digest('hex'); }
+
+// Called inside the same transaction as client creation; credentials never
+// become part of the Client object passed to browser components.
+export function createClinicCredential(clientId:string,password:string) {
+  if(!validClinicPassword(password))throw new Error('Invalid clinic password');
+  const salt=randomBytes(16),hash=digest(password,salt);
+  db().prepare('INSERT INTO clinic_credentials(client_id,password_salt,password_hash) VALUES (?,?,?)').run(clientId,salt.toString('hex'),hash.toString('hex'));
+}
+export function replaceClinicPassword(clientId:string,password:string) {
+  if(!validClinicPassword(password))throw new Error('Invalid clinic password');
+  const salt=randomBytes(16),hash=digest(password,salt);
+  db().prepare('UPDATE clinic_credentials SET password_salt=?,password_hash=? WHERE client_id=?').run(salt.toString('hex'),hash.toString('hex'),clientId);
+  db().prepare('DELETE FROM clinic_sessions WHERE client_id=?').run(clientId);
+}
+export function verifyClinicPassword(clientId:string,password:string) {
+  const row=db().prepare('SELECT password_salt,password_hash FROM clinic_credentials WHERE client_id=?').get(clientId) as {password_salt:string;password_hash:string}|undefined;
+  if(!row || !validClinicPassword(password))return false;
+  const actual=digest(password,Buffer.from(row.password_salt,'hex'));
+  const expected=Buffer.from(row.password_hash,'hex');
+  return expected.length===actual.length && timingSafeEqual(actual,expected);
+}
+export function authenticateClinic(email:string,password:string) {
+  const row=db().prepare(`SELECT c.id,c.subscription_status,c.stripe_subscription_id,c.is_demo,c.trial_ends_at
+    FROM clients c JOIN clinic_credentials a ON a.client_id=c.id
+    WHERE c.email=?`).get(email.toLowerCase()) as {id:string;subscription_status:string;stripe_subscription_id:string|null;is_demo:number;trial_ends_at:string|null}|undefined;
+  // Do a scrypt operation even for a missing email to reduce account probing.
+  if(!row){digest(password,Buffer.alloc(16));return null;}
+  if(!verifyClinicPassword(row.id,password))return null;
+  const isTrial = (!!row.trial_ends_at && new Date(row.trial_ends_at).getTime() > Date.now()) || ['trialing','demo_trial','active'].includes(row.subscription_status);
+  const activated = isTrial || (!!row.stripe_subscription_id && !['pending','incomplete','incomplete_expired'].includes(row.subscription_status));
+  if(!activated)return null;
+  return row.id;
+}
+export function issueClinicSession(clientId:string) {
+  const token=randomBytes(32).toString('hex'),expiresAt=Date.now()+8*60*60*1000;
+  const sql=db();sql.prepare('DELETE FROM clinic_sessions WHERE expires_at<?').run(Date.now());
+  sql.prepare('INSERT INTO clinic_sessions(token_hash,client_id,expires_at) VALUES (?,?,?)').run(tokenHash(token),clientId,expiresAt);
+  return {token,expiresAt};
+}
+export function clinicSession(token:string) {
+  const row=db().prepare(`SELECT s.client_id, c.subscription_status, c.stripe_subscription_id, c.is_demo, c.trial_ends_at
+    FROM clinic_sessions s
+    JOIN clinic_credentials a ON a.client_id=s.client_id JOIN clients c ON c.id=s.client_id
+    WHERE s.token_hash=? AND s.expires_at>?`).get(tokenHash(token),Date.now()) as {client_id:string;subscription_status:string;stripe_subscription_id:string|null;is_demo:number;trial_ends_at:string|null}|undefined;
+  if(!row) return null;
+  const isTrial = (!!row.trial_ends_at && new Date(row.trial_ends_at).getTime() > Date.now()) || ['trialing','demo_trial','active'].includes(row.subscription_status);
+  const activated = isTrial || (!!row.stripe_subscription_id && !['pending','incomplete','incomplete_expired'].includes(row.subscription_status));
+  return activated ? row.client_id : null;
+}
+export function revokeClinicSession(token:string) { db().prepare('DELETE FROM clinic_sessions WHERE token_hash=?').run(tokenHash(token)); }

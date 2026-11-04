@@ -1,0 +1,66 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "react-jsx",
+    "incremental": true,
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "paths": {
+      "@/*": [
+        "./src/*"
+      ]
+    },
+    "allowImportingTsExtensions": true
+  },
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    ".next/dev/types/**/*.ts",
+    ".next-review-20261027/types/**/*.ts",
+    ".next-review-20261027/dev/types/**/*.ts",
+    ".next-product-link-20261027/types/**/*.ts",
+    ".next-product-link-20261027/dev/types/**/*.ts",
+    ".next-equal-choice-20261027/types/**/*.ts",
+    ".next-equal-choice-20261027/dev/types/**/*.ts",
+    ".next-stripe-prep-20261027/types/**/*.ts",
+    ".next-stripe-prep-20261027/dev/types/**/*.ts",
+    ".next-stripe-prep2-20261027/types/**/*.ts",
+    ".next-stripe-prep2-20261027/dev/types/**/*.ts",
+    ".next-memocasting-20261027/types/**/*.ts",
+    ".next-memocasting-20261027/dev/types/**/*.ts",
+    ".next-memocasting2-20261027/types/**/*.ts",
+    ".next-memocasting2-20261027/dev/types/**/*.ts",
+    ".next-clinic-access-20261027/types/**/*.ts",
+    ".next-clinic-access-20261027/dev/types/**/*.ts",
+    ".next-safety-20261028/types/**/*.ts",
+    ".next-safety-20261028/dev/types/**/*.ts",
+    ".next-safety2-20261028/types/**/*.ts",
+    ".next-safety2-20261028/dev/types/**/*.ts",
+    ".next-safety3-20261028/types/**/*.ts",
+    ".next-safety3-20261028/dev/types/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "data",
+    "artifacts"
+  ]
+}

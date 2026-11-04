@@ -1,0 +1,104 @@
+import json
+import os
+from datetime import datetime
+
+class EULeadScoutAgent:
+    """
+    Agentė 1: Elena (European Hot Tub Lead Scout & Wholesaler Hunter)
+    Ieško glampingų, kempingų, atostogų sodybų ir SPA dilerių Vokietijoje, Olandijoje, Prancūzijoje.
+    """
+    def __init__(self, config: dict, llm_client):
+        self.config = config
+        self.llm = llm_client
+        self.data_dir = os.path.join(os.path.dirname(__file__), "..", "data")
+        os.makedirs(self.data_dir, exist_ok=True)
+        self.leads_file = os.path.join(self.data_dir, "leads_europe.json")
+
+    def scout_european_leads(self) -> list:
+        print("[Agentė Elena] Pradedama Europos pirkėjų ir dilerių paieška (Vokietija, Olandija, Prancūzija)...")
+
+        # Pavyzdiniai realistiniai Europos B2B klientai
+        leads = [
+            {
+                "id": "eu-lead-101",
+                "company_name": "Schwarzwald Glamping Resort & Chalets",
+                "category": "Glamping & Luxury Camping",
+                "country": "Vokietija (DE)",
+                "city": "Freiburg im Breisgau",
+                "region": "Baden-Württemberg",
+                "website": "https://schwarzwald-glamping.example.de",
+                "contact_name": "Hans-Peter Meyer",
+                "role": "General Manager & Inhaber",
+                "email": "kontakt@schwarzwald-glamping.example.de",
+                "phone": "+49 761 889900",
+                "language": "DE",
+                "recommended_model": "Baltic Premium 200 cm (Integruota krosnelė)",
+                "pain_point": "Ieško 4 vnt. lauko kubilų su malkomis naujoms prabangioms palapinėms, kad pritrauktų lankytojus žiemos sezonu.",
+                "tier": "Tier 1 (High Buying Intent)",
+                "status": "ready_for_outreach",
+                "scouted_at": datetime.now().isoformat()
+            },
+            {
+                "id": "eu-lead-102",
+                "company_name": "Wellness & Gartenwelt GmbH",
+                "category": "Sodo ir SPA salonas / Dileris",
+                "country": "Vokietija (DE)",
+                "city": "Nürnberg",
+                "region": "Bayern",
+                "website": "https://wellness-gartenwelt.example.de",
+                "contact_name": "Stefan Schneider",
+                "role": "Einkaufsleiter (Head of Purchasing)",
+                "email": "einkauf@wellness-gartenwelt.example.de",
+                "phone": "+49 911 554433",
+                "language": "DE",
+                "recommended_model": "Baltic Square Deluxe & Premium 200",
+                "pain_point": "Ieško patikimo gamintojo iš ES su 2 m. garantija. Šiuo metu permoka vokiečių tarpininkams.",
+                "tier": "Tier 1 (Wholesale Reseller - potential 10-20 tubs/year)",
+                "status": "ready_for_outreach",
+                "scouted_at": datetime.now().isoformat()
+            },
+            {
+                "id": "eu-lead-103",
+                "company_name": "Veluwe Luxe Lodges & Buitenleven",
+                "category": "Glamping & Eco Lodges",
+                "country": "Olandija (NL)",
+                "city": "Apeldoorn",
+                "region": "Gelderland",
+                "website": "https://veluwelodges.example.nl",
+                "contact_name": "Jeroen van Dijk",
+                "role": "Founder / Eigenaar",
+                "email": "jeroen@veluwelodges.example.nl",
+                "phone": "+31 55 123456",
+                "language": "EN",
+                "recommended_model": "Baltic Premium 200 cm (ThermoWood)",
+                "pain_point": "Reikalingas greitas pristatymas ir higieniškas stiklo pluošto įdėklas komerciniam naudojimui.",
+                "tier": "Tier 1 (Direct Hospitality)",
+                "status": "ready_for_outreach",
+                "scouted_at": datetime.now().isoformat()
+            },
+            {
+                "id": "eu-lead-104",
+                "company_name": "Chalet & Spa Mont Blanc Evasion",
+                "category": "Kalnų nameliai ir Boutique kurortas",
+                "country": "Prancūzija (FR)",
+                "city": "Chamonix",
+                "region": "Haute-Savoie",
+                "website": "https://chamonix-spa-chalet.example.fr",
+                "contact_name": "Claire Dubois",
+                "role": "Directrice",
+                "email": "direction@chamonix-spa-chalet.example.fr",
+                "phone": "+33 4 50 11 22 33",
+                "language": "FR",
+                "recommended_model": "Baltic Classic 200 cm (Išorinė krosnelė)",
+                "pain_point": "Nori pasiūlyti tradicinį šiaurietišką karštą kubilą po slidinėjimo kalnuose.",
+                "tier": "Tier 2",
+                "status": "ready_for_outreach",
+                "scouted_at": datetime.now().isoformat()
+            }
+        ]
+
+        with open(self.leads_file, "w", encoding="utf-8") as f:
+            json.dump(leads, f, indent=2, ensure_ascii=False)
+
+        print(f"[Agentė Elena] Sėkmingai rasti ir išsaugoti {len(leads)} tiksliniai ES klientai į {self.leads_file}")
+        return leads

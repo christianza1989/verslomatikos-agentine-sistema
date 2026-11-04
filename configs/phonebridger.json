@@ -1,0 +1,66 @@
+{
+  "business_id": "phonebridger",
+  "business_name": "PhoneBridger (phonebridger.com)",
+  "website_url": "https://phonebridger.com",
+  "industry": "Darbo vietos produktyvumo programinė įranga ir magnetiniai laikikliai (Windows + Android kelių įrenginių valdymas)",
+  "business_type": "software_and_hardware",
+  "target_market": "Globali rinka (JAV, Europa, programuotojai, IT specialistai, socialinių tinklų valdytojai, prekiautojai)",
+  "brand_voice": "Minimalistinis, technologiškai švarus, orientuotas į maksimalų produktyvumą ir ergonomiką ('One mouse. Three phones')",
+  "legal_entity": "MB Memocasting",
+  
+  "core_offer": {
+    "name": "PhoneBridger Full Setup (App + 2 Magnetic Folding Holders)",
+    "price": 65.00,
+    "currency": "USD",
+    "specs": "Windows V1 licencija su Android palydovine programėle (valdykite iki 3 telefonų ta pačia pele ir klaviatūra tiesiog pervedę žymeklį per monitoriaus kraštą per Wi-Fi/USB/ADB) + 2 aliumininiai magnetiniai sulankstomi telefonų laikikliai prie monitoriaus.",
+    "supplier_cost": 14.00
+  },
+
+  "pricing_tiers": [
+    {
+      "tier": "App Only (Lifetime License)",
+      "price": 25.00,
+      "features": "Windows V1 kompiuterio programa + Android companion app, iki 3 prijungtų telefonų, USB ir Wi-Fi/ADB palaikymas, klaviatūros ir pelės sinchronizacija"
+    },
+    {
+      "tier": "Pro Setup (App + 2 Holders)",
+      "price": 65.00,
+      "features": "Programinė įranga + 2 magnetiniai lankstūs aliuminio laikikliai, tvirtinami prie monitoriaus ar nešiojamo kompiuterio krašto"
+    },
+    {
+      "tier": "Multi-Device Desk Master (App + 3 Holders + High-Speed Hub)",
+      "price": 99.00,
+      "features": "Pilnas rinkinys profesionaliai darbo vietai su 3 magnetiniais laikikliais ir greitu USB-C šakotuvu"
+    }
+  ],
+
+  "target_audiences": [
+    {
+      "name": "Socialinių tinklų agentūros ir paskyrų valdytojai (TikTok, Instagram, Telegram)",
+      "pain_point": "Valdo 3-5 fizinius telefonus skirtingoms paskyroms/SIM kortelėms. Baisiai vargina rankinis teksto rašymas mažais ekranais ir rankų kilnojimas tarp klaviatūros ir telefonų."
+    },
+    {
+      "name": "Android programėlių kūrėjai ir QA testuotojai",
+      "pain_point": "Nuolatinis emuliatorių lėtumas arba būtinybė testuoti ant fizinių telefonų greta PC."
+    },
+    {
+      "name": "Kriptovaliutų, Forex prekiautojai ir Day Traderiai",
+      "pain_point": "Reikalingas greitas patekimas į mobiliąsias programėles (2FA, biržų programėlės, saugūs walletai) neatitraukiant rankų nuo pagrindinės pelės ir klaviatūros."
+    },
+    {
+      "name": "Desk Setup ir Battlestation entuziastai (Reddit r/battlestations)",
+      "pain_point": "Nori švarios, estetiškos darbo vietos be besimėtančių telefonų ant stalo."
+    }
+  ],
+
+  "objections_and_answers": {
+    "security_cloud": "Ar duomenys siunčiami į debesį? -> Jokiu būdu. PhoneBridger veikia 100% lokaliai jūsų namų/biuro tinkle per vietinį Wi-Fi arba tiesioginį USB kabelį (naudojant ADB protokolą). Jokie klavišų paspaudimai, slaptažodžiai ar ekranų vaizdai neina į jokius išorinius serverius.",
+    "lag_latency": "Ar jaučiasi pelės vėlavimas (lag)? -> Vietiniu Wi-Fi vėlavimas yra mažesnis nei 8ms, o sujungus per USB – 0ms pastebimas vėlavimas, pelės žymeklis sklandžiai slysta tarp monitoriaus ir telefono ekranų."
+  },
+
+  "ai_sales_agent_strategy": {
+    "lead_source": "Reddit (r/battlestations, r/desksetup, r/androiddev), TikTok technikos apžvalgininkai, B2B agentūros valdančios mobiliąsias paskyras",
+    "hook": "Trumpi 7-10 sekundžių demonstraciniai vaizdo įrašai: viena pelė sklandžiai pervažiuoja iš Windows monitoriaus tiesiai į du telefonus magnetiniuose laikikliuose, rašomas tekstas fizine klaviatūra",
+    "call_to_action": "Išbandykite 7 dienų nemokamą versiją arba užsisakykite pilną 'Desk Setup' su magnetiniais laikikliais už $65"
+  }
+}

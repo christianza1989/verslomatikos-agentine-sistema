@@ -1,0 +1,73 @@
+{
+  "business_id": "kubilai_europa",
+  "business_name": "Baltic Hot Tubs Export (Lietuvos Gamintojo Kubilai Europai)",
+  "origin_country": "Lietuva",
+  "export_regions": ["Vokietija (DE)", "Olandija (NL)", "Belgija (BE)", "Austrija (AT)", "Prancūzija (FR)", "Danija ir Švedija (DK/SE)"],
+  "currency": "EUR",
+  
+  "models": [
+    {
+      "id": "model-integrated-200",
+      "name": "Baltic Premium 200 cm (Integruota krosnelė)",
+      "specs": "Stiklo pluošto įdėklas, AISI 304 nerūdijančio plieno integruota krosnelė, ThermoWood apdaila, 14 hidromasažo purkštukų, 12 oro burbulų, LED šviesos terapija, termo-izoliuotas odinis dangtis.",
+      "supplier_cost_lt": 1950.00,
+      "b2b_dealer_price": 2750.00,
+      "b2c_retail_eu_price": 3850.00,
+      "typical_market_price_germany": 5200.00,
+      "b2b_margin_eur": 800.00,
+      "b2c_margin_eur": 1900.00
+    },
+    {
+      "id": "model-external-200",
+      "name": "Baltic Classic 200 cm (Išorinė krosnelė)",
+      "specs": "Daugiau erdvės viduje (iki 8 asmenų), galinga išorinė krosnelė, greitas įkaitimas (~1.5 val.), ThermoWood mediena, LED ir burbulų sistema.",
+      "supplier_cost_lt": 1750.00,
+      "b2b_dealer_price": 2450.00,
+      "b2c_retail_eu_price": 3450.00,
+      "typical_market_price_germany": 4600.00,
+      "b2b_margin_eur": 700.00,
+      "b2c_margin_eur": 1700.00
+    },
+    {
+      "id": "model-square-deluxe",
+      "name": "Baltic Square Deluxe 200x200 cm (Kvadratinis)",
+      "specs": "Prabangus kvadratinis kubilas su integruotais gultais ir galvos atramomis, 24 masažo purkštukai, integruota krosnelė, tinka glampingams ir SPA.",
+      "supplier_cost_lt": 2350.00,
+      "b2b_dealer_price": 3250.00,
+      "b2c_retail_eu_price": 4650.00,
+      "typical_market_price_germany": 6400.00,
+      "b2b_margin_eur": 900.00,
+      "b2c_margin_eur": 2300.00
+    }
+  ],
+
+  "shipping_costs_per_tub": {
+    "Vokietija (DE)": 350.00,
+    "Olandija (NL)": 380.00,
+    "Belgija (BE)": 380.00,
+    "Austrija (AT)": 390.00,
+    "Prancūzija (FR)": 430.00,
+    "Danija (DK)": 360.00,
+    "Švedija (SE)": 420.00
+  },
+
+  "full_truckload_cost": {
+    "capacity_tubs": "6-8 kubilai",
+    "avg_cost_eur": 2100.00
+  },
+
+  "target_categories": [
+    {
+      "category_id": "glamping_resorts",
+      "name": "Glampingai, kempingai ir atostogų nameliai",
+      "pain_point": "Reikalingas užimtumo didinimas rudenį ir žiemą. Kubilas leidžia pakelti nakvynės kainą 35-50 €/naktį.",
+      "preferred_model": "model-integrated-200"
+    },
+    {
+      "category_id": "pool_spa_dealers",
+      "name": "Sodo ir SPA technikos dileriai (Garten/Pool Händler)",
+      "pain_point": "Ieško patikimo ES gamintojo su CE sertifikatais ir aukšta marža (35%) be Kinijos kokybės rizikos.",
+      "preferred_model": "model-integrated-200 & model-square-deluxe"
+    }
+  ]
+}

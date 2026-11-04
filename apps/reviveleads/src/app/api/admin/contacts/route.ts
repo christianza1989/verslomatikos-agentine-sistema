@@ -1,0 +1,6 @@
+import {NextRequest,NextResponse} from 'next/server';
+import {randomUUID} from 'node:crypto';
+import {db} from '@/lib/db';
+import {authorized,fail,safeOrigin} from '@/lib/auth';
+import {parseContacts} from '@/lib/imports';
+export async function POST(req:NextRequest){if(!await authorized())return fail('Nerasta.',404);if(!safeOrigin(req))return fail('Netinkama užklausos kilmė.',403);try{if(Number(req.headers.get('content-length')||0)>1200000)return fail('Failas per didelis.',413);const data=await req.formData(),file=data.get('file'),client=String(data.get('client_id')||'');if(!(file instanceof File)||file.size>1000000||!db().prepare('SELECT 1 FROM clients WHERE id=?').get(client))return fail('Pasirinkite įmonę ir ne didesnį nei 1 MB failą.');const result=await parseContacts(Buffer.from(await file.arrayBuffer()),file.name);const sql=db();sql.exec('BEGIN IMMEDIATE');try{const insert=sql.prepare('INSERT INTO contacts(id,client_id,name,phone,last_visit) VALUES (?,?,?,?,?)');for(const c of result.contacts)insert.run(randomUUID(),client,c.name,c.phone,c.last_visit);sql.exec('COMMIT');}catch(e){sql.exec('ROLLBACK');throw e;}return NextResponse.json({imported:result.contacts.length,rejected:result.rejected});}catch{return fail('Nepavyko perskaityti failo. Patikrinkite stulpelius.');}}

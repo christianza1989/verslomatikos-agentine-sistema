@@ -1,0 +1,79 @@
+{
+  "business_id": "memocasting",
+  "business_name": "Memocasting Lietuva",
+  "website_url": "https://memocasting.lt",
+  "industry": "3D rankų ir kojų liejimas, personalizuotos dovanos, atsiminimų išsaugojimas",
+  "brand_voice": "Šiltas, šeimyniškas, patikimas, profesionalus, orientuotas į brangių gyvenimo akimirkų įamžinimą",
+  "contact_email": "labas@memocasting.lt",
+  "currency": "EUR",
+  
+  "products": [
+    {
+      "id": "kit-couples",
+      "name": "Poros 3D rankų liejimo rinkinys",
+      "price": 39.99,
+      "category": "rinkiniai",
+      "description": "Pilnas rinkinys dviem suaugusiųjų rankoms nulieti namuose. Pridedamas bandomasis maišelis ir lietuviška video instrukcija."
+    },
+    {
+      "id": "kit-family",
+      "name": "Šeimos 3D rankų liejimo rinkinys (iki 4 rankų)",
+      "price": 49.99,
+      "category": "rinkiniai",
+      "description": "Didelės talpos rinkinys tėvams ir vaikams. Emocionali dovana jubiliejams ir šeimos šventėms."
+    },
+    {
+      "id": "kit-baby",
+      "name": "Kūdikio delniuko ir pėdutės 3D liejimo rinkinys",
+      "price": 34.99,
+      "category": "rinkiniai",
+      "description": "100% saugi, hipoalerginė dermatologiškai patikrinta liejimo masė kūdikiams nuo gimimo."
+    },
+    {
+      "id": "gift-voucher-50",
+      "name": "Dovanų kuponas 50 €",
+      "price": 50.00,
+      "category": "kuponai",
+      "description": "Elektroninis arba prabangiai atspausdintas dovanų kuponas bet kuriam rinkiniui ar paslaugai."
+    },
+    {
+      "id": "studio-session",
+      "name": "Profesionali liejimo sesija studijoje",
+      "price": 85.00,
+      "category": "paslaugos",
+      "description": "Meistro atliekamas liejimas studijoje su pilnu apdirbimu, dažymu ir mediniu stovu."
+    }
+  ],
+
+  "b2b_partnerships": {
+    "target_roles": [
+      "Vestuvių planuotojai ir koordinatoriai",
+      "Krikštynų ir šeimos fotografai",
+      "Privačios akušerijos ir gimdymo klinikos",
+      "Dovanų agentūros ir renginių organizatoriai",
+      "Įmonių personalo (HR) vadovai (Kalėdinėms dovanoms darbuotojams)"
+    ],
+    "value_proposition": "15% partnerystės komisinis ARBA dovanų rinkinys jūsų klientams su išskirtiniu kodu.",
+    "ideal_geo": "Lietuva (Vilnius, Kaunas, Klaipėda, Šiauliai, Panevėžys)"
+  },
+
+  "objections_and_solutions": {
+    "fear_of_failure": "Baimė: 'Bijau, kad nesugebėsiu teisingai sumaišyti masės ir sugadinsiu.' -> Sprendimas: Rinkinyje pridedamas nemokamas mini bandomasis maišelis treniruotei ir žingsnis po žingsnio video gidas QR kodu.",
+    "baby_safety": "Baimė: 'Ar saugu kūdikiui?' -> Sprendimas: Masė pagaminta iš jūros dumblių (alginato), naudojama stomatologijoje, 100% netoksiška ir švelni odelei.",
+    "delivery_time": "Baimė: 'Kada gausiu siuntą?' -> Sprendimas: Išsiunčiama per 24 val., pristatoma per 1-2 d.d. į Omniva/LP Express paštomatus."
+  },
+
+  "inventory_thresholds": {
+    "alginate_kg": { "critical_min": 25, "unit": "kg" },
+    "plaster_kg": { "critical_min": 50, "unit": "kg" },
+    "boxes_family": { "critical_min": 30, "unit": "vnt" },
+    "boxes_couples": { "critical_min": 40, "unit": "vnt" }
+  },
+
+  "seasonal_events": [
+    { "name": "Kalėdos ir Naujieji metai", "peak_months": [11, 12], "focus": "Dovanos šeimai, tėvams, seneliams, dovanų kuponai" },
+    { "name": "Valentino diena", "peak_months": [1, 2], "focus": "Porų rankų liejimas, romantiškas vakaras dviese" },
+    { "name": "Motinos ir Tėvo diena", "peak_months": [4, 5, 6], "focus": "Vaikų ir tėvų rankų liejiniai, padėkos dovanos" },
+    { "name": "Vestuvių ir krikštynų sezonas", "peak_months": [5, 6, 7, 8, 9], "focus": "Vestuvių dovanos jauniesiems, krikšto atsiminimai" }
+  ]
+}

@@ -1,0 +1,61 @@
+{
+  "business_id": "content_repurpose_ai",
+  "business_name": "ClipPulse AI (Vadovų Turinio Autopilotas)",
+  "website_url": "https://clippulse.ai",
+  "industry": "Vadovų asmeninio prekės ženklo automatizavimas, video karpymas į Shorts/TikTok su subtitrais, LinkedIn įrašai ir naujienlaiškiai",
+  "business_type": "b2b_service_saas",
+  "target_market": "Lietuva, JAV, UK, Europos įmonių vadovai, advokatai, investuotojai",
+  "brand_voice": "Aukščiausios klasės, reprezentatyvus, taupantis vadovo laiką, garantuojantis autoritetą ir organinį srautą",
+  
+  "core_offer": {
+    "name": "Executive Brand Autopilot (Mėnesinis)",
+    "price": 590.00,
+    "currency": "EUR",
+    "specs": "Vadovas atsiunčia 1 vaizdo įrašą arba balso žinutę (15-30 min.) per savaitę. AI variklis sugeneruoja: 12 vertikalių 'Shorts/Reels' klipų su dinaminiais subtitrais ir b-roll, 8 autorinius LinkedIn įrašus su karuselėmis, 4 savaitinius naujienlaiškius ir automatiškai suplanuoja publikavimą.",
+    "supplier_cost": 38.00
+  },
+
+  "pricing_tiers": [
+    {
+      "tier": "Starter (Tekstas + LinkedIn)",
+      "price": 290.00,
+      "features": "Iš balso žinučių: 8 giluminiai LinkedIn įrašai, 2 naujienlaiškiai, grafiniai citatų šablonai"
+    },
+    {
+      "tier": "Executive Pro (Video + Tekstas)",
+      "price": 590.00,
+      "features": "12 vertikalių vaizdo klipų (su subtitrais, garsais, B-roll), 8 LinkedIn įrašai, 4 naujienlaiškiai, automatinis skelbimas"
+    },
+    {
+      "tier": "Omnichannel VIP (Podcast + Multi-Platform)",
+      "price": 1200.00,
+      "features": "Iki 25 video klipų, pilnas YouTube kanalo valdymas, TikTok, Instagram, X (Twitter), LinkedIn, asmeninis dedikuotas redaktorius"
+    }
+  ],
+
+  "target_audiences": [
+    {
+      "name": "B2B įmonių generaliniai direktoriai (CEO)",
+      "pain_point": "Nori pritraukti investuotojų, talentų ir B2B klientų per asmeninį profilį, bet neturi laiko kasdien sėdėti prie LinkedIn ar redaguoti video."
+    },
+    {
+      "name": "Advokatų kontorų partneriai ir mokesčių konsultantai",
+      "pain_point": "Aukšta vieno kliento vertė (5,000–50,000 €). Autoritetas LinkedIn yra geriausias naujų verslo klientų šaltinis."
+    },
+    {
+      "name": "Verslo podkastų vedėjai ir konferencijų pranešėjai",
+      "pain_point": "Įrašo valandos trukmės laidą, bet niekas jos nežiūri, nes neturi kas sukarpytų į patrauklius 'kabliukus' (viral hooks)."
+    }
+  ],
+
+  "objections_and_answers": {
+    "ar_tekstai_skambes_mano_balsu": "Ar LinkedIn tekstai neskambės kaip bendrinis ChatGPT? -> Prieš pradedant darbą, AI agentas atlieka jūsų balso ir stiliaus kalibravimą (išanalizuoja jūsų ankstesnius įrašus, mėgstamas frazes, toną). Rezultatas – tekstas skamba 100% kaip jūsų paties parašytas.",
+    "kiek_laiko_man_reikes_skirti": "Kiek laiko man reikės skirti? -> Vos 20 minučių per savaitę: tiesiog įrašykite balso žinutę ar Zoom pokalbį automobilyje ar prie kavos puodelio. Visą kitą atlieka sistema."
+  },
+
+  "ai_sales_agent_strategy": {
+    "lead_source": "LinkedIn vadovai, turintys >1,000 kontaktų, bet keliantys įrašus rečiau nei kartą per mėnesį",
+    "hook": "'Paėmėme jūsų paskutinį interviu/pranešimą ir nemokamai paruošėme 2 vertikalius video klipus su subtitrais bei 1 autorinį LinkedIn įrašą. Štai peržiūra.'",
+    "call_to_action": "Peržiūrėkite savo demonstracinį klipą ir paleiskite 14 dienų bandomąjį periodą"
+  }
+}

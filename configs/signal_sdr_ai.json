@@ -1,0 +1,57 @@
+{
+  "business_id": "signal_sdr_ai",
+  "business_name": "SignalOutreach AI (Signal-Based B2B Outbound)",
+  "website_url": "https://signaloutreach.ai",
+  "industry": "B2B pardavimų automatizavimas, signalais paremti šalti laiškai, darbo skelbimų ir technologijų skenavimas",
+  "business_type": "b2b_service_saas",
+  "target_market": "Lietuva, Baltijos šalys, JAV, UK technologijų ir paslaugų įmonės",
+  "brand_voice": "Hiper-asmeniškas, konsultacinis, pagrįstas faktais ir pirkėjo signalais, nulinio spamo",
+  
+  "core_offer": {
+    "name": "AI SDR Pipeline as a Service",
+    "price": 1200.00,
+    "currency": "EUR",
+    "specs": "Kasdienis pirkimo signalų sekimas (Linkedin darbo skelbimai, tech-stack pokyčiai, vadovų rotacija), 30 hiper-personalizuotų laiškų per dieną be spamo, atsakymų klasifikavimas ir susitikimų vedimas tiesiai į kliento kalendorių.",
+    "supplier_cost": 65.00
+  },
+
+  "pricing_tiers": [
+    {
+      "tier": "Pay Per Qualified Meeting",
+      "price": 150.00,
+      "features": "Nulinis mėnesinis mokestis, 150 € už kiekvieną patvirtintą ir įvykusį B2B susitikimą su sprendimų priėmėju"
+    },
+    {
+      "tier": "Growth Pipeline (Retainer)",
+      "price": 1200.00,
+      "features": "Dedikuotas AI SDR agentas, iki 800 personalizuotų kontaktų/mėn., garantuoti 8–15 kvalifikuotų susitikimų"
+    },
+    {
+      "tier": "Scale Enterprise",
+      "price": 2400.00,
+      "features": "Kelių rinkų aprėptis (DACH + Nordics + Baltics), kelių signalų piltuvėliai, CRM dvipusė integracija"
+    }
+  ],
+
+  "target_audiences": [
+    {
+      "name": "B2B programinės įrangos (SaaS) ir IT paslaugų įmonės",
+      "pain_point": "Žmogiškas SDR kainuoja 2,500–3,500 €/mėn. + mokesčiai, o siunčia generic šablonus, kurie eina į spamą."
+    },
+    {
+      "name": "Logistikos, gamybos ir B2B didmenos įmonės",
+      "pain_point": "Reikalingi dideli kontraktai, bet direktoriai neturi laiko kasdien sėdėti prie LinkedIn ir rašyti ranka."
+    }
+  ],
+
+  "objections_and_answers": {
+    "kodel_tai_ne_spamas": "Kuo tai skiriasi nuo eilinio spamo? -> Mūsų agentas siunčia laišką TIK tada, kai yra konkretus signalas (pvz. įmonė prieš 2 dienas paskelbė, kad ieško 3 naujų vilkikų vairuotojų). Laiškas prasideda nuo konkretaus fakto, todėl atsakomumas siekia 15–25% (palyginti su 1% įprastai).",
+    "ar_nesugadins_musu_domeno": "Ar nenukentės įmonės el. pašto reputacija? -> Naudojami atskiri antriniai domenai su profesionaliu apšildymu (warm-up), DKIM, SPF ir DMARC apsauga. Jūsų pagrindinis domenas lieka 100% saugus."
+  },
+
+  "ai_sales_agent_strategy": {
+    "lead_source": "LinkedIn Jobs API, Rekvizitai.lt darbo skelbimai, BuiltWith technologijų pokyčiai",
+    "hook": "'Pastebėjome, kad jūsų įmonė ką tik paskelbė darbo skelbimą X. Paruošėme pavyzdinį 3 žingsnių piltuvėlį, kaip AI gali atlikti šį darbą 5 kartus pigiau.'",
+    "call_to_action": "Gaukite 10 nemokamų paruoštų kontaktų su jūsų pirkimo signalais"
+  }
+}

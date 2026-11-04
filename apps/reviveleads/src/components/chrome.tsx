@@ -1,0 +1,4 @@
+import Link from 'next/link';
+import {Brand} from './brand';
+export function Header(){return <header className="header"><div className="wrap nav"><Brand/><nav aria-label="Pagrindinė navigacija"><Link href="/demo">Demonstracija</Link><Link href="/checkout">Planai</Link><Link className="nav-button" href="/demo">Išbandyti <span>↗</span></Link></nav></div></header>;}
+export function Footer(){return <footer className="footer"><div className="wrap footer-row"><div><Brand/><p>Ryšys prasideda nuo prasmingo pokalbio.</p></div><div className="footer-links"><Link href="/demo">Demonstracija</Link><Link href="/checkout">Planai</Link><a href="https://verslomatika.lt/reviveleads/">Apie ReviveLeads ↗</a><a href="https://verslomatika.lt/">Verslomatika ↗</a></div><small>Operatorius: MB Pinet · Vilnius, Lietuva · <a href="mailto:info@pinet.lt">info@pinet.lt</a></small></div></footer>;}

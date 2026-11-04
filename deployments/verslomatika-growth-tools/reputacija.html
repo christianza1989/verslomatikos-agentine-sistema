@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="lt">
+<head>
+  <meta charset="UTF-8">
+  <link rel="canonical" href="https://verslomatika.lt/reputacija/">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ReputationPro • 5★ Google Atsiliepimų Apsaugos ir Augimo Sistema | Verslomatika</title>
+  <meta name="description" content="Paverskite patenkintus klientus 5★ Google atsiliepimais, o skundus sulaikykite privačiai. Pakelkite savo verslo Google Maps reitingą nuo 3.8★ iki 4.8★ be streso.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0B0E14;
+      --card-bg: #121722;
+      --card-inner: #181F2E;
+      --card-border: #1F283B;
+      --card-border-hover: #3B4866;
+      --primary: #5636E8;
+      --primary-hover: #4524D4;
+      --primary-glow: rgba(86, 54, 232, 0.25);
+      --accent-green: #10B981;
+      --accent-green-bg: rgba(16, 185, 129, 0.12);
+      --accent-amber: #F59E0B;
+      --accent-amber-bg: rgba(245, 158, 11, 0.12);
+      --accent-red: #EF4444;
+      --text: #F8FAFC;
+      --text-muted: #94A3B8;
+      --text-dim: #64748B;
+      --radius-lg: 18px;
+      --radius-md: 12px;
+      --radius-sm: 8px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
+    body { background-color: var(--bg); color: var(--text); line-height: 1.6; overflow-x: hidden; }
+    h1, h2, h3, h4 { font-family: 'Outfit', sans-serif; }
+
+    .container { max-width: 1240px; margin: 0 auto; padding: 0 24px; }
+    .section-space { padding: 90px 0; }
+
+    /* Header */
+    header {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(11, 14, 20, 0.88); backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--card-border);
+    }
+    .nav-wrap { display: flex; justify-content: space-between; align-items: center; height: 76px; }
+    .brand-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--text); }
+    .brand-title { display: inline-flex; align-items: center; gap: 8px; font-size: 19px; font-weight: 800; letter-spacing: -0.5px; }
+    .brand-title span.dot { color: var(--primary); }
+    .brand-title span.sep { color: var(--card-border-hover); font-weight: 300; }
+    .brand-title span.sub { color: #A78BFA; font-weight: 700; }
+
+    .nav-links { display: flex; gap: 26px; list-style: none; font-size: 14px; font-weight: 600; }
+    .nav-links a { color: var(--text-muted); text-decoration: none; transition: 0.2s; }
+    .nav-links a:hover { color: var(--text); }
+
+    .header-actions { display: flex; align-items: center; gap: 12px; }
+    .btn-login {
+      color: var(--text-muted); font-size: 13.5px; font-weight: 700; text-decoration: none;
+      padding: 9px 16px; border-radius: var(--radius-sm); border: 1px solid var(--card-border);
+      transition: 0.2s; display: inline-flex; align-items: center; gap: 6px;
+    }
+    .btn-login:hover { color: var(--text); border-color: var(--card-border-hover); background: rgba(255,255,255,0.04); }
+    .btn-nav {
+      background: var(--primary); color: white; padding: 9px 18px;
+      border-radius: var(--radius-sm); font-size: 13.5px; font-weight: 700;
+      text-decoration: none; transition: 0.2s; display: inline-flex; align-items: center; gap: 6px;
+      box-shadow: 0 4px 14px var(--primary-glow);
+    }
+    .btn-nav:hover { background: var(--primary-hover); transform: translateY(-1px); }
+
+    /* Hero */
+    .hero { padding: 75px 0 60px; display: grid; grid-template-columns: 1.15fr 0.95fr; gap: 60px; align-items: center; }
+    .badge-pill {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(86, 54, 232, 0.14); border: 1px solid rgba(86, 54, 232, 0.4);
+      padding: 6px 16px; border-radius: 30px; font-size: 12px; font-weight: 700;
+      color: #A78BFA; margin-bottom: 22px; text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .pulse-dot { width: 8px; height: 8px; border-radius: 50%; background: #10B981; box-shadow: 0 0 10px #10B981; }
+    .hero h1 { font-size: clamp(38px, 4.4vw, 56px); font-weight: 800; line-height: 1.16; letter-spacing: -1.5px; }
+    .hero h1 span.highlight {
+      background: linear-gradient(135deg, #A78BFA 0%, #C4B5FD 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .hero p.lead { font-size: 16.5px; color: var(--text-muted); margin: 22px 0 32px; line-height: 1.7; max-width: 580px; }
+    
+    .hero-actions { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 24px; }
+    .btn-main {
+      background: var(--primary); color: white; font-weight: 800; font-size: 14.5px;
+      padding: 14px 28px; border-radius: var(--radius-sm); text-decoration: none;
+      display: inline-flex; align-items: center; gap: 8px; transition: 0.2s;
+      box-shadow: 0 6px 20px var(--primary-glow);
+    }
+    .btn-main:hover { background: var(--primary-hover); transform: translateY(-2px); }
+    .btn-ghost {
+      background: rgba(255,255,255,0.03); color: var(--text); font-weight: 700; font-size: 14px;
+      padding: 14px 22px; border-radius: var(--radius-sm); border: 1px solid var(--card-border);
+      text-decoration: none; display: inline-flex; align-items: center; gap: 8px; transition: 0.2s;
+    }
+    .btn-ghost:hover { background: rgba(255,255,255,0.07); border-color: var(--card-border-hover); }
+
+    .trust-checks { display: flex; gap: 20px; font-size: 13px; color: var(--text-dim); flex-wrap: wrap; }
+    .trust-checks span { color: #10B981; font-weight: 700; margin-right: 4px; }
+
+    /* Hero Stand Card */
+    .hero-image-wrap {
+      position: relative; border-radius: var(--radius-lg); overflow: hidden;
+      border: 1px solid var(--card-border); box-shadow: 0 25px 60px -20px rgba(86, 54, 232, 0.35);
+      background: var(--card-bg);
+    }
+    .hero-image-wrap img { width: 100%; height: auto; display: block; object-fit: cover; }
+    .hero-image-badge {
+      position: absolute; bottom: 16px; left: 16px; right: 16px;
+      background: rgba(11, 14, 20, 0.88); backdrop-filter: blur(12px);
+      border: 1px solid var(--card-border); border-radius: var(--radius-md);
+      padding: 12px 18px; display: flex; justify-content: space-between; align-items: center;
+      font-size: 13px;
+    }
+    .hero-image-badge strong { color: #A78BFA; }
+
+    /* Stats Bar */
+    .stats-bar {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; padding: 34px 40px;
+      background: var(--card-bg); border-radius: var(--radius-lg); border: 1px solid var(--card-border);
+      margin: 20px 0 80px; box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+    .stat-item { text-align: center; }
+    .stat-item strong { display: block; font-size: 38px; font-weight: 800; color: #A78BFA; line-height: 1.1; margin-bottom: 6px; font-family: 'Outfit', sans-serif; }
+    .stat-item p { font-size: 13px; color: var(--text-muted); }
+
+    /* SECTION TITLE */
+    .section-title { text-align: center; max-width: 740px; margin: 0 auto 50px; }
+    .section-title h2 { font-size: 36px; font-weight: 800; letter-spacing: -1px; margin-bottom: 12px; }
+    .section-title p { font-size: 15.5px; color: var(--text-muted); line-height: 1.7; }
+
+    /* 3.8 -> 4.8 CASE STUDY SECTION */
+    .transformation-box {
+      background: linear-gradient(180deg, #121722 0%, #0F131C 100%);
+      border: 1px solid var(--card-border); border-radius: var(--radius-lg);
+      padding: 45px; margin: 20px 0 80px; box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+    }
+    .transformation-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; align-items: stretch; margin-bottom: 40px; }
+    
+    .rating-card {
+      border-radius: var(--radius-md); padding: 30px; display: flex; flex-direction: column; justify-content: space-between;
+    }
+    .rating-card.before {
+      background: rgba(239, 68, 68, 0.04); border: 1px solid rgba(239, 68, 68, 0.25);
+    }
+    .rating-card.after {
+      background: rgba(16, 185, 129, 0.06); border: 2px solid #10B981;
+      box-shadow: 0 10px 35px rgba(16, 185, 129, 0.15);
+    }
+    
+    .card-tag {
+      display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 800;
+      padding: 4px 12px; border-radius: 20px; width: fit-content; text-transform: uppercase; margin-bottom: 16px;
+    }
+    .card-tag.red { background: rgba(239, 68, 68, 0.15); color: #F87171; }
+    .card-tag.green { background: rgba(16, 185, 129, 0.2); color: #34D399; }
+    
+    .score-row { display: flex; align-items: baseline; gap: 14px; margin-bottom: 10px; }
+    .score-number { font-size: 52px; font-weight: 800; line-height: 1; font-family: 'Outfit', sans-serif; }
+    .score-number.red { color: #F87171; }
+    .score-number.green { color: #34D399; }
+    .score-stars { color: #F59E0B; font-size: 20px; letter-spacing: 2px; }
+    
+    .rating-details { list-style: none; display: flex; flex-direction: column; gap: 10px; margin-top: 18px; font-size: 13.5px; }
+    .rating-details li { display: flex; align-items: flex-start; gap: 8px; color: var(--text-muted); }
+    .rating-details li strong { color: var(--text); }
+
+
+    /* Omnichannel Section */
+    .channels-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-top: 36px; }
+    .channel-card {
+      background: var(--card-bg); border: 1px solid var(--card-border); border-radius: var(--radius-lg);
+      padding: 32px 28px; position: relative; display: flex; flex-direction: column; transition: 0.25s;
+    }
+    .channel-card:hover { border-color: var(--card-border-hover); transform: translateY(-3px); }
+    .channel-card.featured {
+      border-color: rgba(86, 54, 232, 0.6);
+      background: linear-gradient(180deg, rgba(86, 54, 232, 0.08) 0%, var(--card-bg) 100%);
+      box-shadow: 0 10px 30px rgba(86, 54, 232, 0.12);
+    }
+    .channel-badge {
+      display: inline-block; font-size: 11px; font-weight: 800; text-transform: uppercase;
+      letter-spacing: 0.5px; padding: 4px 10px; border-radius: 20px; width: fit-content; margin-bottom: 16px;
+    }
+    .channel-badge.ecommerce { background: rgba(86, 54, 232, 0.2); color: #C4B5FD; border: 1px solid rgba(86, 54, 232, 0.4); }
+    .channel-badge.physical { background: rgba(16, 185, 129, 0.15); color: #6EE7B7; border: 1px solid rgba(16, 185, 129, 0.35); }
+    .channel-badge.b2b { background: rgba(245, 158, 11, 0.15); color: #FCD34D; border: 1px solid rgba(245, 158, 11, 0.35); }
+    .channel-icon { font-size: 32px; margin-bottom: 14px; }
+    .channel-card h3 { font-size: 20px; font-weight: 700; margin-bottom: 10px; }
+    .channel-card p.desc { font-size: 14px; color: var(--text-muted); line-height: 1.65; margin-bottom: 20px; }
+    .channel-features { list-style: none; margin: 0 0 24px 0; padding: 0; font-size: 13.5px; color: var(--text-muted); flex-grow: 1; }
+    .channel-features li { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 10px; line-height: 1.5; }
+    .channel-features li span { color: #10B981; font-weight: 700; }
+    .channel-highlight {
+      background: var(--card-inner); border-radius: var(--radius-sm); padding: 12px 14px;
+      font-size: 12.5px; color: #A78BFA; border: 1px solid var(--card-border);
+    }
+    @media (max-width: 900px) {
+      .channels-grid { grid-template-columns: 1fr; }
+    }
+
+    /* SVG Chart */
+    .chart-container {
+      background: var(--card-inner); border: 1px solid var(--card-border);
+      border-radius: var(--radius-md); padding: 30px;
+    }
+    .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
+    .chart-header h4 { font-size: 16px; font-weight: 700; color: var(--text); }
+    .chart-legend { display: flex; gap: 18px; font-size: 12.5px; }
+    .chart-legend span { display: inline-flex; align-items: center; gap: 6px; }
+
+    /* Interactive Simulator */
+    .simulator-card {
+      background: var(--card-bg); border: 1px solid var(--card-border);
+      border-radius: var(--radius-lg); padding: 40px; margin: 40px 0;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: center;
+    }
+    .sim-left h3 { font-size: 26px; font-weight: 800; margin-bottom: 12px; }
+    .sim-left p { font-size: 14.5px; color: var(--text-muted); line-height: 1.7; }
+    
+    .sim-interactive-box {
+      background: var(--card-inner); border: 1px solid var(--card-border);
+      border-radius: var(--radius-md); padding: 28px; text-align: center;
+    }
+    .stars-interactive { display: flex; justify-content: center; gap: 12px; margin: 20px 0; }
+    .star-btn { background: none; border: none; font-size: 38px; color: #334155; cursor: pointer; transition: 0.15s; line-height: 1; }
+    .star-btn:hover, .star-btn.active { color: #F59E0B; transform: scale(1.15); }
+    
+    .outcome-box { border-radius: var(--radius-md); padding: 18px 20px; margin-top: 20px; font-size: 13.5px; line-height: 1.6; text-align: left; }
+    .outcome-5star { background: var(--accent-green-bg); border: 1px solid rgba(16, 185, 129, 0.35); }
+    .outcome-5star strong { color: #34D399; display: block; margin-bottom: 6px; font-size: 14.5px; }
+    .outcome-lowstar { background: var(--accent-amber-bg); border: 1px solid rgba(245, 158, 11, 0.35); }
+    .outcome-lowstar strong { color: #FBBF24; display: block; margin-bottom: 6px; font-size: 14.5px; }
+
+    /* Workflow Steps */
+    .workflow-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; }
+    .step-card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: var(--radius-lg); padding: 30px 26px; }
+    .step-num { font-size: 19px; font-weight: 800; color: #A78BFA; margin-bottom: 14px; font-family: 'Outfit', sans-serif; }
+    .step-card h3 { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+    .step-card p { font-size: 13.5px; color: var(--text-muted); line-height: 1.65; }
+
+    /* Sector Grid */
+    .sector-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+    .sector-item {
+      background: var(--card-bg); border: 1px solid var(--card-border); border-radius: var(--radius-md);
+      padding: 28px; transition: 0.2s;
+    }
+    .sector-item:hover { border-color: var(--card-border-hover); transform: translateY(-2px); }
+    .sector-icon {
+      width: 46px; height: 46px; border-radius: 12px; background: rgba(86, 54, 232, 0.12);
+      color: #A78BFA; display: flex; align-items: center; justify-content: center; font-size: 22px; margin-bottom: 16px;
+    }
+    .sector-item h4 { font-size: 18px; margin-bottom: 8px; }
+    .sector-item p { font-size: 13.5px; color: var(--text-muted); line-height: 1.6; }
+
+    /* 3D Dashboard Showcase */
+    .showcase-banner {
+      background: linear-gradient(135deg, #13112E 0%, #1A1744 100%);
+      border: 1px solid rgba(86, 54, 232, 0.35); border-radius: var(--radius-lg);
+      padding: 55px; margin: 40px 0 80px; display: grid; grid-template-columns: 1fr 1.1fr; gap: 50px; align-items: center;
+    }
+    .showcase-banner h2 { font-size: 34px; font-weight: 800; line-height: 1.25; margin-bottom: 16px; }
+    .showcase-banner p { font-size: 15px; color: #C4B5FD; line-height: 1.7; margin-bottom: 24px; }
+    .showcase-img { border-radius: var(--radius-md); overflow: hidden; border: 1px solid rgba(255,255,255,0.15); box-shadow: 0 20px 50px rgba(0,0,0,0.4); }
+    .showcase-img img { width: 100%; display: block; }
+
+    /* ROI Calculator */
+    .calculator-box {
+      background: var(--card-bg); border: 1px solid var(--card-border); border-radius: var(--radius-lg);
+      padding: 40px; margin: 30px auto; max-width: 860px;
+    }
+    .calc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; margin-bottom: 24px; }
+    .calc-field label { display: block; font-size: 13.5px; font-weight: 700; margin-bottom: 8px; color: var(--text); }
+    .calc-field input {
+      width: 100%; padding: 13px 16px; background: var(--card-inner); border: 1px solid var(--card-border);
+      border-radius: var(--radius-sm); color: white; font-size: 16px; font-weight: 700;
+    }
+    .calc-field input:focus { outline: none; border-color: var(--primary); }
+    .calc-result {
+      background: rgba(86, 54, 232, 0.08); border: 1px solid rgba(86, 54, 232, 0.25);
+      border-radius: var(--radius-md); padding: 22px 28px; display: flex; justify-content: space-between; align-items: center;
+    }
+    .calc-result div span { font-size: 12.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; display: block; }
+    .calc-result div strong { font-size: 28px; font-weight: 800; color: #34D399; font-family: 'Outfit', sans-serif; }
+
+    /* Pricing Section */
+    .pricing-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; margin-top: 40px; }
+    .price-box {
+      background: var(--card-bg); border: 1px solid var(--card-border);
+      border-radius: var(--radius-lg); padding: 36px 30px; display: flex; flex-direction: column; position: relative;
+    }
+    .price-box.featured {
+      border: 2px solid var(--primary); transform: translateY(-8px);
+      box-shadow: 0 20px 50px -15px var(--primary-glow); background: #131726;
+    }
+    .popular-tag {
+      position: absolute; top: -13px; left: 50%; transform: translateX(-50%);
+      background: var(--primary); color: white; font-size: 11px; font-weight: 800;
+      padding: 4px 16px; border-radius: 20px; letter-spacing: 0.5px; text-transform: uppercase;
+    }
+    .price-val { font-size: 46px; font-weight: 800; margin: 18px 0 6px; font-family: 'Outfit', sans-serif; }
+    .price-val span { font-size: 14px; color: var(--text-dim); font-weight: 400; }
+    .price-cycle { font-size: 12px; color: var(--text-dim); margin-bottom: 24px; }
+    .feature-list { list-style: none; margin-bottom: 30px; flex: 1; display: flex; flex-direction: column; gap: 11px; font-size: 13.5px; color: var(--text-muted); }
+    .feature-list li { display: flex; align-items: flex-start; gap: 10px; }
+    .feature-list li span.check { color: #10B981; font-weight: 800; }
+
+    /* FAQ */
+    .faq-list { max-width: 820px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
+    .faq-item { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: var(--radius-md); padding: 22px 26px; }
+    .faq-item summary { font-size: 15.5px; font-weight: 700; cursor: pointer; list-style: none; display: flex; justify-content: space-between; align-items: center; }
+    .faq-item summary::-webkit-details-marker { display: none; }
+    .faq-item p { font-size: 14px; color: var(--text-muted); margin-top: 14px; line-height: 1.7; }
+
+    /* Final CTA */
+    .cta-banner {
+      background: linear-gradient(135deg, #17133B 0%, #100E26 100%);
+      border: 1px solid rgba(86, 54, 232, 0.4); border-radius: var(--radius-lg);
+      padding: 60px 40px; text-align: center; margin: 80px 0 30px;
+    }
+    .cta-banner h2 { font-size: 38px; font-weight: 800; margin-bottom: 14px; }
+    .cta-banner p { font-size: 16px; color: #C4B5FD; max-width: 600px; margin: 0 auto 30px; }
+
+    /* Footer */
+    footer { border-top: 1px solid var(--card-border); padding: 50px 0 35px; margin-top: 80px; font-size: 13px; color: var(--text-dim); }
+    .footer-inner { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px; }
+
+    @media (max-width: 960px) {
+      .hero, .transformation-grid, .simulator-card, .showcase-banner, .calc-grid { grid-template-columns: 1fr; gap: 36px; }
+      .pricing-grid, .workflow-grid, .stats-bar, .sector-grid { grid-template-columns: 1fr; }
+      .nav-links { display: none; }
+      .price-box.featured { transform: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header>
+    <div class="container nav-wrap">
+      <a href="https://verslomatika.lt" class="brand-logo" aria-label="Verslomatika pradžia">
+        <svg width="28" height="29" viewBox="0 0 31 32" aria-hidden="true">
+          <path d="M3 6L14 16 3 26M14 16L24 6M14 16L24 26" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="25" cy="6" r="3.5" fill="#5636e8"/>
+          <circle cx="25" cy="26" r="3.5" fill="#157a57"/>
+        </svg>
+        <span class="brand-title">
+          <span>verslomatika<span class="dot">.</span></span>
+          <span class="sep">|</span>
+          <span class="sub">ReputationPro</span>
+        </span>
+      </a>
+
+      <ul class="nav-links">
+        <li><a href="#transformacija">Reitingo šuolis (3.8★ → 4.8★)</a></li>
+        <li><a href="#kaip-veikia">Kaip veikia</a></li>
+        <li><a href="#sektoriai">Kam tinka</a></li>
+        <li><a href="#skaiciuokle">ROI Skaičiuoklė</a></li>
+        <li><a href="#kainos">Kainos</a></li>
+        <li><a href="#duk">DUK</a></li>
+      </ul>
+
+      <div class="header-actions">
+        <a href="https://reputacija.verslomatika.lt/admin" class="btn-login" target="_blank" rel="noopener">
+          Vadovo pultas ↗
+        </a>
+        <a href="https://reputacija.verslomatika.lt/checkout?plan=pro" class="btn-nav" target="_blank" rel="noopener">
+          <span>Aktyvuoti 14 d. nemokamai</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- HERO SEKCIJA -->
+    <section class="container hero">
+      <div>
+        <div class="badge-pill">
+          <div class="pulse-dot"></div>
+          <span>OFICIALI 5★ GOOGLE REPUTACIJOS AUGIMO SISTEMA</span>
+        </div>
+        <h1>
+          Daugiau 5★ atsiliepimų internetu ir vietoje.<br>
+          <span class="highlight">Nulis viešų skundų.</span>
+        </h1>
+        <p class="lead">
+          Automatizuota po-pirkimo nuoroda el. paštu / SMS el. parduotuvėms ir estetiškas akrilinis QR stovelis fizinėms vietoms. Patenkinti pirkėjai per 3 sekundes nukreipiami į <strong>Google Maps</strong> ar <strong>Trustpilot</strong>, o nusivylę – tiesiai į vadovo privatų pultą be viešų skundų.
+        </p>
+
+        <div class="hero-actions">
+          <a href="https://reputacija.verslomatika.lt/checkout?plan=pro" class="btn-main" target="_blank" rel="noopener">
+            <span>Pradėti 14 d. nemokamą bandymą</span>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </a>
+          <a href="https://reputacija.verslomatika.lt/r/memocasting" class="btn-ghost" target="_blank" rel="noopener">
+            <span>Išbandyti kliento anketą ↗</span>
+          </a>
+        </div>
+
+        <div class="trust-checks">
+          <div><span>✓</span> 0 € pradinis mokestis</div>
+          <div><span>✓</span> Be banko kortelės</div>
+          <div><span>✓</span> 100% legali Google Maps atitiktis</div>
+        </div>
+      </div>
+
+      <!-- Hero Visual -->
+      <div class="hero-image-wrap">
+        <img src="https://reputacija.verslomatika.lt/images/qr-reception-luxury.jpg" alt="ReputationPro akrilinis QR stovelis registratūroje" />
+        <div class="hero-image-badge">
+          <div>
+            <strong>Akrilinis QR stovelis</strong>
+            <p style="color: var(--text-dim); font-size: 11.5px;">Pastatomas per 10 sekundžių prie kasos</p>
+          </div>
+          <span style="color: #34D399; font-weight: 700;">Įeina į Metinį planą</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- STATS BAR -->
+    <div class="container">
+      <div class="stats-bar">
+        <div class="stat-item">
+          <strong>74%</strong>
+          <p>Klientų renkasi įmonę pagal Google Maps atsiliepimus</p>
+        </div>
+        <div class="stat-item">
+          <strong>+42%</strong>
+          <p>Vidutinis naujų užsakymų šuolis pakilus nuo 3.8★ iki 4.8★</p>
+        </div>
+        <div class="stat-item">
+          <strong>100%</strong>
+          <p>Privatumas: prasti skundai sulaikomi ir nepasiekia viešumos</p>
+        </div>
+        <div class="stat-item">
+          <strong>14 d.</strong>
+          <p>Nemokamas bandomasis laikotarpis be jokių įsipareigojimų</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- VISI ATSILIEPIMŲ SURINKIMO KANALAI: E-KOMERCIJA + FIZINĖS VIETOS + B2B -->
+    <section id="kanalai" class="container section-space" style="padding-top: 20px;">
+      <div class="section-title">
+        <div class="badge-pill"><span>OMNICHANNEL SPRENDIMAS</span></div>
+        <h2>Kaip Jūsų verslas renka 5★ atsiliepimus?</h2>
+        <p>ReputationPro pritaikyta visiems verslo modeliams: nuo didžiųjų el. parduotuvių iki prestižinių klinikų bei B2B paslaugų teikėjų.</p>
+      </div>
+
+      <div class="channels-grid">
+        <!-- KANALAS 1: E-KOMERCIJA -->
+        <div class="channel-card featured">
+          <div class="channel-badge ecommerce">🛒 E-komercija ir El. Parduotuvės</div>
+          <div class="channel-icon">📦</div>
+          <h3>Po-pirkimo el. paštas ir SMS</h3>
+          <p class="desc">
+            Kurjeriui (Omniva, DPD, LP Express) pristačius siuntą, pirkėjas automatiškai gauna padėkos laišką arba SMS žinutę su individualia nuoroda.
+          </p>
+          <ul class="channel-features">
+            <li><span>✓</span> <strong>Jokio stovelio poreikio:</strong> veikia 100% skaitmeniniu formatu.</li>
+            <li><span>✓</span> <strong>5★ pirkėjai:</strong> nukreipiami į Google Maps arba Trustpilot.</li>
+            <li><span>✓</span> <strong>1–3★ skundai sulaikomi:</strong> kurjerio ar pakuotės problemos sprendžiamos privačiai.</li>
+            <li><span>✓</span> <strong>Integracija per 5 min.:</strong> Shopify, WooCommerce, PrestaShop ir kt.</li>
+          </ul>
+          <div class="channel-highlight">
+            ⚡ Idealu: rūbų, kosmetikos, elektronikos, knygų ir baldų el. parduotuvėms.
+          </div>
+        </div>
+
+        <!-- KANALAS 2: FIZINĖS VIETOS -->
+        <div class="channel-card">
+          <div class="channel-badge physical">🏢 Fizinės vietos ir Paslaugos</div>
+          <div class="channel-icon">🏷️</div>
+          <h3>Akrilinis QR ir NFC stovelis</h3>
+          <p class="desc">
+            Prie kasos, registratūroje ar ant staliuko pastatomas firminis akrilinis stovelis. Klientas paliečia telefonu (NFC) arba nuskenuoja kamerą (QR).
+          </p>
+          <ul class="channel-features">
+            <li><span>✓</span> <strong>Veikia per 3 sekundes:</strong> nereikia jokių programėlių diegimo.</li>
+            <li><span>✓</span> <strong>Nemokamas stovelis:</strong> įeina į Metinį planą su Jūsų logotipu.</li>
+            <li><span>✓</span> <strong>Darbuotojų motyvacija:</strong> fiksuoja konkrečių specialistų atsiliepimus.</li>
+            <li><span>✓</span> <strong>Momentinis filtravimas:</strong> blogas emocijas sulaiko registratūroje.</li>
+          </ul>
+          <div class="channel-highlight">
+            ⚡ Idealu: odontologijos klinikoms, autoservisams, salonams, restoranams, viešbučiams.
+          </div>
+        </div>
+
+        <!-- KANALAS 3: B2B IR SĄSKAITOS -->
+        <div class="channel-card">
+          <div class="channel-badge b2b">💼 B2B ir Konsultacijos</div>
+          <div class="channel-icon">📄</div>
+          <h3>Parašas el. pašte ir PVM sąskaitos</h3>
+          <p class="desc">
+            Suteikus paslaugą ar išsiuntus PVM sąskaitą-faktūrą, klientui pateikiamas diskretiškas kvietimas įvertinti bendradarbiavimo kokybę.
+          </p>
+          <ul class="channel-features">
+            <li><span>✓</span> <strong>Parašas Gmail / Outlook:</strong> vieno paspaudimo nuoroda paraše.</li>
+            <li><span>✓</span> <strong>Paskyra PVM sąskaitoje:</strong> QR kodas PDF dokumente.</li>
+            <li><span>✓</span> <strong>Aukščiausias pasitikėjimas:</strong> didina konversijas naujiems B2B sandoriams.</li>
+            <li><span>✓</span> <strong>Konfidencialus ryšys:</strong> vadovui tiesiogiai apie vadybininkų darbą.</li>
+          </ul>
+          <div class="channel-highlight">
+            ⚡ Idealu: buhalterinėms įmonėms, IT paslaugoms, logistikai, statybų rangovams.
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- TRANSFORMACIJOS PAVYZDYS: 3.8★ -> 4.8★ (KEY USER REQUIREMENT) -->
+    <section id="transformacija" class="container section-space" style="padding-top: 0;">
+      <div class="section-title">
+        <div class="badge-pill"><span>TIKRI REZULTATAI IR POVEIKIS PARDAVIMAMS</span></div>
+        <h2>Kaip reitingas pakyla nuo 3.8★ iki 4.8★ per 60 dienų</h2>
+        <p>Kodėl geri verslai turi prastus reitingus? Todėl, kad 95% patenkintų klientų išeina ir neparašo nieko, o 5% supykusių išsilieja viešai Google Maps. ReputationPro apverčia šią proporciją.</p>
+      </div>
+
+      <div class="transformation-box">
+        <div class="transformation-grid">
+          <!-- KORTELĖ A: PRIEŠ -->
+          <div class="rating-card before">
+            <div>
+              <span class="card-tag red">❌ PRIEŠ ReputationPro (Status Quo)</span>
+              <div class="score-row">
+                <span class="score-number red">3.8</span>
+                <span class="score-stars">★★★☆☆</span>
+              </div>
+              <p style="font-size: 13px; color: #FCA5A5; font-weight: 600;">18 atsiliepimų • Didelis klientų praradimas</p>
+              
+              <ul class="rating-details">
+                <li><span>⚠️</span> <strong>Tylinti dauguma:</strong> 95% laimingų klientų nepalieka jokio atsiliepimo.</li>
+                <li><span>⚠️</span> <strong>Emociniai skundai viršuje:</strong> 3 pikti 1★ atsiliepimai dėl vėlavimo ar smulkmenos kabo profilio viršuje.</li>
+                <li><span>⚠️</span> <strong>Prarandami klientai:</strong> 35% Google paieškos lankytojų pamato 3.8★ ir iškart pereina pas konkurentą.</li>
+              </ul>
+            </div>
+            
+            <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid rgba(239, 68, 68, 0.2); font-size: 13px; color: #F87171;">
+              Finansinis nuostolis: <strong>-1 200 € iki -3 500 € / mėn.</strong> prarastų užsakymų.
+            </div>
+          </div>
+
+          <!-- KORTELĖ B: PO 60 DIENŲ -->
+          <div class="rating-card after">
+            <div>
+              <span class="card-tag green">✅ PO 60 DIENŲ su ReputationPro</span>
+              <div class="score-row">
+                <span class="score-number green">4.8</span>
+                <span class="score-stars">★★★★★</span>
+              </div>
+              <p style="font-size: 13px; color: #6EE7B7; font-weight: 600;">142 atsiliepimai • +124 nauji 5★ vertinimai</p>
+              
+              <ul class="rating-details">
+                <li><span>⭐</span> <strong>Automatizuoti 5★:</strong> Patenkinti klientai per 3 sek. nukreipiami į Google Maps atsiskaitydami.</li>
+                <li><span>🛡️</span> <strong>100% skundų sulaikyta:</strong> 11 pastabų pateko tiesiai vadovui į privatų pultą. Vadovas išsaugojo klientus.</li>
+                <li><span>📈</span> <strong>Pardavimų proveržis:</strong> +42% daugiau skambučių ir užklausų iš Google Maps paieškos.</li>
+              </ul>
+            </div>
+            
+            <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid rgba(16, 185, 129, 0.25); font-size: 13px; color: #34D399;">
+              Grynasis pajamų augimas: <strong>+3 800 € / mėn.</strong> papildomos apyvartos.
+            </div>
+          </div>
+        </div>
+
+        <!-- SVG Grafikas -->
+        <div class="chart-container">
+          <div class="chart-header">
+            <h4>📈 Reitingo augimo dinamika (60 dienų laikotarpis)</h4>
+            <div class="chart-legend">
+              <span><svg width="12" height="12"><circle cx="6" cy="6" r="5" fill="#EF4444"/></svg> Startas (3.8★)</span>
+              <span><svg width="12" height="12"><circle cx="6" cy="6" r="5" fill="#5636E8"/></svg> 30 d. (4.4★)</span>
+              <span><svg width="12" height="12"><circle cx="6" cy="6" r="5" fill="#10B981"/></svg> 60 d. (4.8★)</span>
+            </div>
+          </div>
+          
+          <svg viewBox="0 0 800 220" style="width: 100%; height: auto; overflow: visible;">
+            <defs>
+              <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#5636E8" stop-opacity="0.45"/>
+                <stop offset="100%" stop-color="#5636E8" stop-opacity="0.0"/>
+              </linearGradient>
+            </defs>
+            <!-- Grid lines -->
+            <line x1="50" y1="30" x2="760" y2="30" stroke="#1F283B" stroke-dasharray="4"/>
+            <line x1="50" y1="80" x2="760" y2="80" stroke="#1F283B" stroke-dasharray="4"/>
+            <line x1="50" y1="130" x2="760" y2="130" stroke="#1F283B" stroke-dasharray="4"/>
+            <line x1="50" y1="180" x2="760" y2="180" stroke="#1F283B"/>
+
+            <!-- Y Axis Labels -->
+            <text x="15" y="35" fill="#64748B" font-size="12" font-weight="700">5.0★</text>
+            <text x="15" y="85" fill="#64748B" font-size="12" font-weight="700">4.5★</text>
+            <text x="15" y="135" fill="#64748B" font-size="12" font-weight="700">4.0★</text>
+            <text x="15" y="185" fill="#64748B" font-size="12" font-weight="700">3.5★</text>
+
+            <!-- Curve fill -->
+            <polygon points="70,150 250,115 480,68 730,42 730,180 70,180" fill="url(#chartGrad)" />
+
+            <!-- Curve line -->
+            <path d="M 70 150 Q 250 115 480 68 T 730 42" fill="none" stroke="#5636E8" stroke-width="4" stroke-linecap="round"/>
+
+            <!-- Data points -->
+            <circle cx="70" cy="150" r="7" fill="#EF4444" stroke="#fff" stroke-width="2"/>
+            <text x="70" y="135" fill="#EF4444" font-size="13" font-weight="800" text-anchor="middle">3.8★</text>
+            <text x="70" y="202" fill="#64748B" font-size="12" text-anchor="middle">1 d. (Startas)</text>
+
+            <circle cx="280" cy="105" r="7" fill="#5636E8" stroke="#fff" stroke-width="2"/>
+            <text x="280" y="90" fill="#A78BFA" font-size="13" font-weight="800" text-anchor="middle">4.2★</text>
+            <text x="280" y="202" fill="#64748B" font-size="12" text-anchor="middle">20 d. (+40 nauji)</text>
+
+            <circle cx="500" cy="62" r="7" fill="#5636E8" stroke="#fff" stroke-width="2"/>
+            <text x="500" y="47" fill="#A78BFA" font-size="13" font-weight="800" text-anchor="middle">4.6★</text>
+            <text x="500" y="202" fill="#64748B" font-size="12" text-anchor="middle">40 d. (+85 nauji)</text>
+
+            <circle cx="730" cy="42" r="8" fill="#10B981" stroke="#fff" stroke-width="2.5"/>
+            <text x="730" y="24" fill="#34D399" font-size="15" font-weight="800" text-anchor="middle">4.8★</text>
+            <text x="730" y="202" fill="#10B981" font-size="12" font-weight="700" text-anchor="middle">60 d. (Tikslas pasiektas!)</text>
+          </svg>
+        </div>
+      </div>
+    </section>
+
+    <!-- INTERAKTYVUS SIMULIATORIUS -->
+    <section class="container">
+      <div class="simulator-card">
+        <div class="sim-left">
+          <div class="badge-pill"><span>IŠBANDYKITE PATYS</span></div>
+          <h3>Kaip veikia išmanus Review Gate?</h3>
+          <p>
+            Sistema akimirksniu nustato kliento patirtį ir nukreipia jį tinkama linkme. Paspauskite žvaigždutes dešinėje ir pamatykite, kaip veikia srauto atskyrimas realiu laiku:
+          </p>
+          <div style="margin-top: 20px;">
+            <a href="https://reputacija.verslomatika.lt/r/memocasting" target="_blank" class="btn-ghost" style="font-size: 13.5px;" rel="noopener">
+              Atverti gyvą demonstraciją telefone ↗
+            </a>
+          </div>
+        </div>
+
+        <div class="sim-interactive-box">
+          <span style="font-size: 11px; color: var(--text-dim); text-transform: uppercase; font-weight: 700;">Pasirinkite įvertinimą:</span>
+          <div class="stars-interactive" id="simStars">
+            <button class="star-btn active" onclick="setSimRating(1)">★</button>
+            <button class="star-btn active" onclick="setSimRating(2)">★</button>
+            <button class="star-btn active" onclick="setSimRating(3)">★</button>
+            <button class="star-btn active" onclick="setSimRating(4)">★</button>
+            <button class="star-btn active" onclick="setSimRating(5)">★</button>
+          </div>
+
+          <div id="simOutcome" class="outcome-box outcome-5star">
+            <strong>🟢 5 Žvaigždutės: Tiesioginis nukreipimas į Google Maps</strong>
+            Patenkintas klientas per 2 sekundes atsidaro oficialią Jūsų Google Maps anketą. Reitingas auga, nauji klientai mato aukščiausią įvertinimą!
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- KAIP TAI VEIKIA -->
+    <section id="kaip-veikia" class="container section-space">
+      <div class="section-title">
+        <div class="badge-pill"><span>PAPRASTAS 4 ŽINGSNIŲ PROCESAS</span></div>
+        <h2>Kaip ReputationPro veikia Jūsų versle?</h2>
+        <p>Jokių sudėtingų integracijų ar papildomo darbuotojų laiko. Viskas paruošiama per kelias minutes.</p>
+      </div>
+
+      <div class="workflow-grid">
+        <div class="step-card">
+          <div class="step-num">01</div>
+          <h3>Nuoroda arba QR kodas</h3>
+          <p>El. parduotuvėms – automatinė po-pirkimo nuoroda el. paštu / SMS. Fiziniam verslui – stilingas akrilinis QR stovelis prie kasos.</p>
+        </div>
+        <div class="step-card">
+          <div class="step-num">02</div>
+          <h3>Klientas nuskenuoja kodą</h3>
+          <p>Telefonu nuskenavus kodą, per 3 sekundes atveriamas patogus įvertinimo langas be jokių slaptažodžių ar registracijų.</p>
+        </div>
+        <div class="step-card">
+          <div class="step-num">03</div>
+          <h3>Išmanus srauto filtras</h3>
+          <p>5★ vertinimai vienu paspaudimu keliauja į viešą Google Maps profilį. 1–3★ nukreipiami į privačią formą tiesiai vadovui.</p>
+        </div>
+        <div class="step-card">
+          <div class="step-num">04</div>
+          <h3>Reputacija apsaugota</h3>
+          <p>Skundas niekada nepateks į Google paiešką. Vadovas gauna progą išspręsti problemą ir išsaugoti lojalų klientą.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SEKTORIAI (VISIEMS VERSLAMS) -->
+    <section id="sektoriai" class="container section-space" style="padding-top: 0;">
+      <div class="section-title">
+        <div class="badge-pill"><span>UNIVERSALUS SPRENDIMAS</span></div>
+        <h2>Pritaikyta visiems paslaugų ir prekybos verslams</h2>
+        <p>Sistema sėkmingai veikia visose srityse, kur reputacija lemia kliento sprendimą pirkti.</p>
+      </div>
+
+      <div class="sector-grid">
+        <div class="sector-item">
+          <div class="sector-icon">🦷</div>
+          <h4>Klinikos ir odontologija</h4>
+          <p>Paciento procedūrų krepšelis siekia 500–2 500 €. Reitingas lemia virš 80% naujų pacientų pasirinkimą.</p>
+        </div>
+        <div class="sector-item">
+          <div class="sector-icon">🔧</div>
+          <h4>Autoservisai ir tech. centrai</h4>
+          <p>Skaidrumas ir pasitikėjimas. Apsaugokite servisą nuo piktų komentarų dėl detalių vėlavimo.</p>
+        </div>
+        <div class="sector-item">
+          <div class="sector-icon">💇‍♀️</div>
+          <h4>Grožio salonai ir SPA</h4>
+          <p>Nauji lankytojai pirmiausia tikrina atsiliepimus Google Maps prieš registruodamiesi procedūroms.</p>
+        </div>
+        <div class="sector-item">
+          <div class="sector-icon">🏨</div>
+          <h4>Viešbučiai ir poilsio bazės</h4>
+          <p>Išspręskite svečių pastabas registratūroje, kol jos netapo viešais neigiamais atsiliepimais.</p>
+        </div>
+        <div class="sector-item">
+          <div class="sector-icon">🛋️</div>
+          <h4>Baldų gamyba ir meistrai</h4>
+          <p>Didelės vertės užsakymai. Klientai reikalauja nepriekaištingo 4.8★+ patikimumo įrodymo.</p>
+        </div>
+        <div class="sector-item">
+          <div class="sector-icon">🎁</div>
+          <h4>E-komercija ir dovanos</h4>
+          <p>Pirkėjai po užsakymo gauna asmeninę nuorodą. Dėkingi klientai kuria pasitikėjimą naujiems pirkėjams.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3D ANALITIKOS SKYDELIO PRISTATYMAS -->
+    <section class="container">
+      <div class="showcase-banner">
+        <div>
+          <div style="font-size: 11px; font-weight: 800; color: #A78BFA; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">VADOVO VALDYMO PULTAS (/ADMIN)</div>
+          <h2>Matykite visus atsiliepimus ir kontroliuokite reputaciją realiu laiku.</h2>
+          <p>
+            Kiekvienas verslas gauna saugų asmeninį skydelį. Matykite dienos ir mėnesio įvertinimus, gaukite momentinius pranešimus apie pastabas, eksportuokite duomenis ir valdykite kelis filialus vienoje vietoje.
+          </p>
+          <div style="display: flex; gap: 14px; flex-wrap: wrap;">
+            <a href="https://reputacija.verslomatika.lt/admin" class="btn-main" target="_blank" rel="noopener">
+              <span>Atverti vadovo pultą ↗</span>
+            </a>
+            <a href="https://reputacija.verslomatika.lt/checkout?plan=pro" class="btn-ghost" target="_blank" rel="noopener">
+              Aktyvuoti paskyrą
+            </a>
+          </div>
+        </div>
+
+        <div class="showcase-img">
+          <img src="https://reputacija.verslomatika.lt/images/dashboard-analytics-3d.jpg" alt="ReputationPro analitikos ir atsiliepimų valdymo pultas" />
+        </div>
+      </div>
+    </section>
+
+    <!-- ROI SKAIČIUOKLĖ -->
+    <section id="skaiciuokle" class="container section-space" style="padding-top: 0;">
+      <div class="section-title">
+        <div class="badge-pill"><span>INVESTICIJOS GRĄŽA</span></div>
+        <h2>Apskaičiuokite savo verslo naudą</h2>
+        <p>Sužinokite, kiek papildomų pajamų atneša pakilęs reitingas ir sulaikyti neigiami skundai.</p>
+      </div>
+
+      <div class="calculator-box">
+        <div class="calc-grid">
+          <div class="calc-field">
+            <label for="clientCount">Klientų skaičius per mėnesį:</label>
+            <input type="number" id="clientCount" value="60" min="1" max="10000" oninput="calculateROI()" />
+          </div>
+          <div class="calc-field">
+            <label for="clientValue">Vidutinė vieno kliento vertė (€):</label>
+            <input type="number" id="clientValue" value="120" min="5" max="50000" oninput="calculateROI()" />
+          </div>
+        </div>
+
+        <div class="calc-result">
+          <div>
+            <span>Prognozuojama papildoma apyvarta:</span>
+            <strong id="roiGain">+1 440 € / mėn.</strong>
+          </div>
+          <div style="text-align: right;">
+            <span>Atsipirkimas per:</span>
+            <strong style="color: #A78BFA;" id="roiPayback">2 dienas</strong>
+          </div>
+        </div>
+        <p style="font-size: 12px; color: var(--text-dim); margin-top: 14px; text-align: center;">
+          *Skaičiavimas pagrįstas konservatyviu +20% naujų klientų srauto padidėjimu pakilus Google reitingui.
+        </p>
+      </div>
+    </section>
+
+    <!-- KAINODARA -->
+    <section id="kainos" class="container section-space">
+      <div class="section-title">
+        <div class="badge-pill"><span>SKAIDRIOS SĄLYGOS</span></div>
+        <h2>Pasirinkite savo verslui tinkamą planą</h2>
+        <p>14 dienų nemokamas bandymas be kortelės. Nutraukimas bet kada vienu paspaudimu.</p>
+      </div>
+
+      <div class="pricing-grid">
+        <!-- 1. STARTER -->
+        <div class="price-box">
+          <h3>Starter</h3>
+          <p style="font-size: 13px; color: var(--text-dim); margin-top: 4px;">Mažoms studijoms, meistrams, pavieniams kabinetams.</p>
+          <div class="price-val">29 € <span>/ mėn.</span></div>
+          <div class="price-cycle">14 d. nemokamai • Po to 29 €/mėn.</div>
+          <ul class="feature-list">
+            <li><span class="check">✓</span> 1 veiklos vieta ar padalinys</li>
+            <li><span class="check">✓</span> Išmanusis 5★ Review Gate filtras</li>
+            <li><span class="check">✓</span> Asmeninė tiesioginė kliento nuoroda</li>
+            <li><span class="check">✓</span> Atsisiunčiamas QR kodas spaudai</li>
+            <li><span class="check">✓</span> Privati vadovo dėžutė pastaboms</li>
+            <li><span class="check">✓</span> 14 dienų nemokamas bandymas</li>
+          </ul>
+          <a href="https://reputacija.verslomatika.lt/checkout?plan=starter" class="btn-ghost" style="text-align: center; justify-content: center;" target="_blank" rel="noopener">
+            Aktyvuoti Starter (14 d.) ↗
+          </a>
+        </div>
+
+        <!-- 2. PRO (FEATURED) -->
+        <div class="price-box featured">
+          <div class="popular-tag">POPULIARIAUSIAS PASIRINKIMAS</div>
+          <h3>Pro Verslui</h3>
+          <p style="font-size: 13px; color: #C4B5FD; margin-top: 4px;">Klinikoms, servisams, salonams, prekybai.</p>
+          <div class="price-val" style="color: white;">49 € <span style="color: #C4B5FD;">/ mėn.</span></div>
+          <div class="price-cycle" style="color: #A78BFA;">14 d. nemokamai • Po to 49 €/mėn.</div>
+          <ul class="feature-list">
+            <li><span class="check">✓</span> <strong>Visi Starter plano privalumai</strong></li>
+            <li><span class="check">✓</span> Neribotas atsiliepimų ir klientų srautas</li>
+            <li><span class="check">✓</span> Aukštos raiškos QR kodas (PNG / SVG / PDF)</li>
+            <li><span class="check">✓</span> Vadovo valdymo pultas (/admin)</li>
+            <li><span class="check">✓</span> Momentiniai pranešimai el. paštu apie pastabas</li>
+            <li><span class="check">✓</span> Reitingo analitika ir CSV duomenų eksportas</li>
+            <li><span class="check">✓</span> Prioritetinis palaikymas telefonu ir el. paštu</li>
+          </ul>
+          <a href="https://reputacija.verslomatika.lt/checkout?plan=pro" class="btn-main" style="text-align: center; justify-content: center;" target="_blank" rel="noopener">
+            Aktyvuoti Pro (14 d. nemokamai) ↗
+          </a>
+        </div>
+
+        <!-- 3. METINIS -->
+        <div class="price-box">
+          <h3>Metinis Pro</h3>
+          <p style="font-size: 13px; color: var(--text-dim); margin-top: 4px;">Maksimali nauda + nemokamas fizinis stovelis.</p>
+          <div class="price-val">290 € <span>/ metus</span></div>
+          <div class="price-cycle">Sutaupote virš 50% metinio mokesčio</div>
+          <ul class="feature-list">
+            <li><span class="check">✓</span> <strong>Visi Pro plano privalumai 12 mėnesių</strong></li>
+            <li><span class="check">✓</span> <strong style="color: #34D399;">NEMOKAMAS akrilinis QR stovelis (vertė 60 €)</strong></li>
+            <li><span class="check">✓</span> Nemokamas fizinis pristatymas į Jūsų vietą</li>
+            <li><span class="check">✓</span> Asmeninė registratūros ar kasos sąranka</li>
+            <li><span class="check">✓</span> Dedikuotas Verslomatikos vadybininkas</li>
+            <li><span class="check">✓</span> 14 dienų nemokamas bandymas</li>
+          </ul>
+          <a href="https://reputacija.verslomatika.lt/checkout?plan=annual" class="btn-ghost" style="text-align: center; justify-content: center;" target="_blank" rel="noopener">
+            Aktyvuoti Metinį planą ↗
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- DUK -->
+    <section id="duk" class="container section-space" style="padding-top: 0;">
+      <div class="section-title">
+        <div class="badge-pill"><span>DUK</span></div>
+        <h2>Dažniausiai užduodami klausimai</h2>
+      </div>
+
+      <div class="faq-list">
+        <details class="faq-item" open>
+          <summary>Kaip pradėti 14 dienų nemokamą bandymą? <span>▼</span></summary>
+          <p>Užsiregistruokite per 1 minutę <a href="https://reputacija.verslomatika.lt/checkout?plan=pro" style="color: #A78BFA; font-weight: 700;">aktyvavimo puslapyje</a>. Banko kortelės nereikia. Iškart gausite asmeninį QR kodą ir prisijungimą prie savo verslo valdymo pulto.</p>
+        </details>
+        
+        <details class="faq-item">
+          <summary>Ar ši sistema atitinka „Google Maps“ taisykles? <span>▼</span></summary>
+          <p>Taip, sistema 100% atitinka oficialias taisykles. Mes nenaudojame techninio blokavimo – klientui visada paliekama teisė palikti viešą atsiliepimą, tačiau protinga psichologinė forma natūraliai nukreipia 95% nepatenkintų klientų parašyti privačiai vadovui, nes jie nori greito problemos sprendimo, o ne viešo konflikto.</p>
+        </details>
+
+        <details class="faq-item">
+          <summary>Ar darbuotojams prie kasos reikės papildomo darbo? <span>▼</span></summary>
+          <p>Nulis papildomo darbo. Stilingas akrilinis stovelis pastatomas matomoje vietoje. Atsiskaitydamas klientas nukreipia savo išmanųjį telefoną ir atsiliepia savarankiškai per kelias sekundes.</p>
+        </details>
+
+        <details class="faq-item">
+          <summary>Kaip vadovas sužino apie gautą pastabą? <span>▼</span></summary>
+          <p>Vos tik klientas pateikia pastabą, vadovas akimirksniu gauna el. laišką su kliento žinute ir kontaktais. Be to, visi atsiliepimai saugomi asmeniniame valdymo pulte (/admin).</p>
+        </details>
+
+        <details class="faq-item">
+          <summary>Per kiek laiko atsiunčiamas fizinis akrilinis stovelis? <span>▼</span></summary>
+          <p>Skaitmeninis QR kodas sugeneruojamas iškart po registracijos. Užsakius Metinį planą, fizinis prabangus akrilinis stovelis su UV spauda pagaminamas ir išsiunčiamas kurjeriu per 2–3 darbo dienas.</p>
+        </details>
+      </div>
+    </section>
+
+    <!-- FINAL CTA -->
+    <section class="container">
+      <div class="cta-banner">
+        <h2>Pasiruošę pasiekti 4.8★ Google reitingą?</h2>
+        <p>Aktyvuokite savo verslo paskyrą šiandien – gaukite asmeninį QR kodą ir išbandykite 14 dienų visiškai nemokamai.</p>
+        <div style="display: flex; gap: 14px; justify-content: center; flex-wrap: wrap;">
+          <a href="https://reputacija.verslomatika.lt/checkout?plan=pro" class="btn-main" target="_blank" rel="noopener">
+            <span>Aktyvuoti paskyrą (14 d. nemokamai)</span>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </a>
+          <a href="https://reputacija.verslomatika.lt/admin" class="btn-ghost" target="_blank" rel="noopener">
+            Vadovo prisijungimas ↗
+          </a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="container footer-inner">
+      <div>
+        <span style="font-weight: 800; color: white;">verslomatika<span style="color: #5636E8;">.</span></span>
+        <span style="margin: 0 8px; color: var(--card-border-hover);">|</span>
+        <span>ReputationPro</span>
+        <p style="margin-top: 6px; font-size: 12px; color: var(--text-dim);">Oficialus Verslomatika B2B holdingo sprendimas • Operatorius: MB „Pinet“ • Įm. k. 306067365</p>
+      </div>
+      <div>
+        <a href="https://verslomatika.lt/verslo-augimo-irankiai" style="color: var(--text-muted); text-decoration: none; margin-right: 20px;">Visi įrankiai</a>
+        <a href="mailto:tomas@verslomatika.lt" style="color: #A78BFA; text-decoration: none;">tomas@verslomatika.lt</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    function setSimRating(rating) {
+      const buttons = document.querySelectorAll('#simStars button');
+      buttons.forEach((btn, index) => {
+        if (index < rating) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+      });
+
+      const outcome = document.getElementById('simOutcome');
+      if (rating >= 4) {
+        outcome.className = 'outcome-box outcome-5star';
+        outcome.innerHTML = '<strong>🟢 ' + rating + ' Žvaigždutės: Nukreipimas į Google Maps</strong>Patenkintas klientas per 2 sekundes atsidaro oficialų Jūsų Google Maps profilį viešam 5★ atsiliepimui. Reitingas kyla, nauji klientai mato aukščiausią įvertinimą!';
+      } else {
+        outcome.className = 'outcome-box outcome-lowstar';
+        outcome.innerHTML = '<strong>🛡️ ' + rating + ' Žvaigždutės: Sulaikymas privačioje formoje vadovui</strong>Atsiliepimas NEPATENKA į Google Maps! Klientui atveriama konfidenciali forma tiesiai vadovui. Pyktis išsilieja saugiai, o Jūs išsaugote klientą ir nepriekaištingą viešą reitingą.';
+      }
+    }
+
+    function calculateROI() {
+      const count = parseFloat(document.getElementById('clientCount').value) || 0;
+      const val = parseFloat(document.getElementById('clientValue').value) || 0;
+      // Conservative +20% more new clients from 4.8* rating
+      const additionalClients = Math.round(count * 0.2);
+      const gain = additionalClients * val;
+      document.getElementById('roiGain').textContent = '+' + gain.toLocaleString('lt-LT') + ' € / mėn.';
+      
+      const planCost = 49;
+      const days = gain > 0 ? Math.max(1, Math.round((planCost / gain) * 30)) : 30;
+      document.getElementById('roiPayback').textContent = days + (days === 1 ? ' dieną' : ' dienas');
+    }
+    calculateROI();
+  </script>
+</body>
+</html>

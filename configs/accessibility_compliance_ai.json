@@ -1,0 +1,57 @@
+{
+  "business_id": "accessibility_compliance_ai",
+  "business_name": "AccessGuard AI (EAA & ADA Teisinė Atitiktis)",
+  "website_url": "https://accessguard.eu",
+  "industry": "Europos prieinamumo akto (EAA) ir ADA atitiktis, svetainių neįgaliesiems auditas ir automatinis kodo taisymas",
+  "business_type": "b2b_saas",
+  "target_market": "Europos Sąjunga (el. parduotuvės, klinikos, transporto ir finansų svetainės)",
+  "brand_voice": "Teisiškai griežtas, apsaugantis nuo tūkstantinių baudų, suteikiantis ramybę e-verslo savininkams",
+  
+  "core_offer": {
+    "name": "EAA 2025/2026 Compliance Audit & Fix Widget",
+    "price": 290.00,
+    "currency": "EUR",
+    "specs": "Automatinis svetainės WCAG 2.1 AA auditas per 30 sek., 12 puslapių teisinė ataskaita su nustatytais pažeidimais, automatinis vienos kodo eilutės JavaScript valdiklis, kuris realiuoju laiku ištaiso kontrasto, ekrano skaitytuvų, klaviatūros navigacijos ir alt-tekstų klaidas.",
+    "supplier_cost": 8.00
+  },
+
+  "pricing_tiers": [
+    {
+      "tier": "Vienkartinis Pilnas Auditas + Ataskaita",
+      "price": 149.00,
+      "features": "Pilna svetainės analizė, teisinė rizika, tikslus instrukcijų sąrašas programuotojams"
+    },
+    {
+      "tier": "Auto-Fix Widget (Metinė licencija)",
+      "price": 290.00,
+      "features": "1 kodo eilutės diegimas, automatinis klaidų šalinimas lankytojui, nuolatinis monitoringas, atitikties sertifikatas"
+    },
+    {
+      "tier": "E-Commerce Enterprise",
+      "price": 690.00,
+      "features": "Didelėms el. parduotuvėms su 10,000+ prekių, kasmėnesinis automatinis naujų prekių alt-tekstų generavimas"
+    }
+  ],
+
+  "target_audiences": [
+    {
+      "name": "Vidutinės ir didelės el. parduotuvės (Shopify, WooCommerce, Magento)",
+      "pain_point": "Pagal Europos Sąjungos direktyvą nuo 2025/2026 m. gresia baudos iki 15,000 € už nepritaikytas el. parduotuves negalią turintiems pirkėjams."
+    },
+    {
+      "name": "Medicinos ir privačios klinikos",
+      "pain_point": "Privalo užtikrinti pacientų registracijos prieinamumą regos ir judėjimo negalią turintiems asmenims."
+    }
+  ],
+
+  "objections_and_answers": {
+    "ar_reikes_perprogramuoti_visa_svetaine": "Ar reikės perprogramuoti visą svetainę? -> Ne. Mūsų AccessGuard valdiklis įterpiamas kaip 1 kodo eilutė (kaip Google Analytics) ir akimirksniu pritaiko svetainę be jokio dizaino ar kodo keitimo.",
+    "ar_tai_tikrai_apsaugo_teiskai": "Ar tai apsaugo nuo vartotojų teisių inspekcijos patikrų? -> Taip, sistema atitinka WCAG 2.1 Level AA reikalavimus ir pateikia viešą atitikties deklaraciją su nuolatiniu klaidų žurnalu."
+  },
+
+  "ai_sales_agent_strategy": {
+    "lead_source": "El. parduotuvių katalogai Lietuvoje ir Europoje. Agentas atlieka automatinį 10 sekundžių auditą ir randa konkrečias klaidas (pvz. 'trūksta 42 alt žymų').",
+    "hook": "'Jūsų el. parduotuvėje aptikome 18 WCAG pažeidimų, kurie nuo 2025 m. pažeidžia Europos prieinamumo aktą. Štai nemokama jūsų svetainės ataskaita.'",
+    "call_to_action": "Įdiekite bandomąjį sprendimą nemokamai per 2 minutes"
+  }
+}

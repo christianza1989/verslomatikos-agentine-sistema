@@ -1,0 +1,61 @@
+{
+  "business_id": "tender_rfp_ai",
+  "business_name": "TenderBot AI (Viešųjų Pirkimų & Sąmatų Asistentas)",
+  "website_url": "https://tenderbot.ai",
+  "industry": "Viešųjų pirkimų automatizavimas, B2B konkursų techninių specifikacijų analizė, automatinis pasiūlymų generavimas",
+  "business_type": "b2b_saas",
+  "target_market": "Lietuva (CVP IS) ir Europos Sąjunga (TED)",
+  "brand_voice": "Tikslus, teisiškai nepriekaištingas, inžinerinis, taupantis dešimtis specialistų darbo valandų",
+  
+  "core_offer": {
+    "name": "TenderBot Pro Narystė (Mėnesinė)",
+    "price": 349.00,
+    "currency": "EUR",
+    "specs": "Kasdienis CVP IS pirkimų monitoringas pagal įmonės CPV kodus, techninių specifikacijų (PDF/DOCX) analizė per 60 sek., automatinis atitikties matricos užpildymas, pilno 30-50 psl. pasiūlymo sugeneravimas pagal įmonės šabloną ir kainyną.",
+    "supplier_cost": 18.00
+  },
+
+  "pricing_tiers": [
+    {
+      "tier": "Starter (Iki 5 konkursų/mėn)",
+      "price": 199.00,
+      "features": "5 konkursų analizė ir pasiūlymų parengimas, kvalifikacinių reikalavimų patikra"
+    },
+    {
+      "tier": "Pro Unlimited",
+      "price": 349.00,
+      "features": "Neribota CVP IS analizė, automatinis kainų skaičiuoklės pildymas, atitikties deklaracijų generavimas"
+    },
+    {
+      "tier": "Enterprise Multi-User",
+      "price": 790.00,
+      "features": "Visos Baltijos šalys ir Skandinavija (TED pirkimai), integracija su įmonės ERP/sąmatų programomis, juristo patikra"
+    }
+  ],
+
+  "target_audiences": [
+    {
+      "name": "Statybų ir renovacijos generaliniai rangovai",
+      "pain_point": "Viešieji pirkimai reikalauja šimtų dokumentų, sąmatų ir sertifikatų. Suklydus vienoje eilutėje – pasiūlymas atmetamas."
+    },
+    {
+      "name": "Patalpų valymo ir teritorijų priežiūros įmonės",
+      "pain_point": "Didžiulė pirkimų apimtis (ligoninės, mokyklos, savivaldybės). Vadybininkai nespėja paruošti pasiūlymų visiems konkursams."
+    },
+    {
+      "name": "IT ir programinės įrangos diegimo bendrovės",
+      "pain_point": "Reikalingi ilgi funkciniai ir saugumo atitikties aprašymai. TenderBot per 5 minutes sugeneruoja 80 psl. techninį atsakymą."
+    }
+  ],
+
+  "objections_and_answers": {
+    "ar_pasiulymas_nebus_atmestas": "Ar AI parengtas pasiūlymas atitiks perkančiosios organizacijos reikalavimus? -> TenderBot apmokytas pagal Lietuvos viešųjų pirkimų įstatymą ir perkančiųjų organizacijų standartus. Kiekviena techninės specifikacijos eilutė pažymima kryžminėmis nuorodomis.",
+    "kodel_moketi_349_eur": "Kokia grąža? -> Sąmatininko ar teisininko atlyginimas yra 2,500–4,000 €/mėn. TenderBot padidina pateikiamų pasiūlymų skaičių 4 kartus ir atsiperka su pirmuoju laimėtu mažu konkursu."
+  },
+
+  "ai_sales_agent_strategy": {
+    "lead_source": "CVP IS ir Rekvizitai.lt: įmonės, kurios aktyviai dalyvauja viešuosiuose pirkimuose",
+    "hook": "'Matome, kad dalyvaujate statybų pirkimuose. Mes ką tik paėmėme šios dienos Vilniaus pirkimą X ir per 4 minutes parengėme pilną pavyzdinį pasiūlymą.'",
+    "call_to_action": "Gaukite paruoštą bandomąjį pasiūlymą kitam savo konkursui nemokamai"
+  }
+}

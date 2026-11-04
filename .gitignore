@@ -1,0 +1,92 @@
+# Dependencies
+node_modules/
+*/node_modules/
+**/node_modules/
+.pnp
+.pnp.js
+
+# Next.js Build Outputs & Temporary Test Caches
+.next/
+*/.next/
+**/.next/
+**/.next*/
+out/
+build/
+dist/
+
+# Test & Review Artifacts
+**/artifacts/
+**/.impeccable/
+
+# Python Cache & Virtual Environments
+__pycache__/
+*/__pycache__/
+**/__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+ENV/
+
+# Databases, WAL & Backups (SQLite)
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+data/*.db
+*/data/*.db
+**/data/*.db
+**/data/operations/
+data/operations/backups/
+data/operations/security-*
+data/operations/stripe-sandbox-private/
+
+# Private Credentials & Secrets
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*/.env
+*/.env.local
+*/.env.*.local
+*.secrets.json
+configs/email_credentials.json
+tunnel-token
+tunnel.json
+*/data/operations/tunnel-token
+*/data/operations/tunnel.json
+
+# Runtime State & IPC
+bridge/messages.json
+bridge/state.json
+
+# Binaries & Executables
+*.exe
+*.dll
+*.dylib
+tools/*.exe
+apps/*/tools/*.exe
+
+# Logs & Runtime State
+logs/
+*/logs/
+**/logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS & Editor Files
+.DS_Store
+Thumbs.db
+Desktop.ini
+.idea/
+.vscode/
+*.swp
+*.swo

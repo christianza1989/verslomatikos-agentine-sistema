@@ -1,0 +1,24 @@
+[
+  {
+    "id": "azuolo_baldai-lead-01",
+    "name": "Baltic Horizon Partners",
+    "contact_person": "Marius Jankauskas",
+    "email": "marius@baltichorizon.example.com",
+    "phone": "+370 600 11223",
+    "market": "Vokietija ir Lietuva",
+    "status": "ready_for_outreach",
+    "signal": "Aktyviai ieško kokybiškų sprendimų Ranku darbo azuoliniai stalai srityje.",
+    "created_at": "2026-10-27T13:29:48.030722"
+  },
+  {
+    "id": "azuolo_baldai-lead-02",
+    "name": "Nordic Solutions Oü",
+    "contact_person": "Erik Lindqvist",
+    "email": "erik@nordicsolutions.example.com",
+    "phone": "+372 555 99881",
+    "market": "Skandinavija / Baltija",
+    "status": "ready_for_outreach",
+    "signal": "Reikalingas patikimas tiesioginis tiekėjas su garantija.",
+    "created_at": "2026-10-27T13:29:48.031726"
+  }
+]

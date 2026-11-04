@@ -1,0 +1,2 @@
+import {notFound,redirect} from 'next/navigation';import {authorized,localRequest} from '@/lib/auth';import {Brand} from '@/components/brand';import {LoginForm} from '@/components/admin-actions';
+export const dynamic='force-dynamic';export default async function Login(){if(!await localRequest())notFound();if(await authorized())redirect('/admin');return <main className="login-shell"><Brand/><div className="login-card"><span className="eyebrow">VIETINIS PROTOTIPAS</span><h1>Prisijunkite.</h1><p>Skydelis pasiekiamas tik šiame kompiuteryje.</p><LoginForm/></div></main>;}

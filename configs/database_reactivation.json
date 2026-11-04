@@ -1,0 +1,61 @@
+{
+  "business_id": "database_reactivation",
+  "business_name": "ReviveLeads AI (CRM Bazių Prikėlimas)",
+  "website_url": "https://reviveleads.ai",
+  "industry": "Mirusių klientų duomenų bazių atgaivinimas, 2-way SMS/WhatsApp AI pokalbiai, sėkmės mokesčio pardavimai",
+  "business_type": "b2b_service_saas",
+  "target_market": "Lietuva ir Europos vidutinis bei stambus paslaugų verslas",
+  "brand_voice": "Rezultatu paremtas, pasitikėjimą keliantis, nulinės rizikos pasiūlymas vadovams",
+  
+  "core_offer": {
+    "name": "Dormant Base Revival Campaign (Pilnas Prikėlimo Paketas)",
+    "price": 500.00,
+    "currency": "EUR",
+    "specs": "Kliento CRM (1,000-10,000 senų kontaktų) išvalymas, AI pokalbių scenarijų paruošimas, automatinis asmeninis 2-way SMS/WhatsApp kontaktavimas, vizitų rezervavimas tiesiai į Google Calendar. Mokestis: 500 € sąranka + 25% nuo sugeneruotų pajamų arba 30 € už kiekvieną atvykusį klientą.",
+    "supplier_cost": 45.00
+  },
+
+  "pricing_tiers": [
+    {
+      "tier": "Pay-On-Success (Be rizikos)",
+      "price": 0.00,
+      "features": "0 € pradinis mokestis, 30% nuo kiekvieno sugeneruoto užsakymo arba 35 € už patvirtintą paciento/kliento vizitą"
+    },
+    {
+      "tier": "Starter Setup + RevShare",
+      "price": 500.00,
+      "features": "500 € sąranka + 20% komisiniai nuo apyvartos, iki 2,500 kontaktų bazė"
+    },
+    {
+      "tier": "Enterprise Retainer",
+      "price": 1200.00,
+      "features": "Mėnesinis pastovus darbas su 10,000+ kontaktų baze, pastovus srautas, individualus dedikuotas AI modelis"
+    }
+  ],
+
+  "target_audiences": [
+    {
+      "name": "Estetinės medicinos ir odontologijos klinikos",
+      "pain_point": "Turi tūkstančius pacientų, kurie buvo prieš 1–2 metus, bet niekada nebegrįžo. Administratorės neturi laiko skambinti tūkstančiams žmonių."
+    },
+    {
+      "name": "Saulės jėgainių, šilumos siurblių ir stogų montuotojai",
+      "pain_point": "Didelė pradinė užklausos kaina (50–100 € už lead'ą). Po metų bazėje guli 3,000 žmonių, kurie domėjosi, bet nenusipirko."
+    },
+    {
+      "name": "Sporto klubai ir sveikatingumo centrai",
+      "pain_point": "Nutrauktos narystės. AI agentas atgaivina buvusius narius su specialiu 'welcome back' pasiūlymu."
+    }
+  ],
+
+  "objections_and_answers": {
+    "ar_tai_nesukels_klientu_pykcio": "Ar klientai nepyks dėl SMS žinučių? -> Ne, nes AI žinutė yra 100% asmeninė ir draugiška: minima tiksli paslauga, kada klientas lankėsi, ir asmeniškai paklausiama, kaip sekasi po procedūros. 92% klientų reaguoja itin teigiamai.",
+    "ar_atitinka_bdar": "Ar tai atitinka BDAR (GDPR)? -> Taip, dirbama su įmonės esamų klientų baze pagal teisėto intereso pagrindą, su momentine galimybe atsisakyti vienu paspaudimu ar žodžiu 'STOP'."
+  },
+
+  "ai_sales_agent_strategy": {
+    "lead_source": "Privačių klinikų, servisų ir rangovų katalogai, LinkedIn įmonių vadovai",
+    "hook": "'Mes nemokamai ištestuosime 200 jūsų senų kontaktų. Jei neatvesime bent 3 mokančių klientų – nieko nemokate'",
+    "call_to_action": "Atsiųskite CSV su 200 senų kontaktų ir stebėkite, kaip kalendorius užsipildo per 48 valandas"
+  }
+}

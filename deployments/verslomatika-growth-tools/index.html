@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="lt">
+<head>
+  <meta charset="UTF-8">
+  <link rel="canonical" href="https://verslomatika.lt/verslo-augimo-irankiai/">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Verslo Augimo Įrankiai • Verslomatika AI Holdingo Ekosistema</title>
+  <meta name="description" content="Oficiali Verslomatika AI holdingo įrankių ekosistema. Specializuoti, autonominiai sprendimai Lietuvos verslų augimui, klientų pritraukimui ir reputacijos apsaugai.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #07090E;
+      --card-bg: #0D111A;
+      --card-inner: #121824;
+      --card-border: #1E2638;
+      --card-border-hover: #334155;
+      --primary: #10B981;
+      --primary-glow: rgba(16, 185, 129, 0.18);
+      --primary-dark: #059669;
+      --accent-blue: #3B82F6;
+      --accent-purple: #A855F7;
+      --accent-amber: #F59E0B;
+      --text: #F8FAFC;
+      --text-muted: #94A3B8;
+      --text-dim: #64748B;
+      --radius-lg: 18px;
+      --radius-md: 12px;
+      --radius-sm: 8px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
+    body { background-color: var(--bg); color: var(--text); line-height: 1.6; overflow-x: hidden; }
+    h1, h2, h3, h4, .font-display { font-family: 'Manrope', sans-serif; }
+
+    /* Layout & Containers */
+    .container { max-width: 1240px; margin: 0 auto; padding: 0 24px; }
+    .section-space { padding: 90px 0; }
+
+    /* Navigation Bar */
+    header {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(7, 9, 14, 0.85); backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--card-border);
+    }
+    .nav-wrap { display: flex; justify-content: space-between; align-items: center; height: 80px; }
+    .brand-logo { display: flex; align-items: center; gap: 12px; text-decoration: none; color: var(--text); }
+    .brand-icon {
+      width: 40px; height: 40px; border-radius: 10px;
+      background: linear-gradient(135deg, #10B981 0%, #064E3B 100%);
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 20px; color: white;
+      box-shadow: 0 0 18px var(--primary-glow);
+    }
+    .brand-name { font-size: 20px; font-weight: 800; letter-spacing: -0.5px; }
+    .brand-name span { color: var(--primary); }
+    .nav-links { display: flex; gap: 32px; list-style: none; font-size: 14px; font-weight: 600; }
+    .nav-links a { color: var(--text-muted); text-decoration: none; transition: 0.2s; }
+    .nav-links a:hover, .nav-links a.active { color: var(--text); }
+    .btn-nav {
+      background: rgba(16, 185, 129, 0.12); color: var(--primary);
+      border: 1px solid rgba(16, 185, 129, 0.35); padding: 10px 20px;
+      border-radius: var(--radius-sm); font-size: 13.5px; font-weight: 700;
+      text-decoration: none; transition: 0.2s; display: inline-flex; align-items: center; gap: 8px;
+    }
+    .btn-nav:hover { background: var(--primary); color: #07090E; }
+
+    /* Hero Section */
+    .hero { padding: 90px 0 60px; text-align: center; position: relative; }
+    .hero::before {
+      content: ''; position: absolute; top: -100px; left: 50%; transform: translateX(-50%);
+      width: 600px; height: 400px; background: radial-gradient(circle, rgba(16, 185, 129, 0.12) 0%, transparent 70%);
+      pointer-events: none; z-index: -1;
+    }
+    .badge-pill {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25);
+      padding: 6px 16px; border-radius: 30px; font-size: 12.5px; font-weight: 700;
+      color: var(--primary); margin-bottom: 24px;
+    }
+    .pulse-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--primary); box-shadow: 0 0 10px var(--primary); }
+    .hero h1 { font-size: clamp(38px, 4.5vw, 58px); font-weight: 800; line-height: 1.18; letter-spacing: -1.5px; max-width: 950px; margin: 0 auto; }
+    .hero h1 span { background: linear-gradient(135deg, #F8FAFC 30%, #94A3B8 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .hero h1 .highlight { background: linear-gradient(135deg, #10B981 0%, #34D399 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .hero p { font-size: 17px; color: var(--text-muted); max-width: 780px; margin: 24px auto 36px; line-height: 1.7; }
+    
+    .hero-meta-bar {
+      display: flex; justify-content: center; gap: 32px; flex-wrap: wrap;
+      padding-top: 24px; border-top: 1px solid var(--card-border); max-width: 800px; margin: 0 auto;
+      font-size: 13px; color: var(--text-dim);
+    }
+    .hero-meta-item { display: flex; align-items: center; gap: 8px; }
+    .hero-meta-item strong { color: var(--text); }
+
+    /* Flagship Product Showcase (ReputationPro) */
+    .flagship-box {
+      background: linear-gradient(145deg, #0D131F 0%, #090D15 100%);
+      border: 1px solid rgba(16, 185, 129, 0.35); border-radius: var(--radius-lg);
+      padding: 48px; margin-bottom: 80px; position: relative; overflow: hidden;
+      box-shadow: 0 20px 60px -20px rgba(16, 185, 129, 0.15);
+    }
+    .flagship-box::after {
+      content: ''; position: absolute; top: 0; right: 0; width: 300px; height: 300px;
+      background: radial-gradient(circle, rgba(16, 185, 129, 0.08) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .flagship-tag {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(16, 185, 129, 0.15); color: #34D399;
+      border: 1px solid rgba(16, 185, 129, 0.4); padding: 5px 14px;
+      border-radius: 20px; font-size: 11.5px; font-weight: 800; letter-spacing: 0.5px;
+      margin-bottom: 20px;
+    }
+    .flagship-grid { display: grid; grid-template-columns: 1.15fr 1fr; gap: 50px; align-items: center; }
+    .flagship-content h2 { font-size: 36px; font-weight: 800; letter-spacing: -1px; line-height: 1.25; margin-bottom: 16px; }
+    .flagship-url-pill {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(255,255,255,0.04); border: 1px solid var(--card-border);
+      padding: 6px 14px; border-radius: 8px; font-size: 13px; font-family: monospace;
+      color: #60A5FA; text-decoration: none; margin-bottom: 20px; transition: 0.2s;
+    }
+    .flagship-url-pill:hover { border-color: var(--accent-blue); background: rgba(59, 130, 246, 0.1); }
+    .flagship-desc { font-size: 15px; color: var(--text-muted); line-height: 1.7; margin-bottom: 28px; }
+
+    .workflow-mini-steps { display: flex; flex-direction: column; gap: 14px; margin-bottom: 32px; }
+    .workflow-mini-step {
+      display: flex; gap: 14px; align-items: flex-start;
+      background: rgba(255,255,255,0.02); border: 1px solid var(--card-border);
+      padding: 14px 18px; border-radius: var(--radius-md); font-size: 13.5px;
+    }
+    .step-number {
+      width: 26px; height: 26px; border-radius: 6px; background: rgba(16, 185, 129, 0.15);
+      color: var(--primary); display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 12px; flex-shrink: 0;
+    }
+    .workflow-mini-step strong { display: block; color: var(--text); margin-bottom: 2px; }
+    .workflow-mini-step p { color: var(--text-muted); font-size: 12.5px; margin: 0; }
+
+    .flagship-actions { display: flex; gap: 16px; flex-wrap: wrap; }
+    .btn-main {
+      background: var(--primary); color: #07090E; font-weight: 800; font-size: 14px;
+      padding: 13px 26px; border-radius: var(--radius-sm); text-decoration: none;
+      display: inline-flex; align-items: center; gap: 8px; transition: 0.2s;
+    }
+    .btn-main:hover { background: #34D399; transform: translateY(-2px); }
+    .btn-ghost {
+      background: transparent; color: var(--text); font-weight: 700; font-size: 14px;
+      padding: 13px 22px; border-radius: var(--radius-sm); border: 1px solid var(--card-border);
+      text-decoration: none; display: inline-flex; align-items: center; gap: 8px; transition: 0.2s;
+    }
+    .btn-ghost:hover { background: rgba(255,255,255,0.05); border-color: var(--card-border-hover); }
+
+    /* Interactive Preview Mockup Box */
+    .flagship-mockup {
+      background: var(--card-inner); border: 1px solid var(--card-border);
+      border-radius: var(--radius-md); padding: 28px; position: relative;
+    }
+    .mockup-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 14px; border-bottom: 1px solid var(--card-border); }
+    .mockup-live-status { display: flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 700; color: var(--primary); }
+    .mockup-screen {
+      background: #080C14; border: 1px solid var(--card-border); border-radius: 12px;
+      padding: 24px; text-align: center; margin-bottom: 20px;
+    }
+    .mockup-stars { display: flex; justify-content: center; gap: 8px; color: #F59E0B; margin: 14px 0; font-size: 24px; }
+    .mockup-split {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; text-align: left;
+    }
+    .split-col {
+      padding: 12px; border-radius: 8px; font-size: 11.5px;
+    }
+    .split-positive { background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.2); }
+    .split-positive strong { color: #34D399; display: block; margin-bottom: 4px; }
+    .split-negative { background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.2); }
+    .split-negative strong { color: #FBBF24; display: block; margin-bottom: 4px; }
+
+    /* Category & Grid Section */
+    .section-title-wrap { text-align: center; max-width: 700px; margin: 0 auto 50px; }
+    .section-title-wrap h2 { font-size: 36px; font-weight: 800; letter-spacing: -1px; margin-bottom: 14px; }
+    .section-title-wrap p { font-size: 15px; color: var(--text-muted); line-height: 1.7; }
+
+    .tools-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 28px; }
+    .tool-card {
+      background: var(--card-bg); border: 1px solid var(--card-border);
+      border-radius: var(--radius-lg); padding: 32px 28px; display: flex;
+      flex-direction: column; transition: transform 0.2s, border-color 0.2s;
+      position: relative;
+    }
+    .tool-card:hover { transform: translateY(-4px); border-color: var(--card-border-hover); }
+    
+    .tool-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 18px; }
+    .tool-icon-box {
+      width: 48px; height: 48px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center; font-size: 22px;
+    }
+    .tool-status-tag {
+      font-size: 10.5px; font-weight: 700; padding: 4px 10px; border-radius: 20px; letter-spacing: 0.5px;
+    }
+    .status-active { background: rgba(16, 185, 129, 0.15); color: #34D399; border: 1px solid rgba(16, 185, 129, 0.3); }
+    .status-pipeline { background: rgba(59, 130, 246, 0.12); color: #60A5FA; border: 1px solid rgba(59, 130, 246, 0.3); }
+    .status-spec { background: rgba(168, 85, 247, 0.12); color: #C084FC; border: 1px solid rgba(168, 85, 247, 0.3); }
+
+    .tool-card h3 { font-size: 20px; font-weight: 800; margin-bottom: 6px; }
+    .tool-subdomain { font-family: monospace; font-size: 12px; color: var(--text-dim); margin-bottom: 14px; }
+    .tool-desc { font-size: 13.5px; color: var(--text-muted); line-height: 1.65; margin-bottom: 20px; flex: 1; }
+
+    .tool-feature-list { list-style: none; margin-bottom: 24px; padding-top: 14px; border-top: 1px solid var(--card-border); display: flex; flex-direction: column; gap: 8px; font-size: 12.5px; color: var(--text-muted); }
+    .tool-feature-list li { display: flex; align-items: center; gap: 8px; }
+    .tool-feature-list li span.dot { width: 5px; height: 5px; border-radius: 50%; background: var(--primary); }
+
+    .tool-footer {
+      display: flex; justify-content: space-between; align-items: center;
+      padding-top: 18px; border-top: 1px solid var(--card-border);
+    }
+    .tool-price { font-size: 13px; font-weight: 700; color: var(--text); }
+    .tool-price span { font-size: 11px; font-weight: 400; color: var(--text-dim); }
+    .tool-btn {
+      color: var(--primary); font-size: 13px; font-weight: 700; text-decoration: none;
+      display: inline-flex; align-items: center; gap: 6px; transition: 0.2s;
+    }
+    .tool-btn:hover { text-decoration: underline; gap: 9px; }
+
+    /* Ecosystem Value Proposition */
+    .ecosystem-banner {
+      background: linear-gradient(135deg, #0B101B 0%, #10192A 100%);
+      border: 1px solid var(--card-border); border-radius: var(--radius-lg);
+      padding: 60px 50px; margin-top: 80px; display: grid; grid-template-columns: 1fr 1fr; gap: 50px; align-items: center;
+    }
+    .ecosystem-banner h2 { font-size: 32px; font-weight: 800; letter-spacing: -0.8px; margin-bottom: 16px; }
+    .ecosystem-banner p { font-size: 14.5px; color: var(--text-muted); line-height: 1.7; }
+    .ecosystem-benefits { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .benefit-item { background: rgba(255,255,255,0.02); border: 1px solid var(--card-border); border-radius: var(--radius-md); padding: 18px; }
+    .benefit-item h4 { font-size: 14px; font-weight: 700; margin-bottom: 6px; color: var(--text); }
+    .benefit-item p { font-size: 12px; color: var(--text-dim); margin: 0; line-height: 1.5; }
+
+    /* Consultation CTA Section */
+    .cta-banner {
+      background: radial-gradient(circle at 50% 50%, rgba(16, 185, 129, 0.12) 0%, transparent 80%), #0D111A;
+      border: 1px solid rgba(16, 185, 129, 0.25); border-radius: var(--radius-lg);
+      padding: 70px 40px; text-align: center; margin-top: 90px;
+    }
+    .cta-banner h2 { font-size: 38px; font-weight: 800; margin-bottom: 16px; letter-spacing: -1px; }
+    .cta-banner p { font-size: 16px; color: var(--text-muted); max-width: 620px; margin: 0 auto 32px; line-height: 1.7; }
+    .cta-form-actions { display: flex; justify-content: center; gap: 16px; flex-wrap: wrap; }
+
+    /* Footer */
+    footer {
+      border-top: 1px solid var(--card-border); padding: 60px 0 30px; margin-top: 100px;
+      font-size: 13px; color: var(--text-dim);
+    }
+    .footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1.5fr; gap: 40px; margin-bottom: 40px; }
+    .footer-col h5 { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .footer-links { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+    .footer-links a { color: var(--text-dim); text-decoration: none; transition: 0.2s; }
+    .footer-links a:hover { color: var(--text); }
+    .footer-bottom { display: flex; justify-content: space-between; align-items: center; padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.05); font-size: 12px; }
+
+    /* Responsive */
+    @media (max-width: 990px) {
+      .flagship-grid, .ecosystem-banner, .footer-grid { grid-template-columns: 1fr; gap: 35px; }
+      .tools-grid { grid-template-columns: 1fr; }
+      .nav-links { display: none; }
+      .hero h1 { font-size: 34px; }
+      .flagship-box { padding: 30px; }
+    }
+
+    /* Verslomatika design system */
+    :root { --bg:#fff; --card-bg:#fff; --card-inner:#f8fafc; --card-border:#e2e8f0; --card-border-hover:#a89af5; --primary:#5636e8; --primary-dark:#4324d6; --primary-glow:rgba(86,54,232,.12); --text:#0f172a; --text-muted:#475569; --text-dim:#64748b; }
+    header { background:rgba(255,255,255,.96); }
+    .brand-icon { background:transparent; box-shadow:none; color:#0f172a; }
+    .hero::before { background:radial-gradient(circle,rgba(86,54,232,.10),transparent 70%); }
+    .hero h1 span,.hero h1 .highlight { background:none; -webkit-text-fill-color:initial; color:var(--text); }
+    .hero h1 .highlight { color:var(--primary); }
+    .flagship-box { background:#f5f3ff; border-color:#ded8fd; box-shadow:none; }
+    .flagship-tag,.status-active { color:#157a57; background:#eaf7ef; border-color:#b7e3c8; }
+    .status-pipeline,.status-spec { color:#5636e8; background:#f5f3ff; border-color:#ded8fd; }
+    .flagship-url-pill { color:#4324d6; background:#fff; }
+    .workflow-mini-step,.benefit-item { background:#fff; }
+    .btn-main { color:white; } .btn-main:hover { background:#4324d6; color:white; }
+    .btn-nav { color:#4324d6; background:#f5f3ff; border-color:#ded8fd; }
+    .btn-nav:hover { color:white; background:#5636e8; }
+    .mockup-screen { background:white; } .split-positive strong { color:#157a57; } .split-negative strong { color:#865600; }
+    .ecosystem-banner { background:#f8fafc; }
+    .cta-banner { background:#f5f3ff; border-color:#ded8fd; }
+    .footer-bottom { border-color:#e2e8f0; }
+    :focus-visible { outline:3px solid #5636e8; outline-offset:3px; }
+    ::selection { background:#ded8fd; color:#0f172a; }
+    @media(max-width:560px) { .container { padding-left:18px; padding-right:18px; } .flagship-box,.ecosystem-banner,.cta-banner { padding:26px 20px; } .ecosystem-benefits,.mockup-split { grid-template-columns:1fr; } .mockup-top { flex-wrap:wrap; gap:8px; } .flagship-content h2,.section-title-wrap h2,.cta-banner h2 { font-size:28px; } .tool-footer { gap:12px; flex-wrap:wrap; } }
+
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header>
+    <div class="container nav-wrap">
+      <a href="https://verslomatika.lt" class="brand-logo">
+        <div class="brand-icon"><svg width="28" height="29" viewBox="0 0 31 32" aria-hidden="true"><path d="M3 6L14 16 3 26M14 16L24 6M14 16L24 26" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="25" cy="6" r="3.5" fill="#5636e8"/><circle cx="25" cy="26" r="3.5" fill="#157a57"/></svg></div>
+        <div class="brand-name">Verslo<span>matika</span></div>
+      </a>
+      <ul class="nav-links">
+        <li><a href="https://verslomatika.lt">Pagrindinis</a></li>
+        <li><a href="#irankiai" class="active">Verslo Augimo Įrankiai</a></li>
+        <li><a href="https://reputacija.verslomatika.lt" target="_blank" rel="noopener noreferrer">ReputationPro ↗</a></li>
+        <li><a href="#ekosistema">Holdingo Modelis</a></li>
+        <li><a href="#kontaktai">Kontaktai</a></li>
+      </ul>
+      <a href="mailto:tomas@verslomatika.lt" class="btn-nav">
+        <span>Susisiekti su Holdingu</span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </a>
+    </div>
+  </header>
+
+  <main>
+    <!-- Hero Section -->
+    <section class="hero container">
+      <div class="badge-pill">
+        <div class="pulse-dot"></div>
+        <span>VERSLOMATIKA AI HOLDINGO EKOSISTEMA</span>
+      </div>
+      <h1>
+        Specializuoti Verslo Augimo Įrankiai.<br>
+        <span class="highlight">Idėjos augimui.</span> <span>Sprendimai Jūsų verslui.</span>
+      </h1>
+      <p>
+        Atraskite ReputationPro demonstraciją ir susipažinkite su planuojamais verslo automatizavimo įrankiais. Dėl jų galimybių ir prieinamumo kviečiame susisiekti.
+      </p>
+
+      <div class="hero-meta-bar">
+        <div class="hero-meta-item">
+          <span>🏢 Operatorius:</span> <strong>MB Pinet / Verslomatika</strong>
+        </div>
+        <div class="hero-meta-item">
+          <span>🔒 Saugumas:</span> <strong>HTTPS per Cloudflare</strong>
+        </div>
+        <div class="hero-meta-item">
+          <span>🇱🇹 Rinka:</span> <strong>100% Pritaikyta Lietuvos Verslams</strong>
+        </div>
+        <div class="hero-meta-item">
+          <span>⚡ Būsena:</span> <strong>ReputationPro demonstracija</strong>
+        </div>
+      </div>
+    </section>
+
+    <!-- 1. VĖLIAVNEŠYS: REPUTATIONPRO SAAS -->
+    <section class="container" style="padding-top: 20px;">
+      <div class="flagship-box">
+        <div class="flagship-grid">
+          <div class="flagship-content">
+            <div class="flagship-tag">
+              <span>● REPUTATIONPRO DEMONSTRACIJA</span>
+            </div>
+            <h2>ReputationPro • klientų atsiliepimų demonstracija</h2>
+            <a href="https://reputacija.verslomatika.lt" class="flagship-url-pill" target="_blank" rel="noopener noreferrer">
+              <span>https://reputacija.verslomatika.lt</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3"/></svg>
+            </a>
+            <p class="flagship-desc">
+              Demonstracija parodo atsiliepimų formą ir vadovo skydelį. Sprendimas dar rengiamas naudojimui. Google taisyklės neleidžia atrankinio viešų atsiliepimų prašymo pagal įvertinimą, todėl šis demonstracinis būdas turi būti pakeistas prieš naudojimą.
+            </p>
+
+            <div class="workflow-mini-steps">
+              <div class="workflow-mini-step">
+                <div class="step-number">1</div>
+                <div>
+                  <strong>Paciento atsiliepimo puslapis</strong>
+                  <p>Atsiliepimo puslapį galima atverti telefone per nuorodą.</p>
+                </div>
+              </div>
+              <div class="workflow-mini-step">
+                <div class="step-number">2</div>
+                <div>
+                  <strong>Išmanusis srauto atskyrimas (Smart Review Gate)</strong>
+                  <p>Pasirinkus 4–5★ -> nukreipiama į Google Maps; pasirinkus 1–3★ -> atveriama privati forma vadovui.</p>
+                </div>
+              </div>
+              <div class="workflow-mini-step">
+                <div class="step-number">3</div>
+                <div>
+                  <strong>Pastabos vadovo skydelyje</strong>
+                  <p>Demonstraciniame skydelyje galima peržiūrėti privačius atsiliepimus.</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="flagship-actions">
+              <a href="https://reputacija.verslomatika.lt" class="btn-main" target="_blank" rel="noopener noreferrer">
+                <span>Atverti ReputationPro Portalą</span>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+              </a>
+              <a href="https://reputacija.verslomatika.lt/r/vilniaus-denta" class="btn-ghost" target="_blank" rel="noopener noreferrer">
+                <span>Išbandyti paciento kelią gyvai</span>
+              </a>
+              <a href="https://reputacija.verslomatika.lt/admin" class="btn-ghost" target="_blank" rel="noopener noreferrer">
+                <span>Vadovo pultas (/admin)</span>
+              </a>
+            </div>
+          </div>
+
+          <!-- Visual Demonstration Mockup -->
+          <div class="flagship-mockup">
+            <div class="mockup-top">
+              <div class="mockup-live-status">
+                <span class="pulse-dot"></span>
+                <span>DEMONSTRACIJOS SCHEMA</span>
+              </div>
+              <span style="font-size: 11px; color: var(--text-dim); font-family: monospace;">reputacija.verslomatika.lt</span>
+            </div>
+
+            <div class="mockup-screen">
+              <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-dim);">Paciento langas telefone</span>
+              <h4 style="font-size: 18px; margin-top: 6px;">Kaip praėjo Jūsų vizitas?</h4>
+              <div class="mockup-stars">★★★★★</div>
+              <p style="font-size: 11.5px; color: var(--text-muted);">Vienas paspaudimas nukreipia srautą:</p>
+
+              <div class="mockup-split">
+                <div class="split-col split-positive">
+                  <strong>4–5 ★ Teigiamas</strong>
+                  <span>Tiesioginis nukreipimas į Google Maps viešam įvertinimui.</span>
+                </div>
+                <div class="split-col split-negative">
+                  <strong>1–3 ★ Neigiamas</strong>
+                  <span>Atveriama privataus pranešimo forma; viešą atsiliepimą pacientas taip pat gali palikti.</span>
+                </div>
+              </div>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: var(--text-dim); padding-top: 8px;">
+              <span>Planuojamas pasiūlymas: <strong>49 € / mėn.</strong></span>
+              <span style="color: var(--primary);">Mokėjimai dar neaktyvūs</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. KITI HOLDINGO ĮRANKIAI -->
+    <section id="irankiai" class="container section-space" style="padding-top: 0;">
+      <div class="section-title-wrap">
+        <div class="badge-pill">
+          <span>PORTFELIO KATALOGAS</span>
+        </div>
+        <h2>Visi Holdingo Verslo Augimo Įrankiai</h2>
+        <p>Žemiau pateiktos kuriamų ir svarstomų įrankių idėjos. Funkcijos, kainos ir paleidimo datos dar derinamos.</p>
+      </div>
+
+      <div class="tools-grid">
+
+        <!-- Tool 1: ReviveLeads AI -->
+        <div class="tool-card">
+          <div class="tool-header">
+            <div class="tool-icon-box" style="background: rgba(239, 68, 68, 0.12); color: #F87171;">🔥</div>
+            <span class="tool-status-tag status-spec">PLANUOJAMA</span>
+          </div>
+          <h3>ReviveLeads AI</h3>
+          <div class="tool-subdomain">Idėja / kūrimo etapas</div>
+          <p class="tool-desc">
+            Mirusių CRM kontaktų bazių atgaivinimas per 2-way AI SMS pokalbių variklį. Planuojama galimybė pakviesti buvusius klientus sugrįžti ir registruoti vizitus.
+          </p>
+          <ul class="tool-feature-list">
+            <li><span class="dot"></span> Pritaikyta autoservisams (sezoninė priežiūra)</li>
+            <li><span class="dot"></span> Odontologijai (profilaktinis higienos kvietimas)</li>
+            <li><span class="dot"></span> Planuojamas kontaktų automatizavimas</li>
+          </ul>
+          <div class="tool-footer">
+            <div class="tool-price">Sąlygos derinamos</div>
+            <a href="mailto:tomas@verslomatika.lt?subject=ReviveLeads%20Uzklausa" class="tool-btn">Teirautis ↗</a>
+          </div>
+        </div>
+
+        <!-- Tool 2: AccessGuard AI -->
+        <div class="tool-card">
+          <div class="tool-header">
+            <div class="tool-icon-box" style="background: rgba(59, 130, 246, 0.12); color: #60A5FA;">🛡️</div>
+            <span class="tool-status-tag status-spec">PLANUOJAMA</span>
+          </div>
+          <h3>AccessGuard AI</h3>
+          <div class="tool-subdomain">Idėja / kūrimo etapas</div>
+          <p class="tool-desc">
+            Europos prieinamumo akto (EAA) ir WCAG 2.1 AA audito ir prieinamumo gerinimo įrankio idėja el. parduotuvėms ir verslo svetainėms.
+          </p>
+          <ul class="tool-feature-list">
+            <li><span class="dot"></span> 1 kodo eilutės JavaScript integracija</li>
+            <li><span class="dot"></span> Prieinamumo pultas regos ir motorikos negalią turintiems</li>
+            <li><span class="dot"></span> Atitiktį ir teisinius reikalavimus būtina įvertinti atskirai</li>
+          </ul>
+          <div class="tool-footer">
+            <div class="tool-price">Sąlygos derinamos</div>
+            <a href="mailto:tomas@verslomatika.lt?subject=AccessGuard%20Uzklausa" class="tool-btn">Teirautis ↗</a>
+          </div>
+        </div>
+
+        <!-- Tool 3: MeistraiPRO Directory -->
+        <div class="tool-card">
+          <div class="tool-header">
+            <div class="tool-icon-box" style="background: rgba(245, 158, 11, 0.12); color: #FBBF24;">🔨</div>
+            <span class="tool-status-tag status-spec">PLANUOJAMA</span>
+          </div>
+          <h3>MeistraiPRO Katalogas</h3>
+          <div class="tool-subdomain">Idėja / kūrimo etapas</div>
+          <p class="tool-desc">
+            Lietuvos meistrų ir paslaugų teikėjų portalas su automatinėmis SEO puslapių generacijomis pagal miestus ir tiesioginiu WhatsApp užsakymų persiuntimu.
+          </p>
+          <ul class="tool-feature-list">
+            <li><span class="dot"></span> Santechnikai, elektrikai, apdailos meistrai</li>
+            <li><span class="dot"></span> Momentinis užklausos siuntimas meistrui į WhatsApp</li>
+            <li><span class="dot"></span> „Claim Profile“ ir prenumeratos modelis</li>
+          </ul>
+          <div class="tool-footer">
+            <div class="tool-price">Sąlygos derinamos</div>
+            <a href="mailto:tomas@verslomatika.lt?subject=MeistraiPRO%20Uzklausa" class="tool-btn">Gauti informaciją ↗</a>
+          </div>
+        </div>
+
+        <!-- Tool 4: RecruitFilter AI -->
+        <div class="tool-card">
+          <div class="tool-header">
+            <div class="tool-icon-box" style="background: rgba(168, 85, 247, 0.12); color: #C084FC;">⚡</div>
+            <span class="tool-status-tag status-spec">PLANUOJAMA</span>
+          </div>
+          <h3>RecruitFilter AI</h3>
+          <div class="tool-subdomain">Idėja / kūrimo etapas</div>
+          <p class="tool-desc">
+            Pirmosios grandies kandidatų atrankos asistentas logistikos, gamybos ir prekybos įmonėms. Užduoda 4 esminius klausimus ir atrenka tik tinkamus.
+          </p>
+          <ul class="tool-feature-list">
+            <li><span class="dot"></span> Pokalbis per WhatsApp arba greitąją formą</li>
+            <li><span class="dot"></span> Automatinis vairuotojų, operatorių, pakuotojų sijojimas</li>
+            <li><span class="dot"></span> Vadovas gauna tik TOP 5 patikrintus kandidatus</li>
+          </ul>
+          <div class="tool-footer">
+            <div class="tool-price">Sąlygos derinamos</div>
+            <a href="mailto:tomas@verslomatika.lt?subject=RecruitFilter%20Uzklausa" class="tool-btn">Teirautis ↗</a>
+          </div>
+        </div>
+
+        <!-- Tool 5: InboundDesk AI -->
+        <div class="tool-card">
+          <div class="tool-header">
+            <div class="tool-icon-box" style="background: rgba(16, 185, 129, 0.12); color: #34D399;">📞</div>
+            <span class="tool-status-tag status-spec">PLANUOJAMA</span>
+          </div>
+          <h3>InboundDesk AI</h3>
+          <div class="tool-subdomain">Idėja / kūrimo etapas</div>
+          <p class="tool-desc">
+            24/7 dirbtinio intelekto registratūra. Priima skambučius ir SMS po darbo valandų, atsako į standartinius klausimus ir užrašo klientą į laisvą laiką.
+          </p>
+          <ul class="tool-feature-list">
+            <li><span class="dot"></span> Planuojamas atsakymas ne darbo metu</li>
+            <li><span class="dot"></span> Kalendoriaus sinchronizacija (Google / Outlook)</li>
+            <li><span class="dot"></span> Sklandi lietuvių kalbos balso sintezė</li>
+          </ul>
+          <div class="tool-footer">
+            <div class="tool-price">Sąlygos derinamos</div>
+            <a href="mailto:tomas@verslomatika.lt?subject=InboundDesk%20Uzklausa" class="tool-btn">Teirautis ↗</a>
+          </div>
+        </div>
+
+        <!-- Tool 6: InvoiceChaser AI -->
+        <div class="tool-card">
+          <div class="tool-header">
+            <div class="tool-icon-box" style="background: rgba(236, 72, 153, 0.12); color: #F472B6;">📊</div>
+            <span class="tool-status-tag status-spec">PLANUOJAMA</span>
+          </div>
+          <h3>InvoiceChaser AI</h3>
+          <div class="tool-subdomain">Idėja / kūrimo etapas</div>
+          <p class="tool-desc">
+            Automatinis, diplomatiškas vėluojančių B2B sąskaitų priminimo variklis didmenininkams ir rangovams. Planuojama padėti sekti vėluojančius mokėjimus.
+          </p>
+          <ul class="tool-feature-list">
+            <li><span class="dot"></span> 3 d., 7 d., 14 d. protingos el. pašto sekos</li>
+            <li><span class="dot"></span> Automatiškai prisegama originali sąskaita PDF</li>
+            <li><span class="dot"></span> Mandagūs priminimai klientams</li>
+          </ul>
+          <div class="tool-footer">
+            <div class="tool-price">Sąlygos derinamos</div>
+            <a href="mailto:tomas@verslomatika.lt?subject=InvoiceChaser%20Uzklausa" class="tool-btn">Sumažinti skolas ↗</a>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- 3. EKOSISTEMOS PRANAŠUMAI -->
+    <section id="ekosistema" class="container">
+      <div class="ecosystem-banner">
+        <div>
+          <div class="badge-pill">
+            <span>KODĖL VERSLOMATIKOS HOLDINGAS?</span>
+          </div>
+          <h2>Viena Ekosistema. Visi Įrankiai Jūsų Verslui.</h2>
+          <p>
+            Vietoj dešimčių nesusijusių tiekėjų, užsienio brangių SaaS platformų ir nesusikalbančių sistemų – Verslomatika sukuria vientisą, lietuvišką verslo valdymo ir automatizavimo branduolį.
+          </p>
+        </div>
+
+        <div class="ecosystem-benefits">
+          <div class="benefit-item">
+            <h4>📄 Aiškios sąlygos</h4>
+            <p>Dėl paslaugų teikimo ir atsiskaitymo sąlygų susisiekite su MB Pinet.</p>
+          </div>
+          <div class="benefit-item">
+            <h4>🛡️ Cloudflare Apsauga</h4>
+            <p>Šis puslapis pasiekiamas per HTTPS naudojant Cloudflare.</p>
+          </div>
+          <div class="benefit-item">
+            <h4>🇱🇹 100% Lietuviškumas</h4>
+            <p>Įrankiai pristatomi lietuvių kalba ir orientuojami į Lietuvos verslus.</p>
+          </div>
+          <div class="benefit-item">
+            <h4>⚡ Tiesioginis Ryšys</h4>
+            <p>Dėl įrankių ir individualių sprendimų galite parašyti el. paštu.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. BAIGIAMASIS CTA -->
+    <section id="kontaktai" class="container">
+      <div class="cta-banner">
+        <h2>Reikia individualaus sprendimo Jūsų įmonei?</h2>
+        <p>
+          Papasakokite apie savo veiklą ir aptarkime galimus automatizavimo sprendimus.
+        </p>
+        <div class="cta-form-actions">
+          <a href="mailto:tomas@verslomatika.lt?subject=Holdingo%20Konsultacija" class="btn-main">
+            <span>Parašyti vadovui: tomas@verslomatika.lt</span>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </a>
+          <a href="https://reputacija.verslomatika.lt" class="btn-ghost" target="_blank" rel="noopener noreferrer">
+            <span>Išbandyti ReputationPro gyvai</span>
+          </a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-col">
+          <div class="brand-logo" style="margin-bottom: 14px;">
+            <div class="brand-icon"><svg width="28" height="29" viewBox="0 0 31 32" aria-hidden="true"><path d="M3 6L14 16 3 26M14 16L24 6M14 16L24 26" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="25" cy="6" r="3.5" fill="#5636e8"/><circle cx="25" cy="26" r="3.5" fill="#157a57"/></svg></div>
+            <div class="brand-name" style="font-size: 18px;">Verslo<span>matika</span></div>
+          </div>
+          <p style="font-size: 13px; line-height: 1.6; margin-bottom: 14px;">
+            Dirbtinio intelekto agentų ir autonominių mikro-SaaS produktų holdingas. Padeda Lietuvos įmonėms augti, saugoti reputaciją ir automatizuoti rutininius darbus.
+          </p>
+          <p style="font-size: 12px; color: var(--text-dim);">Operatorius: MB Pinet • Vilnius, Lietuva</p>
+        </div>
+
+        <div class="footer-col">
+          <h5>ReputationPro demonstracija</h5>
+          <ul class="footer-links">
+            <li><a href="https://reputacija.verslomatika.lt" target="_blank" rel="noopener noreferrer">ReputationPro 5★</a></li>
+            <li><a href="https://reputacija.verslomatika.lt/r/vilniaus-denta" target="_blank" rel="noopener noreferrer">Paciento langas</a></li>
+            <li><a href="https://reputacija.verslomatika.lt/admin" target="_blank" rel="noopener noreferrer">Vadovo skydelis</a></li>
+            <li><a href="https://reputacija.verslomatika.lt/checkout" target="_blank" rel="noopener noreferrer">Mokėjimų būsena</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h5>Plėtros Produktai</h5>
+          <ul class="footer-links">
+            <li><a href="#irankiai">ReviveLeads AI</a></li>
+            <li><a href="#irankiai">AccessGuard AI</a></li>
+            <li><a href="#irankiai">MeistraiPRO</a></li>
+            <li><a href="#irankiai">RecruitFilter AI</a></li>
+            <li><a href="#irankiai">InboundDesk AI</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h5>Kontaktai ir Teisė</h5>
+          <ul class="footer-links">
+            <li><a href="mailto:tomas@verslomatika.lt">tomas@verslomatika.lt</a></li>
+            <li><a href="mailto:info@pinet.lt">info@pinet.lt</a></li>
+            <li><a href="https://verslomatika.lt">verslomatika.lt</a></li>
+            <li><span style="color: var(--text-dim);">Duomenų privatumas ir BDAR</span></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <span>© 2026 Verslomatika • MB Pinet Holding • Visos teisės saugomos.</span>
+        <span>Ryšys apsaugotas HTTPS</span>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>

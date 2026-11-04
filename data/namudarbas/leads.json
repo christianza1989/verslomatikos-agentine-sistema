@@ -1,0 +1,24 @@
+[
+  {
+    "id": "namudarbas-lead-01",
+    "name": "Baltic Horizon Partners",
+    "contact_person": "Marius Jankauskas",
+    "email": "marius@baltichorizon.example.com",
+    "phone": "+370 600 11223",
+    "market": "Lietuva (tėvai, globėjai ir 1-12 klasių mokiniai)",
+    "status": "ready_for_outreach",
+    "signal": "Aktyviai ieško kokybiškų sprendimų Švietimo technologijos (EdTech), AI mokytojas vaikams, mokymosi pagalba šeimai ir namų darbų asistentas srityje.",
+    "created_at": "2026-10-27T14:05:36.386553"
+  },
+  {
+    "id": "namudarbas-lead-02",
+    "name": "Nordic Solutions Oü",
+    "contact_person": "Erik Lindqvist",
+    "email": "erik@nordicsolutions.example.com",
+    "phone": "+372 555 99881",
+    "market": "Skandinavija / Baltija",
+    "status": "ready_for_outreach",
+    "signal": "Reikalingas patikimas tiesioginis tiekėjas su garantija.",
+    "created_at": "2026-10-27T14:05:36.386553"
+  }
+]

@@ -1,0 +1,30 @@
+// Run only on a temporary SQLite backup of the real DB, never on the live file.
+const assert=require('node:assert/strict');
+const path=require('node:path');
+const os=require('node:os');
+const {DatabaseSync}=require('node:sqlite');
+const {randomUUID,createHash}=require('node:crypto');
+const candidate=path.resolve(process.argv[2] || '');
+const allowed=path.resolve(os.tmpdir())+path.sep;
+if(!candidate.toLowerCase().startsWith(allowed.toLowerCase()) || !path.basename(candidate).startsWith('reputationpro-migration-check-')) throw new Error('Expected a dedicated temporary backup.');
+const before=new DatabaseSync(candidate,{readOnly:true});
+const original=before.prepare('SELECT * FROM internal_feedback ORDER BY id').all();
+const digest=rows=>createHash('sha256').update(JSON.stringify(rows)).digest('hex');
+const signature=digest(original), count=original.length;
+assert.equal(before.prepare('PRAGMA quick_check').get().quick_check,'ok');
+before.close();
+process.env.DATABASE_PATH=candidate;process.env.APP_URL='http://127.0.0.1:3001';process.env.DEMO_MODE='true';
+globalThis.AsyncLocalStorage=require('node:async_hooks').AsyncLocalStorage;
+const {NextRequest}=require('next/server');
+const handler=require('../.next-equal-choice-20261027/server/app/api/feedback/route.js').routeModule.userland.POST;
+const id=randomUUID();
+(async()=>{
+  const request=new NextRequest('http://127.0.0.1:3001/api/feedback',{method:'POST',headers:{'content-type':'application/json',origin:'http://127.0.0.1:3001',host:'127.0.0.1:3001'},body:JSON.stringify({slug:'vilniaus-denta',rating:5,submission_id:id,feedback_text:'Izoliuoto migracijos testo žinutė',consent:true})});
+  const response=await handler(request);assert.equal(response.status,201);
+  const after=new DatabaseSync(candidate,{readOnly:true});
+  const kept=after.prepare('SELECT * FROM internal_feedback WHERE id != ? ORDER BY id').all(id);
+  assert.equal(kept.length,count);assert.equal(digest(kept),signature);
+  assert.equal(after.prepare('PRAGMA integrity_check').get().integrity_check,'ok');
+  after.close();
+  console.log(`Migration of isolated SQLite backup passed; ${count} existing feedback records preserved and new 5-star feedback accepted.`);
+})().catch(error=>{console.error(error);process.exitCode=1;});

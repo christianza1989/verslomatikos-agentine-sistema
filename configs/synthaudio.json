@@ -1,0 +1,61 @@
+{
+  "business_id": "synthaudio",
+  "business_name": "SynthAudio AI (synthaudio.io)",
+  "website_url": "https://synthaudio.io",
+  "industry": "AI muzikos ir video automatizavimo platforma automatizuotiems 'Faceless' YouTube kanalams",
+  "business_type": "b2b_saas",
+  "target_market": "Globali rinka (JAV, UK, Vokietija, Europa, YouTube kūrėjai visame pasaulyje)",
+  "brand_voice": "Inovatyvus, technologiškas, orientuotas į YouTube kūrėjų pelną, automatizaciją ir pasyvias pajamas",
+  
+  "core_offer": {
+    "name": "SynthAudio Creator Automation Plan",
+    "price": 59.00,
+    "currency": "USD",
+    "specs": "Pilna 'faceless' YouTube kanalo automatizacija: Suno muzikos generavimas, Ideogram 4K viršeliai, Gemini SEO pavadinimai ir aprašymai, automatinis MP4 montavimas ir tiesioginis publikavimas į YouTube per API pagal protingą tvarkaraštį. Taip pat apima Stem splitting ir Cover Studio.",
+    "supplier_cost": 6.50
+  },
+
+  "pricing_tiers": [
+    {
+      "tier": "Starter",
+      "price": 29.00,
+      "features": "Rankinis generavimas, 50 takelių/mėn., 4K viršeliai, eksportas į MP4"
+    },
+    {
+      "tier": "Pro Automation",
+      "price": 59.00,
+      "features": "Pilnas autopilotas: automatinis YouTube kanalo pildymas 3-5 k./sav., Suno + Ideogram + Gemini integracija, komercinė licencija"
+    },
+    {
+      "tier": "Agency / Multi-Channel",
+      "price": 149.00,
+      "features": "Iki 5 atskirų YouTube kanalų valdymas autopilotu (Lofi, Meditation, Sleep Sounds, Synthwave, Study Music), prioritetinis renderinimas"
+    }
+  ],
+
+  "target_audiences": [
+    {
+      "name": "Faceless YouTube kanalų savininkai ir operatoriai",
+      "pain_point": "Valandų valandas trunka rankinis muzikos paieškos, licencijavimo, Canva viršelių ir montavimo procesas. Reikia kasdienio turinio be veido, kad kanalas augtų ir gautų AdSense pajamas."
+    },
+    {
+      "name": "Nišinės muzikos kanalų kūrėjai (Lo-Fi, Meditation, Sleep, Ambient)",
+      "pain_point": "Didelė kompozitorių ir grafikos dizainerių kaina; sunku išlaikyti nuolatinį 1-2 video per dieną kėlimo tempą."
+    },
+    {
+      "name": "Skaitmeninio marketingo ir pasyvių pajamų entuziastai",
+      "pain_point": "Nori paleisti monetizuotus YouTube kanalus nenaudodami savo balso ar veido ir automatizuoti 100% proceso."
+    }
+  ],
+
+  "objections_and_answers": {
+    "youtube_monetization": "Ar YouTube monetizuoja AI muziką? -> Taip, SynthAudio sugeneruoja visiškai unikalias garso kompozicijas su Suno modeliais ir unikaliais 4K viršeliais per Ideogram, todėl turinys atitinka YouTube partnerių programos originalumo reikalavimus ir negauna Content ID pretenzijų.",
+    "video_quality": "Kaip vyksta video paruošimas? -> Serveris debesyje automatiškai sujungia garso takelį su 4K vizualizacija į paruoštą MP4 failą ir per YouTube oficialų API įkelia tiesiai į jūsų kanalą su Gemini sugeneruotu SEO optimizuotu aprašymu ir žymomis."
+  },
+
+  "ai_sales_agent_strategy": {
+    "lead_source": "YouTube API kanalo skenavimas pagal raktažodžius 'lofi hip hop', 'deep sleep music', 'ambient study', 'binaural beats'",
+    "hook": "Radome jūsų kanalą, analizuojame jūsų kėlimo dažnumą ir paruošėme 3 nemokamus bandomuosius takelius jūsų kanalo stiliumi",
+    "call_to_action": "Aktyvuokite nemokamą 7 dienų autopilotą ir leiskite SynthAudio sukurti kitą jūsų kanalo hitą"
+  }
+}
