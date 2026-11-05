@@ -2,6 +2,9 @@
 
 Autonominė B2B klientų pritraukimo, Google Maps 5★ reputacijos valdymo ir šaltųjų el. pašto kampanijų sistema Lietuvos bei ES rinkoms.
 
+> 🤖 **Dirbtinio Intelekto / LLM Modelių Gidas:**  
+> Jei esate AI modelis ar agentas (Claude, GPT, Codex, Cursor, Devin), išsamią techninę atmintį, failų schemas, paleidimo komandas ir veiklos taisykles rasite faile **[AGENTS.md](AGENTS.md)**.
+
 ---
 
 ## 🏛️ Sistemos Architektūra
