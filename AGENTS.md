@@ -76,23 +76,27 @@ Agentai/
        │  Function: provision_lead_in_db() inserts record into apps/reputationpro/data/reputation.db
        │  Record created with: is_demo=1, subscription_status='demo_trial', unique slug
        ▼
-3. Outbound Email Generation (core/morning_campaign_runner.py)
-       │  Dispatches at 08:30 daily (max 25 emails/day, 40-65s jitter)
-       │  Generates 24/7 Edge URLs:
-       │    Preview:  https://verslomatika.lt/r/{slug}
-       │    Claim:    https://verslomatika.lt/checkout?slug={slug}&name={name}&email={email}
-       │    Tracking: https://verslomatika.lt/api/track/click?id={id}&to=...
-       │    Pixel:    https://verslomatika.lt/api/track/open?id={id}
-       │    QR Code:  https://verslomatika.lt/api/qr?slug={slug}
+3. Outbound Email Generation (core/morning_campaign_runner.py)   [rewritten 2026-11-05]
+       │  Dispatches at 08:30 daily (max 25 emails/day, 40-65s jitter). Preview without sending:
+       │    python core/morning_campaign_runner.py preview 5
+       │  Skips: campaign_suppressions (opt_out / needs_review / client), leads without a direct
+       │  Google review link (placeid). Issues a one-time claim token (core/claim_tokens.py).
+       │  ONE call-to-action, all URLs on the app host (this PC via Cloudflare Tunnel):
+       │    CTA:      https://reputacija.verslomatika.lt/api/track/click?id={lead_id}&to=<demo>
+       │    Demo:     https://reputacija.verslomatika.lt/r/{slug}?k={claim_token}
+       │    Claim:    https://reputacija.verslomatika.lt/aktyvuoti/{claim_token}
+       │    Pixel:    https://reputacija.verslomatika.lt/api/track/open?id={lead_id}
+       │  Never put email/name/PII into URLs.
        ▼
 4. Client Interaction Paths:
        ├─────────────────────────────────────────┬────────────────────────────────────────┐
        ▼                                         ▼                                        ▼
-[Path A: Opens Demo /r/{slug}]        [Path B: Replies to Email]           [Path C: Clicks Checkout]
-- Served 24/7 by Cloudflare Worker    - Detected by email_reply_listener   - Handled by /checkout
-- 4-5★: Directs to Google Maps        - SQLite status updated to 'replied' - Pre-provisioned slug recognized
-- 1-3★: Opens private owner feedback  - AI generates consultative answer   - Upgraded to 'trialing', is_demo=0
-                                                                           - User logs in to /admin
+[Path A: Opens Demo /r/{slug}?k=…]    [Path B: Replies to Email]           [Path C: Activates]
+- is_demo=1 → OWNER MODE demo         - email_reply_listener (campaign      - /aktyvuoti/{token}: password only
+  (src/components/owner-demo.tsx):      leads checked BEFORE accounting)    - src/lib/claim.ts::claimClient():
+  customer phone view + live owner    - „ne“/„atsisakau“ → opt_out            is_demo=0, 'trialing' +14 d.,
+  inbox; nothing stored or emailed    - status 'replied'; answer manually     email verified, token used once
+- is_demo=0 → customer review page                                         - → /admin#onboarding checklist
 ```
 
 ---
@@ -111,9 +115,12 @@ Agentai/
 
 ## 5. Critical Engineering Invariants (Do-Not-Break Rules)
 
-1. **Checkout Slug Claiming (Crucial Bug Prevention)**:
-   - *Rule*: Outbound leads are pre-provisioned in `reputation.db` with `is_demo=1`.
-   - *Requirement*: When a lead visits `/checkout?slug=...` and registers, `apps/reputationpro/src/app/api/checkout/route.ts` **MUST NOT** reject the submission with *"Šis nuorodos vardas jau užimtas"*. It must detect that the slug is pre-provisioned and upgrade the client from `demo_trial` to `trialing`, hash their chosen password, set `is_demo=0`, and establish a secure session.
+1. **Account claiming only via one-time token (security, changed 2026-11-05)**:
+   - Outbound leads are pre-provisioned with `is_demo=1`. They are claimed **only** through `/aktyvuoti/{token}` (`src/lib/claim.ts`, `POST /api/claim`).
+   - `apps/reputationpro/src/app/api/checkout/route.ts` **MUST NEVER modify an existing client.** Existing demo slug/email → mail a fresh claim link to the address on file (`409 claim_sent`); existing real client → `409 exists` ("prisijunkite"). The old "upgrade on matching slug/email" logic allowed account takeover and was removed.
+   - `/checkout` must not prefill anything from the database.
+   - Login (`src/lib/clinic-access.ts::accountActive`) requires `is_demo=0` + verified email. Tests: `tests/clinic-access.test.ts`, `tests/claim.test.ts` must pass.
+   - `provision_lead_in_db()` / `seed_preactivated_leads.py` must never update rows with `is_demo=0`.
 
 2. **Lithuanian Language & UTF-8 Encoding**:
    - All email templates, database records, and logs contain Lithuanian diacritics (`ą, č, ę, ė, į, š, ų, ū, ž`).
@@ -123,12 +130,18 @@ Agentai/
          sys.stdout.reconfigure(encoding='utf-8', errors='replace')
      ```
 
-3. **No Coercive Review Gating (Google Maps Compliance)**:
-   - While 4–5★ ratings guide customers to Google Maps and 1–3★ ratings offer a private resolution form to the manager, the interface **must always maintain an optional public review link** to remain strictly compliant with Google’s anti-review-gating guidelines.
+3. **Public Google link after 1–3★ is the client's choice (owner decision 2026-11-05)**:
+   - 4–5★ → Google review form. 1–3★ → private form to the manager.
+   - Whether the public Google link is also shown after 1–3★ is controlled per client by `clients.show_public_link_low` (default `0`), toggled in the dashboard (`src/components/public-link-toggle.tsx`, `PATCH /api/admin/settings`). The toggle shows a note about Google's policy. Do not hard-code either behaviour.
+   - Marketing copy must not promise "100%" / "niekada nepateks į viešumą": customers can always post on Google directly.
 
 4. **Security & Secrets Hygiene**:
    - Never commit `configs/email_credentials.json`, `.env.local`, `*.db`, or `tunnel-token`.
    - Production secrets are passed via environment variables or `.env.local`.
+
+5. **Live app config**: `apps/reputationpro/.env.local` `APP_URL` must be `https://reputacija.verslomatika.lt`. A loopback value makes `sameOrigin()` reject every form on the live site with 403 (this happened until 2026-11-05).
+
+> **Open work and its status:** [`ROADMAP_REPUTATIONPRO.md`](ROADMAP_REPUTATIONPRO.md) (checkbox roadmap for any LLM continuing the work).
 
 ---
 
@@ -165,6 +178,12 @@ npm run start -- --port 3002
 ```
 
 ### C. Running Autonomous Daemons
+```bash
+# Follow-up agent (2nd/3rd email to leads that did not activate; runs inside the daemon too)
+python core/followup_runner.py status    # dry run: what would be sent now
+python core/followup_runner.py preview   # all templates -> data/reports/email_previews/followups/
+```
+
 ```bash
 # Run Outbound Morning Campaign Once (Immediate test)
 python core/morning_campaign_runner.py once

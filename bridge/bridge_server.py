@@ -5,9 +5,16 @@ import sys
 import urllib.parse
 from datetime import datetime
 
-# UTF-8 terminale
-if hasattr(sys.stdout, 'reconfigure'):
+# UTF-8 terminale & pythonw saugumas
+if sys.stdout is None:
+    sys.stdout = open(os.devnull, 'w', encoding='utf-8')
+elif hasattr(sys.stdout, 'reconfigure'):
     sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+
+if sys.stderr is None:
+    sys.stderr = open(os.devnull, 'w', encoding='utf-8')
+elif hasattr(sys.stderr, 'reconfigure'):
+    sys.stderr.reconfigure(encoding='utf-8', errors='replace')
 
 PORT = 5050
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))

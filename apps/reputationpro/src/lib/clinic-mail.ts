@@ -7,20 +7,30 @@ import { db } from './db.ts';
 type Purpose = 'verify' | 'reset';
 const digest = (token: string) => createHash('sha256').update(token).digest('hex');
 
+// Lookup order: REPUTATION_SMTP_CONFIG, the app's private file, then the shared
+// configs/email_credentials.json the Python campaign sender already uses
+// (format: smtp_host, smtp_port, use_ssl, email, password).
 function getSmtpConfig() {
-  const defaultPrivatePath = path.resolve(process.cwd(), 'data/operations/reputation-private/smtp.json');
-  const configPath = process.env.REPUTATION_SMTP_CONFIG || (existsSync(defaultPrivatePath) ? defaultPrivatePath : undefined);
-  if (!configPath || !existsSync(configPath)) return null;
+  // Test/verification instances must never email real leads.
+  if (process.env.REPUTATION_MAIL_DISABLED === 'true') return null;
+  const candidates = [
+    process.env.REPUTATION_SMTP_CONFIG,
+    path.resolve(process.cwd(), 'data/operations/reputation-private/smtp.json'),
+    path.resolve(process.cwd(), '../../configs/email_credentials.json'),
+  ].filter((p): p is string => !!p);
+  const configPath = candidates.find((p) => existsSync(p));
+  if (!configPath) return null;
   try {
-    const cfg = JSON.parse(readFileSync(configPath, 'utf8')) as {
+    const raw = JSON.parse(readFileSync(configPath, 'utf8')) as {
       smtp_host: string;
       smtp_port: number;
       smtp_secure?: boolean;
+      use_ssl?: boolean;
       email: string;
       password: string;
     };
-    if (!cfg.smtp_host || !cfg.smtp_port || !cfg.email || !cfg.password) return null;
-    return cfg;
+    if (!raw.smtp_host || !raw.smtp_port || !raw.email || !raw.password) return null;
+    return { ...raw, smtp_secure: raw.smtp_secure ?? raw.use_ssl };
   } catch {
     return null;
   }
@@ -54,6 +64,33 @@ export async function sendAccountEmail(to: string, purpose: Purpose, url: string
   const subject = purpose === 'verify' ? 'Patvirtinkite ReputationPro el. paštą' : 'ReputationPro slaptažodžio atkūrimas';
   const action = purpose === 'verify' ? 'Patvirtinkite el. paštą ir tęskite registraciją' : 'Pasirinkite naują slaptažodį';
   await transporter.sendMail({ from: { name: 'Verslomatika', address: cfg.email }, to, subject, text: `${action}:\n${url}\n\nNuoroda galioja 30 minučių. Jei užklausos neteikėte, ignoruokite šį laišką.` });
+}
+
+// Activation link for a pre-provisioned lead that reached /checkout without its token.
+// Returns false when SMTP is not configured so the caller can say so honestly.
+export async function sendClaimEmail(to: string, businessName: string, url: string) {
+  const cfg = getSmtpConfig();
+  if (!cfg) return false;
+  const transporter = nodemailer.createTransport({ host: cfg.smtp_host, port: cfg.smtp_port, secure: cfg.smtp_secure ?? cfg.smtp_port === 465, auth: { user: cfg.email, pass: cfg.password }, requireTLS: true, connectionTimeout: 10000, greetingTimeout: 10000, socketTimeout: 15000 });
+  await transporter.sendMail({
+    from: { name: 'Tomas | Verslomatika', address: cfg.email }, to,
+    subject: `${businessName}: Jūsų ReputationPro paskyros aktyvavimas`,
+    text: `Laba diena,\n\nkažkas (tikėtina, Jūs) norėjo aktyvuoti „${businessName}“ ReputationPro paskyrą. Ji jau paruošta: atsiliepimų puslapis, QR kodas ir Google nuoroda.\n\nAktyvuoti (užtruks 1 min., 14 d. nemokamai, be kortelės):\n${url}\n\nNuoroda galioja 30 dienų ir veikia vieną kartą. Jei to neprašėte, tiesiog ignoruokite šį laišką.\n\nTomas\nVerslomatika`
+  });
+  return true;
+}
+
+// Security notice: the claimant chose a different login email than the address we contacted.
+export async function sendLoginEmailChangedNotice(previous: string, businessName: string, newEmail: string) {
+  const cfg = getSmtpConfig();
+  if (!cfg) return false;
+  const transporter = nodemailer.createTransport({ host: cfg.smtp_host, port: cfg.smtp_port, secure: cfg.smtp_secure ?? cfg.smtp_port === 465, auth: { user: cfg.email, pass: cfg.password }, requireTLS: true, connectionTimeout: 10000, greetingTimeout: 10000, socketTimeout: 15000 });
+  await transporter.sendMail({
+    from: { name: 'ReputationPro', address: cfg.email }, to: previous,
+    subject: `${businessName}: ReputationPro paskyra aktyvuota`,
+    text: `Laba diena,\n\n„${businessName}“ ReputationPro paskyra ką tik aktyvuota. Prisijungimo el. paštas: ${newEmail}.\n\nJei paskyrą aktyvavote Jūs ar Jūsų kolega, nieko daryti nereikia. Jei ne, tiesiog atsakykite į šį laišką ir paskyrą užrakinsime.\n\nReputationPro · Verslomatika`
+  });
+  return true;
 }
 
 export async function sendFeedbackAlert(

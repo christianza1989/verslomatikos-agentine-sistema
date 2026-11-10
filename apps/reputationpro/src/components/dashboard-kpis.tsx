@@ -48,12 +48,12 @@ export function DashboardKPIs({
           <div className="shield-badge-live">
             <span className="live-pulse" />
             <ShieldCheck size={16} />
-            <span>Review Shield™ Apsauga Aktyvi</span>
+            <span>Atsiliepimų sistema aktyvi</span>
           </div>
           <h2>Dvigubo nukreipimo skydas saugo {clinicName} reputaciją</h2>
           <p>
-            Visi pacientų įvertinimai registratūroje filtruojami realiu laiku: patenkinti pacientai (4–5★) nukreipiami tiesiai į viešą 
-            Google profilį, o neigiamos pastabos (1–3★) saugiai sulaikomos privačioje vadovo dėžutėje.
+            Kiekvienas įvertinimas apdorojamas akimirksniu: patenkinti klientai (4–5★) nukreipiami tiesiai į Jūsų 
+            Google atsiliepimų formą, o pastabos (1–3★) atkeliauja į vadovo dėžutę, kad galėtumėte greitai sureaguoti.
           </p>
         </div>
         <div className="shield-hero-actions">
@@ -64,10 +64,10 @@ export function DashboardKPIs({
             className="btn-shield-test"
           >
             <Sparkles size={16} />
-            <span>Testuoti paciento kelią</span>
+            <span>Peržiūrėti kliento puslapį</span>
             <ArrowUpRight size={15} />
           </a>
-          <span className="shield-test-caption">Atidaro realų paciento vertinimo langą</span>
+          <span className="shield-test-caption">Atidaro Jūsų tikrą atsiliepimų puslapį</span>
         </div>
       </div>
 
@@ -88,14 +88,14 @@ export function DashboardKPIs({
             </span>
           </div>
           <div className="stat-card-bottom">
-            <span>Laimingi pacientai, nukreipti į viešus Google Maps atsiliepimus</span>
+            <span>Patenkinti klientai, nukreipti į Google atsiliepimų formą</span>
           </div>
         </div>
 
         {/* Card 2: Shield Intercepted (Negative Avoided) */}
         <div className="stat-card stat-card-shield">
           <div className="stat-card-top">
-            <span className="stat-label">Privačiai sulaikyta (Shield)</span>
+            <span className="stat-label">Privačios pastabos</span>
             <div className="stat-icon-wrap icon-shield">
               <ShieldCheck size={18} />
             </div>
@@ -114,7 +114,7 @@ export function DashboardKPIs({
         {/* Card 3: Experience Rating */}
         <div className="stat-card">
           <div className="stat-card-top">
-            <span className="stat-label">Pacientų patirties indeksas</span>
+            <span className="stat-label">Klientų patirties indeksas</span>
             <div className="stat-icon-wrap icon-neutral">
               <Sparkles size={18} />
             </div>
@@ -149,13 +149,13 @@ export function DashboardKPIs({
             </div>
           </div>
           <div className="stat-card-value">
-            <strong>{unreadCount > 0 ? `${unreadCount} laukia` : '100%'}</strong>
+            <strong>{unreadCount > 0 ? `${unreadCount} laukia` : shieldedFeedback > 0 ? 'Visos' : '–'}</strong>
             <span className={`stat-badge-status ${unreadCount > 0 ? 'status-amber' : 'status-green'}`}>
               {unreadCount > 0 ? 'Reikia skambučio' : 'Visi išspręsti'}
             </span>
           </div>
           <div className="stat-card-bottom">
-            <span>{resolvedCount} iš {shieldedFeedback} pacientų pastebėjimų sėkmingai išspręsti</span>
+            <span>{resolvedCount} iš {shieldedFeedback} pastabų išspręsta</span>
           </div>
         </div>
       </div>

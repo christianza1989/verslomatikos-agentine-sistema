@@ -1,10 +1,23 @@
+"""Rytinis B2B laiškų siuntėjas (ReputationPro).
+
+Paleidimas:
+    python core/morning_campaign_runner.py once      # šios dienos kvota dabar
+    python core/morning_campaign_runner.py daemon    # kasdien 08:30 (vietinis laikas)
+    python core/morning_campaign_runner.py preview   # NIEKO nesiunčia: įrašo pavyzdinius laiškus į data/reports/email_previews/
+
+Piltuvas (ROADMAP_REPUTATIONPRO.md §1):
+    provision_lead_in_db() → issue_claim_token() → laiškas su VIENU CTA:
+    {APP_BASE}/api/track/click?id={lead_id}&to={APP_BASE}/r/{slug}?k={token}
+    Demo puslapyje savininkas mato abi puses ir aktyvuoja per /aktyvuoti/{token}.
+    Asmens duomenys (el. paštas, vardas) į URL nededami.
+"""
 import os
 import sys
-import json
 import time
 import random
 import uuid
 import datetime
+import html as html_lib
 import urllib.parse
 import sqlite3
 
@@ -19,8 +32,14 @@ if BASE_DIR not in sys.path:
 from core.smtp_sender import SMTPEmailSender
 from core.dental_lead_pool import get_uncontacted_dental_leads, provision_lead_in_db
 from core.ecommerce_lead_pool import get_uncontacted_ecommerce_leads
+from core.claim_tokens import (ensure_schema, issue_claim_token, is_suppressed, suppress, is_direct_review_url,
+                               record_message, count_sent_today)
 
 DB_PATH = os.path.join(BASE_DIR, "apps", "reputationpro", "data", "reputation.db")
+# Visa piltuvo logika (demo, sekimas, aktyvavimas) gyvena Next.js aplikacijoje šiame PC.
+APP_BASE = os.environ.get("REPUTATION_APP_URL", "https://reputacija.verslomatika.lt").rstrip("/")
+SENDER_NAME = "Tomas"
+SENDER_EMAIL = "tomas@verslomatika.lt"
 
 # Multi-agent sender profiles pool (lengva pridėti naujus domenus ir agentus)
 AGENT_PROFILES = [
@@ -28,432 +47,461 @@ AGENT_PROFILES = [
         "agent_id": "agent-tomas",
         "name": "Tomas | Verslo sprendimų vadovas",
         "display_from": "Tomas | Verslomatika B2B",
-        "email": "tomas@verslomatika.lt",
+        "email": SENDER_EMAIL,
         "config_path": os.path.join(BASE_DIR, "configs", "email_credentials.json"),
         "daily_limit": 25,
-        "target_industry": "mixed",  # mixed (50% e-komercija, 50% klinikos), "ecommerce", arba "dental"
+        "target_industry": "mixed",  # mixed (pakaitomis e-komercija ir klinikos), "ecommerce", arba "dental"
         "is_active": True
     }
-    # Kai prijungsime naują domeną:
-    # {
-    #     "agent_id": "agent-naujas",
-    #     "name": "Laura | Klientų partnerė",
-    #     "display_from": "Laura | Partneriai B2B",
-    #     "email": "laura@naujasdomenas.lt",
-    #     "config_path": os.path.join(BASE_DIR, "configs", "email_naujasdomenas.json"),
-    #     "daily_limit": 25,
-    #     "is_active": True
-    # }
 ]
 
+
 def get_today_sent_count(agent_email: str) -> int:
-    """Suskaičiuoja, kiek laiškų jau buvo išsiųsta šiandien iš nurodytos pašto dėžutės."""
-    today_str = datetime.datetime.now().strftime("%Y-%m-%d")
+    """Šiandien išsiųsti laiškai: pirmi + follow-up'ai (viena bendra kvota saugo pašto dėžutės reputaciją)."""
     try:
         conn = sqlite3.connect(DB_PATH)
-        c = conn.cursor()
-        c.execute("""
-            SELECT COUNT(*) FROM campaign_leads 
-            WHERE sent_at LIKE ?
-        """, (f"{today_str}%",))
-        cnt = c.fetchone()[0]
+        ensure_schema(conn)
+        cnt = count_sent_today(conn)
         conn.close()
         return cnt
     except Exception as e:
         print(f"[DB Sent Count Error] {e}")
         return 0
 
-def build_tracked_email(lead: dict, lead_id: str) -> tuple[str, str, str]:
-    """Suformuoja personalizuotą el. laišką pagal veiklos sritį (e-komercija, klinika, paslaugos)."""
-    b_name = lead["business_name"]
-    city = lead.get("city", "Vilnius")
-    industry = lead.get("industry", "dental")
-    
-    # Auto-detect industry if not explicit
-    b_lower = b_name.lower()
-    if any(k in b_lower for k in ["shop", "parduotuv", "prekyb", "mada", "drabuž", "avalyn", "kosmetik", "baldai", "dovan", "knyg"]):
-        industry = "ecommerce"
-    elif any(k in b_lower for k in ["auto", "servis", "remont", "salonas", "spa", "viešbut"]):
-        industry = "services"
 
-    default_role = "El. parduotuvės vadovui" if industry == "ecommerce" else "Klinikos vadovui"
-    role = lead.get("role", default_role)
-    
+# ---------------------------------------------------------------------------
+# Laiškų šablonai (ROADMAP C1): trumpi, vienas CTA, be „100%“ / „niekada“
+# ---------------------------------------------------------------------------
+
+SERVICE_KEYWORDS = ["auto", "servis", "remont", "salonas", "spa", "viešbut", "grož", "kirpykl", "restoran", "kavin", "sporto"]
+ECOMMERCE_KEYWORDS = ["shop", "parduotuv", "prekyb", "mada", "drabuž", "avalyn", "kosmetik", "baldai", "baldų", "dovan", "knyg"]
+
+
+def detect_industry(lead: dict) -> str:
+    explicit = (lead.get("industry") or "").lower()
+    if explicit in ("clinic", "ecommerce", "services"):
+        return explicit
+    if lead.get("niche") == "odontologija":
+        return "clinic"
+    name = lead["business_name"].lower()
+    if any(k in name for k in SERVICE_KEYWORDS):
+        return "services"
+    if any(k in name for k in ECOMMERCE_KEYWORDS):
+        return "ecommerce"
+    return "services"
+
+
+def _fmt_rating(value) -> str:
+    return f"{float(value):.1f}".replace(".", ",")
+
+
+TEMPLATES = {
+    "clinic": {
+        "generic": "Pacientai, rinkdamiesi kliniką, pirmiausia žiūri Google atsiliepimus. Patenkinti pacientai atsiliepimą palieka retai: ne todėl, kad nenori, o todėl, kad niekas jų nepaprašo tinkamu momentu.",
+        "stats": "Pažiūrėjome į „{name}“ Google profilį: {rating}★ iš {count} atsiliepimų. Pacientai, rinkdamiesi kliniką, pirmiausia žiūri būtent čia, ir dažniau renkasi tą, kurios atsiliepimų daugiau.",
+        "offer": "Paruošėme „{name}“ atsiliepimų puslapį su QR kodu registratūrai. Per 30 sekundžių pamatysite, kaip jis atrodo paciento telefone ir ką tą pačią sekundę gaunate Jūs, kai pacientas lieka kuo nors nepatenkintas:",
+        "subject_stats": "{name}: {rating}★ iš {count} atsiliepimų Google",
+        "subject_generic": "{name}: pacientų atsiliepimai Google",
+    },
+    "ecommerce": {
+        "generic": "Pirkėjai prieš užsakydami internetu vis dažniau patikrina parduotuvės atsiliepimus Google. Patenkinti pirkėjai atsiliepimą palieka retai, o nepatenkintas beveik visada.",
+        "stats": "Pažiūrėjome į „{name}“ Google profilį: {rating}★ iš {count} atsiliepimų. Pirkėjai prieš užsakydami dažnai patikrina būtent čia, ypač pirkdami pirmą kartą.",
+        "offer": "Paruošėme „{name}“ atsiliepimų puslapį. Nuorodą galima įdėti į užsakymo ar pristatymo laišką. Per 30 sekundžių pamatysite, ką mato pirkėjas ir ką tą pačią sekundę gaunate Jūs, jei jis kuo nors nepatenkintas:",
+        "subject_stats": "{name}: {rating}★ iš {count} atsiliepimų Google",
+        "subject_generic": "{name}: pirkėjų atsiliepimai Google",
+    },
+    "services": {
+        "generic": "Klientai, rinkdamiesi paslaugų teikėją, pirmiausia žiūri Google atsiliepimus. Patenkinti klientai atsiliepimą palieka retai, nes niekas jų nepaprašo tinkamu momentu.",
+        "stats": "Pažiūrėjome į „{name}“ Google profilį: {rating}★ iš {count} atsiliepimų. Nauji klientai, rinkdamiesi paslaugų teikėją, pirmiausia žiūri būtent čia.",
+        "offer": "Paruošėme „{name}“ atsiliepimų puslapį su QR kodu (prie kasos ar registratūros) ir nuoroda SMS žinutei po apsilankymo. Per 30 sekundžių pamatysite, ką mato klientas ir ką tą pačią sekundę gaunate Jūs:",
+        "subject_stats": "{name}: {rating}★ iš {count} atsiliepimų Google",
+        "subject_generic": "{name}: klientų atsiliepimai Google",
+    },
+}
+
+
+def build_tracked_email(lead: dict, lead_id: str, demo_url: str = None, google_stats: dict = None) -> tuple:
+    """Grąžina (subject, text, html). Vienas CTA: asmeninis demo puslapis.
+
+    demo_url: {APP_BASE}/r/{slug}?k={token} (be tokeno, tik peržiūrai).
+    google_stats: {"rating": 4.6, "count": 87}, jei žinoma (ROADMAP B3).
+    """
+    name = lead["business_name"].strip()
     slug = lead.get("slug") or "demo"
-    raw_preview_url = lead.get("preview_url") or f"https://verslomatika.lt/r/{slug}"
-    qr_img_url = lead.get("qr_url") or f"https://verslomatika.lt/api/qr?slug={slug}"
-    raw_claim_url = lead.get("claim_url") or f"https://verslomatika.lt/checkout?slug={slug}&name={urllib.parse.quote(b_name)}&email={urllib.parse.quote(lead['email'])}"
-    raw_pricing_url = "https://verslomatika.lt/reputacija"
+    tpl = TEMPLATES[detect_industry(lead)]
+    demo_url = demo_url or f"{APP_BASE}/r/{slug}"
 
-    # Sekimo nuorodos per Next.js API
-    track_open_url = f"https://verslomatika.lt/api/track/open?id={lead_id}"
-    preview_url = f"https://verslomatika.lt/api/track/click?id={lead_id}&to={urllib.parse.quote(raw_preview_url)}"
-    claim_url = f"https://verslomatika.lt/api/track/click?id={lead_id}&to={urllib.parse.quote(raw_claim_url)}"
-    pricing_url = f"https://verslomatika.lt/api/track/click?id={lead_id}&to={urllib.parse.quote(raw_pricing_url)}"
+    rating = (google_stats or {}).get("rating")
+    count = (google_stats or {}).get("count")
+    if rating and count:
+        intro = tpl["stats"].format(name=name, rating=_fmt_rating(rating), count=count)
+        subject = tpl["subject_stats"].format(name=name, rating=_fmt_rating(rating), count=count)
+    else:
+        intro = tpl["generic"]
+        subject = tpl["subject_generic"].format(name=name)
+    offer = tpl["offer"].format(name=name)
+    closing = "Jei tiks, paskyrą aktyvuosite vienu paspaudimu: 14 dienų nemokamai, be banko kortelės."
+    ps = "P.S. Jei neaktualu, tiesiog atsakykite „ne“ ir daugiau nerašysime."
 
-    if industry == "ecommerce":
-        subject = f"Kaip {b_name} gali surinkti 5★ atsiliepimus po kiekvieno internetinio pirkimo"
-        text = f"""Sveiki, {role},
+    track_open_url = f"{APP_BASE}/api/track/open?id={urllib.parse.quote(lead_id)}"
+    cta_url = f"{APP_BASE}/api/track/click?id={urllib.parse.quote(lead_id)}&to={urllib.parse.quote(demo_url, safe='')}"
 
-Pastebėjome, kad pirkėjai prieš pirkdami Jūsų el. parduotuvėje vis dažniau tikrina atsiliepimus „Google“ bei „Trustpilot“. Vos vienas piktas 1★ skundas dėl vėlavusio kurjerio ar pažeistos pakuotės gali atbaidyti dešimtis potencialių pirkėjų, o patenkinti klientai po sėkmingo pirkimo retai prisimena parašyti atsiliepimą patys.
+    text = f"""Laba diena,
 
-Mūsų sukurta „ReputationPro“ sistema skirta tokiems el. prekybos lyderiams kaip „{b_name}“:
-1. Automatinė po-pirkimo nuoroda: kurjeriui (Omniva, DPD, LP Express) pristačius siuntą, pirkėjas el. laišku ar SMS gauna asmeninę padėkos nuorodą.
-2. Laimingi pirkėjai (5★): per 3 sekundes nukreipiami parašyti viešą 5★ atsiliepimą oficialiame Google Maps arba Trustpilot profilyje.
-3. Nepatenkinti pirkėjai (1–3★): nukreipiami į privačią formą tiesiai el. parduotuvės vadovui. Išsprendžiate situaciją asmeniškai, pakeičiate prekę ir išsaugote klientą – joks skundas NIEKADA nepasirodo viešai!
-4. Nereikia jokio fizinio stovelio: visa sistema veikia skaitmeniniu būdu per unikalią nuorodą, integruojamą į Jūsų el. parduotuvę (Shopify, WooCommerce ar bet kurią kitą platformą).
+{intro}
 
-Paruošėme Jūsų el. parduotuvei individualų demonstracinį pirkėjo kelią:
-👉 Jūsų demonstracinis puslapis: {raw_preview_url}
-👉 Aktyvuoti Jūsų paskyrą (14 d. nemokamai): {raw_claim_url}
-(Spustelėjus aktyvavimą, Jūsų duomenys jau bus paruošti – tereikės nustatyti norimą slaptažodį).
+{offer}
+{cta_url}
 
-Išsamus sprendimo pristatymas ir skaidri kainodara (29 € / 49 € / 290 €):
-👉 {raw_pricing_url}
+{closing}
 
-Pagarbiai,
-Tomas | Verslo sprendimų vadovas
-Verslomatika B2B • MB Pinet
-tomas@verslomatika.lt • https://verslomatika.lt
+{SENDER_NAME}
+Verslomatika · {SENDER_EMAIL}
+
+{ps}
 """
 
-        html = f"""<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <style>
-    body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #1e293b; background-color: #f8fafc; margin: 0; padding: 20px; }}
-    .container {{ max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden; }}
-    .header {{ background: #5636E8; padding: 24px 30px; color: #ffffff; }}
-    .header h2 {{ margin: 0; font-size: 20px; font-weight: 700; }}
-    .header p {{ margin: 5px 0 0; font-size: 13px; opacity: 0.9; }}
-    .content {{ padding: 30px; }}
-    .highlight-box {{ background: #f5f3ff; border-left: 4px solid #5636E8; padding: 15px 20px; border-radius: 6px; margin: 20px 0; }}
-    .card-preview {{ background: #ffffff; border: 2px solid #5636E8; border-radius: 12px; padding: 22px; text-align: center; margin: 25px 0; box-shadow: 0 4px 15px rgba(86,54,232,0.08); }}
-    .btn-primary {{ display: inline-block; background: #5636E8; color: #ffffff !important; text-decoration: none; padding: 11px 22px; border-radius: 8px; font-weight: 700; font-size: 13px; margin: 5px; }}
-    .btn-green {{ display: inline-block; background: #157a57; color: #ffffff !important; text-decoration: none; padding: 11px 22px; border-radius: 8px; font-weight: 700; font-size: 13px; margin: 5px; }}
-    .footer {{ background: #f8fafc; padding: 20px 30px; border-top: 1px solid #e2e8f0; font-size: 12px; color: #64748b; }}
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div class="header">
-      <h2>Verslomatika • ReputationPro</h2>
-      <p>5★ Atsiliepimų Apsauga El. Parduotuvėms ir E-komercijai</p>
-    </div>
-    <div class="content">
-      <p>Sveiki, <strong>{role}</strong>,</p>
-      <p>Pastebėjome, kad pirkėjai prieš pirkdami Jūsų el. parduotuvėje vis dažniau tikrina atsiliepimus „Google“ bei „Trustpilot“. Vos vienas piktas 1★ skundas dėl vėlavusio kurjerio ar pažeistos pakuotės gali atbaidyti dešimtis potencialių pirkėjų, o patenkinti klientai po sėkmingo pirkimo retai prisimena parašyti atsiliepimą patys.</p>
-      
-      <div class="highlight-box">
-        <h4 style="margin: 0 0 8px 0; color: #5636E8;">Kaip ReputationPro veikia Jūsų el. parduotuvėje:</h4>
-        <ul style="margin: 0; padding-left: 20px; font-size: 14px;">
-          <li><strong>Automatinė po-pirkimo nuoroda:</strong> kurjeriui (Omniva, DPD, LP Express) pristačius siuntą, pirkėjas gauna padėkos laišką su nuoroda.</li>
-          <li><strong>5★ pirkėjai:</strong> akimirksniu nukreipiami į oficialų Google ar Trustpilot profilį parašyti viešo atsiliepimo.</li>
-          <li><strong>1–3★ nusivylę pirkėjai:</strong> patenka į privačią formą tiesiai Jums – pakeičiate prekę, išsprendžiate problemą, o skundas <strong>niekada nepateks į viešumą</strong>.</li>
-          <li><strong>Nulis fizinių reikalavimų:</strong> nereikia jokio stovelio – veikia 100% skaitmeniniu formatu.</li>
-        </ul>
-      </div>
-
-      <div class="card-preview">
-        <h3 style="margin: 0 0 6px 0; color: #1e293b; font-size: 17px;">Individuali „{b_name}“ pirkėjo demonstracija:</h3>
-        <p style="margin: 0 0 16px 0; font-size: 13px; color: #64748b;">Išbandykite, kaip pirkėjas mato atsiliepimų formą telefone ar kompiuteryje:</p>
-        
-        <div style="margin: 20px 0;">
-          <a href="{preview_url}" class="btn-primary">Išbandyti pirkėjo kelią ↗</a>
-          <a href="{claim_url}" class="btn-green">Aktyvuoti paskyrą (14 d. nemokamai) ↗</a>
-        </div>
-        <p style="font-size: 11px; color: #94a3b8; margin: 10px 0 0;">Spustelėjus aktyvavimą, įmonės duomenys jau bus paruošti – tereikės nustatyti slaptažodį.</p>
-      </div>
-
-      <p style="font-size: 13px; color: #475569;">
-        Išsamus pristatymas ir skaidri kainodara (29 € / 49 € / 290 €): <br>
-        👉 <a href="{pricing_url}" style="color: #5636E8; font-weight: 600;">verslomatika.lt/reputacija</a>
-      </p>
-
-      <p style="margin-bottom: 0;">Pagarbiai,<br>
-      <strong>Tomas</strong><br>
-      <span style="color: #64748b; font-size: 13px;">Verslo sprendimų vadovas | Verslomatika B2B</span></p>
-    </div>
-    <div class="footer">
-      MB Pinet • Įm. k. 306067365 • Vilnius, Lietuva<br>
-      Ryšys: <a href="mailto:tomas@verslomatika.lt" style="color: #5636E8;">tomas@verslomatika.lt</a> • <a href="https://verslomatika.lt" style="color: #5636E8;">verslomatika.lt</a><br>
-      Norėdami atsisakyti pasiūlymų, atsakykite „Atsisakau“.
-    </div>
-  </div>
-  <!-- 1x1 Transparent Tracking Pixel -->
-  <img src="{track_open_url}" width="1" height="1" style="display:none !important;" alt="" />
-</body>
-</html>
-"""
-        return subject, text, html
-
-    # Standartinis klinikos / fizinės vietos šablonas
-    subject = f"Kaip {b_name} gali apsaugoti 5.0★ Google reitingą ({city})"
-    text = f"""Sveiki, {role},
-
-Pastebėjome, kad pacientai vis dažniau renkasi odontologijos kliniką remdamiesi būtent Google Maps atsiliepimais. Vienas neigiamas 1★ atsiliepimas po sudėtingesnės procedūros gali atbaidyti dešimtis naujų pacientų, kurių krepšelis siekia 500 € – 2 000 €.
-
-Mūsų sukurta „ReputationPro“ sistema skirta tokiems rinkos lyderiams kaip „{b_name}“:
-1. Registratūroje pastatomas estetiškas akrilinis QR stovelis arba siunčiama nuoroda po vizito.
-2. Patenkinti pacientai (5★) per 3 sekundes nukreipiami parašyti atsiliepimą oficialiame Google Maps tinkle.
-3. Jei lankytojas turi pastabų (1–3★) – sistema pasiūlo privačią formą tiesiogiai vadovui. Tai leidžia išspręsti situaciją konfidencialiai, o skundas NIEKADA nepateks į viešą erdvę.
-
-Paruošėme Jūsų įmonei individualų demonstracinį puslapį bei QR kodą:
-👉 Jūsų demonstracinis puslapis: {raw_preview_url}
-👉 Jūsų QR kodo peržiūra: {qr_img_url}
-👉 Aktyvuoti Jūsų paskyrą (14 d. nemokamai): {raw_claim_url}
-(Spustelėjus aktyvavimą, Jūsų duomenys jau bus paruošti – tereikės nustatyti norimą slaptažodį).
-
-Išsamus sprendimo pristatymas ir skaidri kainodara (29 € / 49 € / 290 €):
-👉 {raw_pricing_url}
-
-Jei norėtumėte gauti nemokamą testinį akrilinį QR stovelį registratūrai – tiesiog atsakykite į šį laišką.
-
-Pagarbiai,
-Tomas | Verslo sprendimų vadovas
-Verslomatika B2B • MB Pinet
-tomas@verslomatika.lt • https://verslomatika.lt
-"""
-
+    e = html_lib.escape
     html = f"""<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <style>
-    body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #1e293b; background-color: #f8fafc; margin: 0; padding: 20px; }}
-    .container {{ max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden; }}
-    .header {{ background: #5636E8; padding: 24px 30px; color: #ffffff; }}
-    .header h2 {{ margin: 0; font-size: 20px; font-weight: 700; }}
-    .header p {{ margin: 5px 0 0; font-size: 13px; opacity: 0.9; }}
-    .content {{ padding: 30px; }}
-    .highlight-box {{ background: #f5f3ff; border-left: 4px solid #5636E8; padding: 15px 20px; border-radius: 6px; margin: 20px 0; }}
-    .card-preview {{ background: #ffffff; border: 2px solid #5636E8; border-radius: 12px; padding: 22px; text-align: center; margin: 25px 0; box-shadow: 0 4px 15px rgba(86,54,232,0.08); }}
-    .btn-primary {{ display: inline-block; background: #5636E8; color: #ffffff !important; text-decoration: none; padding: 11px 22px; border-radius: 8px; font-weight: 700; font-size: 13px; margin: 5px; }}
-    .btn-green {{ display: inline-block; background: #157a57; color: #ffffff !important; text-decoration: none; padding: 11px 22px; border-radius: 8px; font-weight: 700; font-size: 13px; margin: 5px; }}
-    .footer {{ background: #f8fafc; padding: 20px 30px; border-top: 1px solid #e2e8f0; font-size: 12px; color: #64748b; }}
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div class="header">
-      <h2>Verslomatika • ReputationPro</h2>
-      <p>5★ Atsiliepimų Apsaugos ir Augimo Sistema • {city}</p>
-    </div>
-    <div class="content">
-      <p>Sveiki, <strong>{role}</strong>,</p>
-      <p>Pastebėjome, kad pacientai vis dažniau renkasi odontologijos kliniką remdamiesi būtent Google Maps atsiliepimais. Vienas neigiamas 1★ atsiliepimas po sudėtingesnės procedūros gali atbaidyti dešimtis naujų pacientų, kurių krepšelis siekia 500 € – 2 000 €.</p>
-      
-      <div class="highlight-box">
-        <h4 style="margin: 0 0 8px 0; color: #5636E8;">Kaip ReputationPro apsaugo „{b_name}“:</h4>
-        <ul style="margin: 0; padding-left: 20px; font-size: 14px;">
-          <li><strong>Patenkinti pacientai (5★):</strong> akimirksniu nukreipiami į oficialų Google Maps profilį.</li>
-          <li><strong>Nusivylę lankytojai (1–3★):</strong> patenka į privačią formą tiesiai vadovui. Skundas <strong>niekada nepateks į viešumą</strong>.</li>
-          <li><strong>QR stovelis arba nuoroda:</strong> veikia per 3 sekundes telefonu be jokių programėlių diegimo.</li>
-        </ul>
-      </div>
-
-      <div class="card-preview">
-        <h3 style="margin: 0 0 6px 0; color: #1e293b; font-size: 17px;">Individuali „{b_name}“ demonstracija:</h3>
-        <p style="margin: 0 0 16px 0; font-size: 13px; color: #64748b;">Nukreipkite telefoną arba išbandykite paciento kelią:</p>
-        
-        <a href="{preview_url}" style="display: inline-block; text-decoration: none;">
-          <img src="{qr_img_url}" width="160" height="160" style="border-radius: 8px; border: 1px solid #e2e8f0; display: block; margin: 0 auto;" alt="Jūsų klinikos QR kodas" />
-        </a>
-        
-        <div style="margin-top: 18px;">
-          <a href="{preview_url}" class="btn-primary">Išbandyti paciento kelią ↗</a>
-          <a href="{claim_url}" class="btn-green">Aktyvuoti paskyrą (14 d. nemokamai) ↗</a>
-        </div>
-        <p style="font-size: 11px; color: #94a3b8; margin: 10px 0 0;">Spustelėjus aktyvavimą, klinikos duomenys jau bus užpildyti – tereikės nurodyti slaptažodį.</p>
-      </div>
-
-      <p style="font-size: 13px; color: #475569;">
-        Išsamus pristatymas ir skaidri kainodara (29 € / 49 € / 290 €): <br>
-        👉 <a href="{pricing_url}" style="color: #5636E8; font-weight: 600;">verslomatika.lt/reputacija</a>
-      </p>
-
-      <p style="margin-top: 25px;">Jei norėtumėte gauti nemokamą testinį akrilinį QR stovelį klinikos registratūrai – tiesiog atsakykite į šį laišką.</p>
-
-      <p style="margin-bottom: 0;">Pagarbiai,<br>
-      <strong>Tomas</strong><br>
-      <span style="color: #64748b; font-size: 13px;">Verslo sprendimų vadovas | Verslomatika B2B</span></p>
-    </div>
-    <div class="footer">
-      MB Pinet • Įm. k. 306067365 • Vilnius, Lietuva<br>
-      Ryšys: <a href="mailto:tomas@verslomatika.lt" style="color: #5636E8;">tomas@verslomatika.lt</a> • <a href="https://verslomatika.lt" style="color: #5636E8;">verslomatika.lt</a><br>
-      Norėdami atsisakyti pasiūlymų, atsakykite „Atsisakau“.
-    </div>
-  </div>
-  <!-- 1x1 Transparent Tracking Pixel -->
-  <img src="{track_open_url}" width="1" height="1" style="display:none !important;" alt="" />
-</body>
-</html>
+<html lang="lt"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#ffffff;">
+<div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.6;color:#1e293b;max-width:560px;padding:8px 4px;">
+<p style="margin:0 0 14px;">Laba diena,</p>
+<p style="margin:0 0 14px;">{e(intro)}</p>
+<p style="margin:0 0 18px;">{e(offer)}</p>
+<p style="margin:0 0 20px;"><a href="{e(cta_url)}" style="display:inline-block;background:#5636E8;color:#ffffff;text-decoration:none;font-weight:600;padding:12px 20px;border-radius:8px;">Peržiūrėti paruoštą puslapį →</a></p>
+<p style="margin:0 0 18px;">{e(closing)}</p>
+<p style="margin:0 0 18px;">{SENDER_NAME}<br><span style="color:#64748b;">Verslomatika · <a href="mailto:{SENDER_EMAIL}" style="color:#64748b;">{SENDER_EMAIL}</a></span></p>
+<p style="margin:0;color:#64748b;font-size:13px;">{e(ps)}</p>
+<p style="margin:18px 0 0;color:#94a3b8;font-size:11px;">MB Pinet · įm. k. 306067365 · Vilnius</p>
+</div>
+<img src="{e(track_open_url)}" width="1" height="1" alt="" style="display:block;width:1px;height:1px;border:0;" />
+</body></html>
 """
     return subject, text, html
 
-def dispatch_daily_quota(target_agent_id: str = "agent-tomas", force_count: int = None, delay_min: int = 40, delay_max: int = 65) -> int:
-    """
-    Išsiunčia tiksliai trūkstamus laiškus iki 25 dienos limito.
-    Apsaugo nuo per didelio siuntimo, registruoja į SQLite ir naudoja saugius intervalus.
-    """
+
+# ---------------------------------------------------------------------------
+# Siuntimas
+# ---------------------------------------------------------------------------
+
+def _fetch_candidates(target_ind: str, needed: int) -> list:
+    """Paima daugiau kandidatų nei reikia, nes dalis bus praleista (suppressed / needs_review)."""
+    pool = needed * 3
+    if target_ind == "ecommerce":
+        return get_uncontacted_ecommerce_leads(limit=pool)
+    if target_ind == "dental":
+        return get_uncontacted_dental_leads(limit=pool)
+    ecom = get_uncontacted_ecommerce_leads(limit=pool)
+    dental = get_uncontacted_dental_leads(limit=pool)
+    mixed = []
+    for i in range(max(len(ecom), len(dental))):  # pakaitomis: e-komercija, klinika, ...
+        if i < len(ecom):
+            mixed.append(ecom[i])
+        if i < len(dental):
+            mixed.append(dental[i])
+    return mixed
+
+
+def prepare_lead(conn: sqlite3.Connection, lead: dict):
+    """Paruošia lead'ą siuntimui. Grąžina (client_row, priežastis_praleisti)."""
+    email = lead["email"].strip().lower()
+    if is_suppressed(conn, email):
+        return None, "suppressed"
+    client = provision_lead_in_db(lead)
+    if not client:
+        return None, "provision_failed"
+    if not client.get("is_demo"):
+        suppress(conn, email, "client", "Jau aktyvuotas klientas")
+        return None, "already_client"
+    if not is_direct_review_url(client.get("google_review_url") or ""):
+        # ROADMAP C2: be patikrintos Google nuorodos demo atrodytų nepatikimai.
+        suppress(conn, email, "needs_review", client.get("google_review_url") or "")
+        return None, "needs_review"
+    return client, None
+
+
+def dispatch_daily_quota(target_agent_id: str = "agent-tomas", force_count: int = None, delay_min: int = 40, delay_max: int = 65, dry_run: bool = False) -> int:
+    """Išsiunčia trūkstamus laiškus iki dienos limito. dry_run=True: nieko nesiunčia, įrašo peržiūras."""
     agent = next((a for a in AGENT_PROFILES if a["agent_id"] == target_agent_id), None)
     if not agent or not agent.get("is_active"):
         print(f"Agentas {target_agent_id} nerastas arba neaktyvus.")
         return 0
 
     daily_limit = force_count if force_count is not None else agent["daily_limit"]
-    already_sent = get_today_sent_count(agent["email"])
+    already_sent = 0 if dry_run else get_today_sent_count(agent["email"])
     needed = max(0, daily_limit - already_sent)
 
     now_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    print(f"\n{'='*75}")
-    print(f"[{now_str}] 🚀 B2B RYTINĖ ODONTOLOGIJOS KAMPANIJA ({agent['email']})")
-    print(f"Dienos limitas: {daily_limit} | Šiandien jau išsiųsta: {already_sent} | Reikia išsiųsti: {needed}")
-    print(f"{'='*75}")
-
+    print(f"\n{'=' * 75}")
+    print(f"[{now_str}] 🚀 ReputationPro B2B kampanija ({agent['email']}){' – PERŽIŪRA, nesiunčiama' if dry_run else ''}")
+    print(f"Dienos limitas: {daily_limit} | Šiandien jau išsiųsta: {already_sent} | Reikia: {needed}")
+    print(f"{'=' * 75}")
     if needed == 0:
-        print(f"✅ Šios dienos kvota ({daily_limit} laiškų) jau pilnai pasiekta. Naujų laiškų nesiunčiama.")
+        print(f"✅ Šios dienos kvota ({daily_limit}) jau pasiekta.")
         return 0
 
-    # Pasiimame šviežias nekontaktuotas įmones (e-komercija arba odontologija)
-    target_ind = agent.get("target_industry", "mixed")
-    if target_ind == "ecommerce":
-        leads = get_uncontacted_ecommerce_leads(limit=needed)
-    elif target_ind == "dental":
-        leads = get_uncontacted_dental_leads(limit=needed)
-    else:
-        # Mišrus paskirstymas: dalis e-komercijos, dalis klinikų
-        ecom_count = needed // 2
-        dental_count = needed - ecom_count
-        leads_ecom = get_uncontacted_ecommerce_leads(limit=ecom_count)
-        leads_dental = get_uncontacted_dental_leads(limit=dental_count)
-        leads = leads_ecom + leads_dental
-        if len(leads) < needed:
-            remainder = needed - len(leads)
-            extra_ecom = get_uncontacted_ecommerce_leads(limit=remainder + len(leads_ecom))[len(leads_ecom):]
-            leads.extend(extra_ecom)
-            if len(leads) < needed:
-                extra_rem = needed - len(leads)
-                extra_dental = get_uncontacted_dental_leads(limit=extra_rem + len(leads_dental))[len(leads_dental):]
-                leads.extend(extra_dental)
-        
-    if not leads:
-        print("⚠️ Dėmesio: Nėra naujų nekontaktuotų įmonių sąraše!")
-        return 0
-
-    sender = SMTPEmailSender(config_path=agent["config_path"])
     conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
+    conn.row_factory = sqlite3.Row
+    ensure_schema(conn)
 
-    campaign_id = f"dental-daily-{datetime.datetime.now().strftime('%Y%m%d')}"
-    sent_successfully = 0
+    candidates = _fetch_candidates(agent.get("target_industry", "mixed"), needed)
+    if not candidates:
+        print("⚠️ Nėra naujų nekontaktuotų įmonių sąraše!")
+        conn.close()
+        return 0
 
-    for idx, lead in enumerate(leads, 1):
-        lead_id = str(uuid.uuid4())
-        b_name = lead["business_name"]
-        to_email = lead["email"]
+    sender = None if dry_run else SMTPEmailSender(config_path=agent["config_path"])
+    campaign_id = f"reputation-daily-{datetime.datetime.now().strftime('%Y%m%d')}"
+    done = 0
+    preview_dir = os.path.join(BASE_DIR, "data", "reports", "email_previews")
+
+    for lead in candidates:
+        if done >= needed:
+            break
+        b_name, to_email, slug = lead["business_name"], lead["email"].strip().lower(), lead["slug"]
         city = lead.get("city", "Vilnius")
-        slug = lead["slug"]
 
-        # 1. Užtikriname, kad klinika turi demonstracinį profilį `clients` lentelėje
-        provision_lead_in_db(lead)
+        if dry_run:
+            client = {"id": "preview", "is_demo": 1, "industry": lead.get("industry"), "google_rating": None, "google_reviews_count": None}
+        else:
+            client, skip = prepare_lead(conn, lead)
+            if skip:
+                print(f"    ↷ Praleista {b_name} ({to_email}): {skip}")
+                continue
 
-        # 2. Suformuojame personalizuotą el. laišką su sekimo pikseliais
-        subj, text, html = build_tracked_email(lead, lead_id)
+        # Naudojame esamą campaign_leads id, kitaip sekimo įvykiai nesusietų su lead'u.
+        row = conn.execute("SELECT id FROM campaign_leads WHERE email=?", (to_email,)).fetchone()
+        lead_id = row["id"] if row else str(uuid.uuid4())
 
-        print(f"\n[{idx}/{len(leads)}] Siunčiama: {b_name} ({city}) -> {to_email}...")
+        token = "PERZIURA" if dry_run else issue_claim_token(conn, client["id"])
+        demo_url = f"{APP_BASE}/r/{urllib.parse.quote(slug)}?k={token}"
+        stats = {"rating": client.get("google_rating"), "count": client.get("google_reviews_count")}
+        subj, text, html = build_tracked_email({**lead, "industry": client.get("industry") or lead.get("industry")}, lead_id, demo_url, stats)
+
+        if dry_run:
+            os.makedirs(preview_dir, exist_ok=True)
+            with open(os.path.join(preview_dir, f"{slug}.html"), "w", encoding="utf-8") as f:
+                f.write(f"<!-- Tema: {html_lib.escape(subj)} -->\n" + html)
+            print(f"    👁 {b_name}: „{subj}“ → data/reports/email_previews/{slug}.html")
+            done += 1
+            continue
+
+        print(f"\n[{done + 1}/{needed}] Siunčiama: {b_name} ({city}) -> {to_email}...")
+        now_iso = datetime.datetime.now().isoformat()
         try:
-            res = sender.send_email(
-                to_email=to_email,
-                subject=subj,
-                body_text=text,
-                body_html=html
-            )
-            print(f"    ✓ Sėkmingai pristatyta per SMTP serverį!")
-            
-            now_iso = datetime.datetime.now().isoformat()
-            # 3. Įrašome į campaign_leads lentelę
-            c.execute("""
-                INSERT INTO campaign_leads 
-                (id, campaign_id, business_name, email, slug, city, status, sent_at, created_at, updated_at)
+            ok = sender.send_email(to_email=to_email, subject=subj, body_text=text, body_html=html,
+                                   headers={"List-Unsubscribe": f"<mailto:{SENDER_EMAIL}?subject=Atsisakau>"})
+            if not ok:  # send_email klaidos nekelia – grąžina False
+                raise RuntimeError("SMTP serveris laiško nepriėmė")
+            print("    ✓ Išsiųsta")
+            conn.execute("""
+                INSERT INTO campaign_leads (id, campaign_id, business_name, email, slug, city, status, sent_at, created_at, updated_at)
                 VALUES (?, ?, ?, ?, ?, ?, 'sent', ?, ?, ?)
-                ON CONFLICT(email) DO UPDATE SET
-                  status = 'sent',
-                  sent_at = excluded.sent_at,
-                  updated_at = excluded.updated_at
+                ON CONFLICT(email) DO UPDATE SET status='sent', sent_at=excluded.sent_at, slug=excluded.slug, updated_at=excluded.updated_at
             """, (lead_id, campaign_id, b_name, to_email, slug, city, now_iso, now_iso, now_iso))
-
-            # 4. Įrašome siuntimo įvykį į campaign_events
-            c.execute("""
-                INSERT INTO campaign_events (id, lead_id, event_type, created_at)
-                VALUES (?, ?, 'sent', ?)
-            """, (str(uuid.uuid4()), lead_id, now_iso))
-
+            conn.execute("INSERT INTO campaign_events (id, lead_id, event_type, created_at) VALUES (?, ?, 'sent', ?)",
+                         (str(uuid.uuid4()), lead_id, now_iso))
             conn.commit()
-            sent_successfully += 1
-
-            # Saugus pauzės intervalas tarp laiškų
-            if idx < len(leads):
+            record_message(conn, lead_id, "E0", sender.last_message_id, subj)  # follow-up'ų gijai
+            done += 1
+            if done < needed:
                 delay = random.randint(delay_min, delay_max)
-                print(f"    ⏳ Saugumo pauzė prieš kitą kliniką: {delay} sek. (apsaugo pašto dėžutės reputaciją)...")
+                print(f"    ⏳ Pauzė {delay} s (saugo pašto dėžutės reputaciją)...")
                 time.sleep(delay)
-
         except Exception as e:
             print(f"    ✗ Klaida siunčiant į {to_email}: {e}")
-            c.execute("""
-                INSERT INTO campaign_leads 
-                (id, campaign_id, business_name, email, slug, city, status, notes, created_at, updated_at)
+            conn.execute("""
+                INSERT INTO campaign_leads (id, campaign_id, business_name, email, slug, city, status, notes, created_at, updated_at)
                 VALUES (?, ?, ?, ?, ?, ?, 'bounced', ?, ?, ?)
-                ON CONFLICT(email) DO UPDATE SET
-                  status = 'bounced',
-                  notes = excluded.notes,
-                  updated_at = excluded.updated_at
-            """, (lead_id, campaign_id, b_name, to_email, slug, city, str(e), datetime.datetime.now().isoformat(), datetime.datetime.now().isoformat()))
+                ON CONFLICT(email) DO UPDATE SET status='bounced', notes=excluded.notes, updated_at=excluded.updated_at
+            """, (lead_id, campaign_id, b_name, to_email, slug, city, str(e), now_iso, now_iso))
             conn.commit()
 
     conn.close()
-    print(f"\n{'='*75}")
-    print(f"🏁 Kampanija baigta! Šiandien sėkmingai išsiųsta: {sent_successfully} laiškų.")
-    print(f"{'='*75}")
-    return sent_successfully
+    print(f"\n{'=' * 75}")
+    print(f"🏁 Baigta. {'Paruošta peržiūrų' if dry_run else 'Išsiųsta'}: {done}.")
+    print(f"{'=' * 75}")
+    return done
+
 
 def run_daily_morning_daemon(target_hour: int = 8, target_minute: int = 30):
-    """
-    Nuolatinis foninis demonas:
-    Kiekvieną rytą (pvz. 08:30) patikrina kiekvieno aktyvaus agento siuntimo kvotą (pvz. 25 laiškų)
-    ir jei trūksta – automatiškai išsiunčia.
-    Jei paleidžiamas po numatytos valandos ir šiandien dar neišsiųsta – išsiunčia iškart.
-    """
+    """Kiekvieną rytą (08:30) užpildo aktyvių agentų dienos kvotą. Tikrina kas 10 min."""
     print(f"[{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] 🕒 Rytinio B2B siuntimo demonas paleistas.")
-    print(f"Numatytas kasdienio siuntimo laikas: kiekvieną dieną {target_hour:02d}:{target_minute:02d}")
-    print(f"Aktyvūs siuntimo agentai: {[a['email'] for a in AGENT_PROFILES if a.get('is_active')]}")
-
+    print(f"Siuntimo laikas: kasdien {target_hour:02d}:{target_minute:02d}. Agentai: {[a['email'] for a in AGENT_PROFILES if a.get('is_active')]}")
     while True:
         try:
             now = datetime.datetime.now()
             for agent in AGENT_PROFILES:
                 if not agent.get("is_active"):
                     continue
-                a_id = agent["agent_id"]
-                a_email = agent["email"]
-                a_limit = agent["daily_limit"]
-
-                today_sent = get_today_sent_count(a_email)
-                if today_sent < a_limit and (now.hour > target_hour or (now.hour == target_hour and now.minute >= target_minute)):
-                    print(f"\n[{now.strftime('%H:%M:%S')}] ⏰ Agentui {a_email} atėjo laikas ir šiandienos kvota nepasiekta ({today_sent}/{a_limit}). Pradedamas siuntimas...")
-                    dispatch_daily_quota(target_agent_id=a_id, force_count=a_limit)
-
-            # Miegama 10 minučių iki kito patikrinimo
+                after_start = now.hour > target_hour or (now.hour == target_hour and now.minute >= target_minute)
+                if after_start:
+                    # 1) Follow-up'ai (karšti pirmiau) – core/followup_runner.py, tik darbo dienomis 08:30–16:30.
+                    from core.followup_runner import dispatch_followups
+                    sent_fu = dispatch_followups()
+                    if sent_fu:
+                        print(f"[{now.strftime('%H:%M:%S')}] ↪ Follow-up laiškų išsiųsta: {sent_fu}")
+                # 2) Nauji laiškai iš likusios kvotos.
+                today_sent = get_today_sent_count(agent["email"])
+                if today_sent < agent["daily_limit"] and after_start and now.weekday() < 5:
+                    print(f"\n[{now.strftime('%H:%M:%S')}] ⏰ {agent['email']}: kvota nepasiekta ({today_sent}/{agent['daily_limit']}).")
+                    dispatch_daily_quota(target_agent_id=agent["agent_id"], force_count=agent["daily_limit"])
             time.sleep(600)
         except Exception as e:
             print(f"[Daemon Error] {e}")
             time.sleep(60)
 
+
+def send_manual_test(business_name: str, to_email: str, city: str = "Vilnius", industry: str = "clinic",
+                     google_rating: float = None, google_reviews: int = None) -> bool:
+    """Tikras laiškas per TĄ PATĮ kelią kaip kampanija, bet į Jūsų adresą ir su atskiru testiniu profiliu.
+
+    Tikras lead'as nepaliečiamas: testinis slug = {slug}-testas, campaign_id = 'manual-test'.
+    Follow-up agentas vėliau elgsis su juo kaip su tikru lead'u (galima ištestuoti ir B1/H1/H2/F).
+    """
+    from core.dental_lead_pool import slugify
+    lead = {"business_name": business_name, "email": to_email.strip().lower(), "slug": f"{slugify(business_name)}-testas",
+            "city": city, "industry": industry}
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    ensure_schema(conn)
+    client, skip = prepare_lead(conn, lead)
+    if skip:
+        print(f"✗ Nesiųsta: {skip}. (needs_review = Google nuoroda be placeid; žr. core/google_place_resolver.py KNOWN_PLACE_IDS)")
+        conn.close()
+        return False
+    if google_rating and google_reviews:
+        conn.execute("UPDATE clients SET google_rating=?, google_reviews_count=? WHERE id=?", (google_rating, google_reviews, client["id"]))
+        conn.commit()
+    row = conn.execute("SELECT id FROM campaign_leads WHERE email=?", (lead["email"],)).fetchone()
+    lead_id = row["id"] if row else str(uuid.uuid4())
+    token = issue_claim_token(conn, client["id"])
+    demo_url = f"{APP_BASE}/r/{urllib.parse.quote(lead['slug'])}?k={token}"
+    subj, text, html = build_tracked_email(lead, lead_id, demo_url, {"rating": google_rating, "count": google_reviews})
+    agent = AGENT_PROFILES[0]
+    sender = SMTPEmailSender(config_path=agent["config_path"])
+    ok = sender.send_email(to_email=lead["email"], subject=subj, body_text=text, body_html=html,
+                           headers={"List-Unsubscribe": f"<mailto:{SENDER_EMAIL}?subject=Atsisakau>"})
+    if not ok:
+        print("✗ SMTP serveris laiško nepriėmė.")
+        conn.close()
+        return False
+    now_iso = datetime.datetime.now().isoformat()
+    conn.execute("""
+        INSERT INTO campaign_leads (id, campaign_id, business_name, email, slug, city, status, sent_at, created_at, updated_at)
+        VALUES (?, 'manual-test', ?, ?, ?, ?, 'sent', ?, ?, ?)
+        ON CONFLICT(email) DO UPDATE SET status='sent', sent_at=excluded.sent_at, slug=excluded.slug, updated_at=excluded.updated_at
+    """, (lead_id, business_name, lead["email"], lead["slug"], city, now_iso, now_iso, now_iso))
+    conn.execute("INSERT INTO campaign_events (id, lead_id, event_type, created_at) VALUES (?, ?, 'sent', ?)", (str(uuid.uuid4()), lead_id, now_iso))
+    conn.commit()
+    record_message(conn, lead_id, "E0", sender.last_message_id, subj)
+    conn.close()
+    print(f"✓ Išsiųsta: „{subj}“ → {lead['email']}\n  Demo: {APP_BASE}/r/{lead['slug']} (asmeninė nuoroda su tokenu – laiške)")
+    return True
+
+
+def build_custom_email(draft: dict, lead_id: str, demo_url: str) -> tuple:
+    """Individualus laiškas pagal agento tyrimą (data/leads/research/*.json → email_draft). Tas pats stilius ir vienas CTA."""
+    e = html_lib.escape
+    paragraphs = draft["paragraphs"]
+    closing = draft.get("closing", "Jei tiks, paskyrą aktyvuosite vienu paspaudimu: 14 dienų nemokamai, be banko kortelės.")
+    ps = "P.S. Jei neaktualu, tiesiog atsakykite „ne“ ir daugiau nerašysime."
+    cta_url = f"{APP_BASE}/api/track/click?id={urllib.parse.quote(lead_id)}&to={urllib.parse.quote(demo_url, safe='')}"
+    track_open_url = f"{APP_BASE}/api/track/open?id={urllib.parse.quote(lead_id)}"
+    text = "Laba diena,\n\n" + "\n\n".join(paragraphs) + f"\n{cta_url}\n\n{closing}\n\n{SENDER_NAME}\nVerslomatika · {SENDER_EMAIL}\n\n{ps}\n"
+    body = "".join(f'<p style="margin:0 0 14px;">{e(p)}</p>' for p in paragraphs)
+    html = f"""<!DOCTYPE html>
+<html lang="lt"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#ffffff;">
+<div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.6;color:#1e293b;max-width:560px;padding:8px 4px;">
+<p style="margin:0 0 14px;">Laba diena,</p>
+{body}
+<p style="margin:4px 0 20px;"><a href="{e(cta_url)}" style="display:inline-block;background:#5636E8;color:#ffffff;text-decoration:none;font-weight:600;padding:12px 20px;border-radius:8px;">{e(draft.get('cta_label', 'Peržiūrėti paruoštą puslapį'))} →</a></p>
+<p style="margin:0 0 18px;">{e(closing)}</p>
+<p style="margin:0 0 18px;">{SENDER_NAME}<br><span style="color:#64748b;">Verslomatika · <a href="mailto:{SENDER_EMAIL}" style="color:#64748b;">{SENDER_EMAIL}</a></span></p>
+<p style="margin:0;color:#64748b;font-size:13px;">{e(ps)}</p>
+<p style="margin:18px 0 0;color:#94a3b8;font-size:11px;">MB Pinet · įm. k. 306067365 · Vilnius</p>
+</div>
+<img src="{e(track_open_url)}" width="1" height="1" alt="" style="display:block;width:1px;height:1px;border:0;" />
+</body></html>
+"""
+    return draft["subject"], text, html
+
+
+def send_researched(brief_path: str, send: bool = False) -> bool:
+    """Agento ištirtas lead'as (data/leads/research/{slug}.json).
+
+    Be --send: paruošia demo profilį (niekam nieko nesiunčia) ir įrašo laiško peržiūrą į
+    data/reports/email_previews/{slug}.html. Su --send: išsiunčia tikrą laišką.
+    """
+    import json
+    with open(brief_path, encoding="utf-8") as f:
+        brief = json.load(f)
+    review_url = f"https://search.google.com/local/writereview?placeid={brief['google_place_id']}"
+    lead = {"business_name": brief["business_name"], "email": brief["email"].strip().lower(), "slug": brief["slug"],
+            "city": brief.get("city", "Lietuva"), "industry": brief.get("industry", "services"), "google_review_url": review_url}
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    ensure_schema(conn)
+    client, skip = prepare_lead(conn, lead)
+    if skip:
+        print(f"✗ Nesiųsta: {skip}")
+        conn.close()
+        return False
+    conn.execute("UPDATE clients SET google_place_id=?, google_rating=?, google_reviews_count=? WHERE id=?",
+                 (brief["google_place_id"], brief.get("google_rating"), brief.get("google_reviews_count"), client["id"]))
+    conn.commit()
+    row = conn.execute("SELECT id FROM campaign_leads WHERE email=?", (lead["email"],)).fetchone()
+    lead_id = row["id"] if row else str(uuid.uuid4())
+
+    if not send:
+        subj, text, html = build_custom_email(brief["email_draft"], lead_id, f"{APP_BASE}/r/{brief['slug']}?k=PERZIURA")
+        out = os.path.join(BASE_DIR, "data", "reports", "email_previews", f"{brief['slug']}.html")
+        os.makedirs(os.path.dirname(out), exist_ok=True)
+        with open(out, "w", encoding="utf-8") as f:
+            f.write(f"<!-- Tema: {html_lib.escape(subj)} | Kam: {lead['email']} -->\n" + html)
+        print(f"👁 PERŽIŪRA (neišsiųsta)\nKam: {lead['email']}\nTema: {subj}\n\n{text}\nFailas: {out}\nDemo: {APP_BASE}/r/{brief['slug']}")
+        conn.close()
+        return True
+
+    token = issue_claim_token(conn, client["id"])
+    subj, text, html = build_custom_email(brief["email_draft"], lead_id, f"{APP_BASE}/r/{urllib.parse.quote(brief['slug'])}?k={token}")
+    sender = SMTPEmailSender(config_path=AGENT_PROFILES[0]["config_path"])
+    ok = sender.send_email(to_email=lead["email"], subject=subj, body_text=text, body_html=html,
+                           headers={"List-Unsubscribe": f"<mailto:{SENDER_EMAIL}?subject=Atsisakau>"})
+    if not ok:
+        print("✗ SMTP serveris laiško nepriėmė.")
+        conn.close()
+        return False
+    now_iso = datetime.datetime.now().isoformat()
+    conn.execute("""
+        INSERT INTO campaign_leads (id, campaign_id, business_name, email, slug, city, website, phone, status, sent_at, created_at, updated_at)
+        VALUES (?, 'researched', ?, ?, ?, ?, ?, ?, 'sent', ?, ?, ?)
+        ON CONFLICT(email) DO UPDATE SET status='sent', sent_at=excluded.sent_at, slug=excluded.slug, updated_at=excluded.updated_at
+    """, (lead_id, brief["business_name"], lead["email"], brief["slug"], lead["city"], brief.get("website", ""), brief.get("phone", ""), now_iso, now_iso, now_iso))
+    conn.execute("INSERT INTO campaign_events (id, lead_id, event_type, details, created_at) VALUES (?, ?, 'sent', 'researched', ?)", (str(uuid.uuid4()), lead_id, now_iso))
+    conn.commit()
+    record_message(conn, lead_id, "E0", sender.last_message_id, subj)
+    conn.close()
+    print(f"✓ Išsiųsta: „{subj}“ → {lead['email']}")
+    return True
+
+
 if __name__ == "__main__":
-    # Paleidimas: jei nurodyta 'daemon' – veikia fone, jei ne – paleidžia šios dienos kvotą
-    if len(sys.argv) > 1 and sys.argv[1] == "daemon":
+    mode = sys.argv[1] if len(sys.argv) > 1 else "once"
+    if mode == "research":
+        # python core/morning_campaign_runner.py research data/leads/research/memory-casting.json [--send]
+        send_researched(sys.argv[2], send="--send" in sys.argv[3:])
+        sys.exit(0)
+    if mode == "daemon":
         run_daily_morning_daemon(target_hour=8, target_minute=30)
+    elif mode == "test":
+        # python core/morning_campaign_runner.py test "Denticija Vilnius" jusu+denticija@gmail.com [miestas] [nisa] [reitingas] [atsiliepimu_sk]
+        a = sys.argv[2:]
+        send_manual_test(a[0], a[1], a[2] if len(a) > 2 else "Vilnius", a[3] if len(a) > 3 else "clinic",
+                         float(a[4]) if len(a) > 4 else None, int(a[5]) if len(a) > 5 else None)
+    elif mode == "preview":
+        dispatch_daily_quota(target_agent_id="agent-tomas", force_count=int(sys.argv[2]) if len(sys.argv) > 2 else 3, dry_run=True)
     else:
-        # Tiesioginis šios dienos 25 laiškų išsiuntimas
         dispatch_daily_quota(target_agent_id="agent-tomas", force_count=25)

@@ -7,6 +7,9 @@ export type Client = {
   id: string; slug: string; business_name: string; email: string; phone: string;
   google_review_url: string; subscription_status: string; stripe_customer_id: string | null;
   stripe_subscription_id: string | null; created_at: string; trial_ends_at: string | null; is_demo: number;
+  // Added 2026-11-05 (see ROADMAP_REPUTATIONPRO.md). Columns are created by ensureClientColumns().
+  show_public_link_low: number; industry: string;
+  google_place_id: string | null; google_rating: number | null; google_reviews_count: number | null;
 };
 export type Feedback = {
   id: string; client_id: string; rating: number; feedback_text: string;
@@ -148,6 +151,15 @@ export function db() {
       client_id TEXT PRIMARY KEY REFERENCES clients(id), attempt_id TEXT NOT NULL,
       expires_at INTEGER NOT NULL, session_id TEXT
     );
+    CREATE TABLE IF NOT EXISTS claim_tokens (
+      token_hash TEXT PRIMARY KEY, client_id TEXT NOT NULL REFERENCES clients(id),
+      expires_at INTEGER NOT NULL, used_at INTEGER, created_at INTEGER NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS claim_tokens_client ON claim_tokens(client_id);
+    CREATE TABLE IF NOT EXISTS campaign_suppressions (
+      email TEXT PRIMARY KEY, reason TEXT NOT NULL, details TEXT,
+      created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+    );
     CREATE TABLE IF NOT EXISTS rate_limits (bucket TEXT PRIMARY KEY, count INTEGER NOT NULL, resets_at INTEGER NOT NULL);
     CREATE TABLE IF NOT EXISTS stripe_events (id TEXT PRIMARY KEY, created_at INTEGER NOT NULL);
 
@@ -244,6 +256,7 @@ export function db() {
     CREATE INDEX IF NOT EXISTS revive_bookings_client ON revive_bookings(client_id);
   `);
   migrateFeedbackRatings(sql);
+  ensureClientColumns(sql);
   seedPilotCampaignLeads(sql);
   // Only an explicitly enabled local demo receives a fictional sample clinic.
   if (process.env.DEMO_MODE === 'true') {
@@ -257,6 +270,23 @@ export function db() {
   }
   singleton = sql;
   return sql;
+}
+// Additive, idempotent column migration. Python (core/claim_tokens.py::ensure_schema)
+// runs the same list, so either side may create the columns first.
+export const CLIENT_COLUMNS: [string, string][] = [
+  ['show_public_link_low', 'INTEGER NOT NULL DEFAULT 0'],
+  ['industry', "TEXT NOT NULL DEFAULT 'general'"],
+  ['google_place_id', 'TEXT'],
+  ['google_rating', 'REAL'],
+  ['google_reviews_count', 'INTEGER'],
+];
+function ensureClientColumns(sql: DatabaseSync) {
+  const have = new Set(sql.prepare('PRAGMA table_info(clients)').all().map((row) => String(row.name)));
+  for (const [name, definition] of CLIENT_COLUMNS) {
+    if (have.has(name)) continue;
+    try { sql.exec(`ALTER TABLE clients ADD COLUMN ${name} ${definition}`); }
+    catch (error) { if (!/duplicate column/i.test(String(error))) throw error; }
+  }
 }
 // SQLite cannot alter a CHECK constraint in place. Migrate the known legacy
 // schema transactionally; preserve every row and reject unknown local changes.
@@ -530,7 +560,8 @@ export function recordLeadReply(email: string, replyText: string) {
 export function recordLeadConversion(emailOrSlug: string) {
   const now = new Date().toISOString();
   const lead = getCampaignLeadByEmail(emailOrSlug) || getCampaignLeadBySlug(emailOrSlug);
-  if (lead) {
+  // Callers pass both email and slug; record each lead's conversion only once.
+  if (lead && !lead.converted_at) {
     db().prepare(`UPDATE campaign_leads SET
       status = 'converted',
       converted_at = ?,
@@ -540,6 +571,23 @@ export function recordLeadConversion(emailOrSlug: string) {
       randomUUID(), lead.id, 'Paskyra aktyvuota / pradėtas 14 d. bandymas'
     );
   }
+}
+
+// Demo page opened with a valid claim token (campaign_events.event_type has a CHECK
+// constraint, so demo views are stored as 'click' with details='demo_view').
+export function recordDemoView(slug: string) {
+  const lead = getCampaignLeadBySlug(slug);
+  if (!lead) return;
+  const now = new Date().toISOString();
+  db().prepare(`UPDATE campaign_leads SET
+    status = CASE WHEN status IN ('ready', 'sent', 'opened') THEN 'clicked' ELSE status END,
+    clicked_at = COALESCE(clicked_at, ?), updated_at = ? WHERE id=?`).run(now, now, lead.id);
+  db().prepare(`INSERT INTO campaign_events (id, lead_id, event_type, details) VALUES (?, ?, 'click', 'demo_view')`).run(randomUUID(), lead.id);
+}
+
+export function getClientByEmail(email: string) {
+  const row = db().prepare('SELECT * FROM clients WHERE email=?').get(email.trim().toLowerCase());
+  return row ? { ...row } as Client : undefined;
 }
 
 export function getCampaignStats(campaignId?: string) {

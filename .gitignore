@@ -90,3 +90,30 @@ Desktop.ini
 .vscode/
 *.swp
 *.swo
+
+# --- 2026-11-09: NEKELTI Į GIT ---
+# Vietiniai Cloudflare pagalbiniai skriptai su įrašytu API raktu (cfut_...).
+# Perkėlus raktą į aplinkos kintamąjį (pvz. CLOUDFLARE_API_TOKEN), šiuos įrašus galima išimti.
+configs/cloudflare.json
+configs/cloudflared_config.yml
+add_cf_domain.py
+add_reviveleads_domain.py
+check_cert_status.py
+check_cf_dns.py
+check_cf_routes.py
+check_cf_tunnels.py
+check_growth_routes.py
+check_zt.py
+create_cname.py
+delete_worker_domains.py
+deploy_production_worker.py
+deploy_worker_direct.py
+find_lenovo_tunnel.py
+get_domain_detail.py
+test_deploy_fix.py
+test_normalize_deploy.py
+test_token_dns.py
+verify_token.py
+# Sugeneruotos gyvo Cloudflare worker'io kopijos (~18 MB, tik šiame PC)
+verslomatika_v2_live.js
+verslomatika_v2_updated.js

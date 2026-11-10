@@ -44,7 +44,7 @@ function formatRelativeTime(dateStr: string): string {
 
 export function FeedbackInbox({ 
   items: initialItems,
-  clinicName = 'Mūsų klinika'
+  clinicName = 'Mūsų įmonė'
 }: { 
   items: Feedback[];
   clinicName?: string;
@@ -102,14 +102,14 @@ export function FeedbackInbox({
   }
 
   function composeApologyMailto(f: Feedback): string {
-    const subject = encodeURIComponent(`Klinika „${clinicName}“: atsakymas dėl Jūsų atsiliepimo`);
-    const patientName = f.customer_name ? f.customer_name : 'paciente';
+    const subject = encodeURIComponent(`„${clinicName}“: atsakymas dėl Jūsų atsiliepimo`);
+    const patientName = f.customer_name ? f.customer_name : 'kliente';
     const body = encodeURIComponent(
       `Sveiki, gerb. ${patientName},\n\n` +
-      `Nuoširdžiai apgailestaujame, kad Jūsų vizitas klinikoje „${clinicName}“ nebuvo nepriekaištingas. ` +
+      `Nuoširdžiai apgailestaujame, kad Jūsų patirtis „${clinicName}“ nebuvo nepriekaištinga. ` +
       `Gavome Jūsų pastebėjimą:\n` +
       `„${f.feedback_text}“\n\n` +
-      `Mūsų komandai itin svarbi kiekvieno paciento patirtis. Norėtume asmeniškai aptarti šią situaciją ir rasti Jums tinkamiausią sprendimą.\n\n` +
+      `Mūsų komandai itin svarbi kiekvieno kliento patirtis. Norėtume asmeniškai aptarti šią situaciją ir rasti Jums tinkamiausią sprendimą.\n\n` +
       `Kada Jums būtų patogu trumpam pasikalbėti telefonu?\n\n` +
       `Pagarbiai,\n` +
       `${clinicName} vadovybė\n`
@@ -154,7 +154,7 @@ export function FeedbackInbox({
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Ieškoti pagal tekstą, pacientą ar tel…"
+            placeholder="Ieškoti pagal tekstą, vardą ar tel…"
             aria-label="Ieškoti privačių atsiliepimų"
           />
         </div>
@@ -172,7 +172,7 @@ export function FeedbackInbox({
           <p>
             {items.length
               ? 'Pakeiskite paieškos frazę arba pasirinkite kitą filtrą viršuje.'
-              : 'Kai pacientas registratūroje pasirinks 1–3★ įvertinimą, jo privati žinutė atkeliaus tiesiai čia, nesukeldama jokios žalos viešam Google Maps reitingui.'}
+              : 'Kai klientas pasirinks 1–3★ įvertinimą ir parašys pastabą, ji atkeliaus tiesiai čia, o Jūs gausite el. laišką.'}
           </p>
         </div>
       ) : (
@@ -197,7 +197,7 @@ export function FeedbackInbox({
                     </div>
                     <div>
                       <div className="patient-name-row">
-                        <strong>{item.customer_name || 'Anoniminis pacientas'}</strong>
+                        <strong>{item.customer_name || 'Vardas nenurodytas'}</strong>
                         <span className={`urgency-pill ${isCritical ? 'urgency-critical' : isNotice ? 'urgency-notice' : 'urgency-positive'}`}>
                           {isCritical ? '🔴 Kritinis nusiskundimas' : isNotice ? '🟡 Pastaba / Pasiūlymas' : '🟢 Pagyrimas'}
                         </span>
@@ -229,7 +229,7 @@ export function FeedbackInbox({
                 <div className="incident-actions-bar">
                   <div className="patient-contacts-row">
                     {cleanPhone ? (
-                      <a href={`tel:${cleanPhone}`} className="action-pill pill-call" title="Skambinti pacientui">
+                      <a href={`tel:${cleanPhone}`} className="action-pill pill-call" title="Skambinti klientui">
                         <Phone size={13} />
                         <span>Skambinti: {item.customer_phone}</span>
                       </a>
@@ -286,7 +286,7 @@ export function FeedbackInbox({
       <div className="inbox-footer-note">
         <Sparkles size={14} />
         <span>
-          Šios žinutės yra 100% privačios ir matomos tik Jūsų klinikos vadovybei. Jos nėra ir niekada nebus skelbiamos Google ar viešoje erdvėje.
+          Šios žinutės privačios: jas mato tik Jūsų paskyra, mes jų niekur neskelbiame.
         </span>
       </div>
     </div>

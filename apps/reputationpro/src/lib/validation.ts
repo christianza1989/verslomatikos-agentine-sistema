@@ -7,6 +7,17 @@ export function validGoogleUrl(value: string) {
     return ['google.com','www.google.com'].includes(u.hostname)&&/^\/maps(?:\/|$)/.test(u.pathname);
   } catch { return false; }
 }
+// True only for links that open the business's own "write a review" form directly
+// (not a Maps search). Used for honest "Susieta" badges and onboarding checks.
+export function isDirectReviewUrl(value: string|null|undefined) {
+  if(!value)return false;
+  try {
+    const u=new URL(value);
+    if(u.hostname==='search.google.com'&&u.pathname==='/local/writereview')return !!u.searchParams.get('placeid');
+    if(u.hostname==='g.page')return /^\/r\/[^/]+\/review\/?$/.test(u.pathname);
+    return false;
+  } catch { return false; }
+}
 export const clinicSchema=z.object({
   business_name:z.string().trim().min(2).max(120),
   email:z.email().trim().toLowerCase().max(254),

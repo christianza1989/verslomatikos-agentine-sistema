@@ -1,138 +1,97 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db, createClient, getClient, recordLeadConversion } from '@/lib/db';
-import { error, jsonBody, sameOrigin, SESSION_COOKIE } from '@/lib/security';
+import { z } from 'zod';
+import { db, createClient, getClient, getClientByEmail, recordLeadConversion, type Client } from '@/lib/db';
+import { appUrl, error, jsonBody, rateLimit, sameOrigin, SESSION_COOKIE } from '@/lib/security';
 import { createClinicCredential, issueClinicSession } from '@/lib/clinic-access';
-import { sendWelcomeEmail, sendNewOrderAlertToAdmin } from '@/lib/clinic-mail';
+import { issueClaimToken, maskEmail, TRIAL_MS } from '@/lib/claim';
+import { clinicSchema } from '@/lib/validation';
+import { sendClaimEmail, sendWelcomeEmail, sendNewOrderAlertToAdmin } from '@/lib/clinic-mail';
+
+const checkoutSchema = clinicSchema.extend({
+  password: z.string().min(8, 'Slaptažodis turi būti bent 8 simbolių.').max(128),
+  plan: z.enum(['starter', 'pro', 'annual']).optional(),
+  delivery_address: z.string().trim().max(300).optional(),
+});
+
+// Self-service registration from the landing page.
+//
+// SECURITY (do not regress, see ROADMAP_REPUTATIONPRO.md A1): this route never modifies
+// an existing client. Pre-provisioned outbound leads (is_demo=1) are claimed only with the
+// one-time token from their email (/aktyvuoti/{token}); here we just mail that link to the
+// address on file. Claimed/real clients get "please log in".
+async function handleExisting(existing: Client) {
+  if (existing.is_demo === 1) {
+    let sentTo: string | null = null;
+    if (rateLimit(`claim-resend:${existing.id}`, 3, 60 * 60 * 1000)) {
+      const token = issueClaimToken(existing.id);
+      const sent = await sendClaimEmail(existing.email, existing.business_name, `${appUrl()}/aktyvuoti/${token}`).catch(() => false);
+      if (sent) sentTo = maskEmail(existing.email);
+    }
+    return NextResponse.json({
+      error: sentTo
+        ? `„${existing.business_name}“ paskyra jau paruošta. Aktyvavimo nuorodą išsiuntėme į ${sentTo} – atverkite ją ir nustatykite slaptažodį.`
+        : `„${existing.business_name}“ paskyra jau paruošta. Aktyvuokite ją per nuorodą laiške arba parašykite tomas@verslomatika.lt.`,
+      code: 'claim_sent',
+    }, { status: 409 });
+  }
+  return NextResponse.json({
+    error: 'Paskyra su šiuo pavadinimu arba el. paštu jau yra. Prisijunkite arba atkurkite slaptažodį.',
+    code: 'exists',
+  }, { status: 409 });
+}
 
 export async function POST(req: NextRequest) {
   if (!sameOrigin(req)) return error('Netinkama užklausos kilmė.', 403);
+  const ip = req.headers.get('cf-connecting-ip') || req.headers.get('x-forwarded-for') || 'local';
+  if (!rateLimit(`checkout:${ip}`, 10, 60 * 60 * 1000)) return error('Per daug bandymų. Pabandykite po valandos.', 429);
   try {
-    const body = await jsonBody(req) as Record<string, string>;
-    const { business_name, email, slug, google_review_url, phone, password, plan, delivery_address } = body;
-    if (!business_name || !email || !slug || !google_review_url) {
-      return error('Užpildykite visus privalomus laukelius.');
-    }
-    const cleanSlug = slug.toLowerCase().trim();
-    const existing = getClient(cleanSlug);
+    const parsed = checkoutSchema.safeParse(await jsonBody(req));
+    if (!parsed.success) return error(parsed.error.issues[0]?.message || 'Užpildykite visus privalomus laukelius.');
+    const data = parsed.data;
 
-    let client: any;
+    const existing = getClient(data.slug) || getClientByEmail(data.email);
+    if (existing) return handleExisting(existing);
 
-    if (existing) {
-      // If this is our pre-provisioned demo/campaign lead claiming their account
-      const isPreProvisioned = existing.is_demo === 1 || existing.subscription_status === 'demo_trial';
-      const isSameEmail = existing.email.toLowerCase() === email.trim().toLowerCase();
-      
-      if (isPreProvisioned || isSameEmail) {
-        // Upgrade existing demo client to active trial
-        db().prepare(`
-          UPDATE clients SET
-            business_name = ?,
-            email = ?,
-            google_review_url = ?,
-            phone = ?,
-            subscription_status = 'trialing',
-            is_demo = 0,
-            trial_ends_at = ?
-          WHERE id = ?
-        `).run(
-          business_name.trim(),
-          email.trim().toLowerCase(),
-          google_review_url.trim(),
-          (phone || '').trim(),
-          new Date(Date.now() + 14 * 86400000).toISOString(),
-          existing.id
-        );
-        client = getClient(cleanSlug)!;
-      } else {
-        return error('Šis nuorodos vardas jau užimtas. Pasirinkite kitą.');
-      }
-    } else {
-      // Create fresh client in 14-day trial mode
+    const sql = db();
+    sql.exec('BEGIN IMMEDIATE');
+    let client: Client;
+    try {
       client = createClient({
-        business_name: business_name.trim(),
-        email: email.trim().toLowerCase(),
-        slug: cleanSlug,
-        google_review_url: google_review_url.trim(),
-        phone: (phone || '').trim(),
-        subscription_status: 'trialing',
-        trial_ends_at: new Date(Date.now() + 14 * 86400000).toISOString()
+        business_name: data.business_name, email: data.email, slug: data.slug,
+        google_review_url: data.google_review_url, phone: data.phone || '',
+        subscription_status: 'trialing', trial_ends_at: new Date(Date.now() + TRIAL_MS).toISOString(),
       }, false);
-    }
-
-    // Track campaign conversion if this clinic was part of a campaign
-    try {
-      recordLeadConversion(email.trim().toLowerCase());
-      recordLeadConversion(cleanSlug);
-    } catch (err) {
-      console.error('Failed to record campaign conversion:', err);
-    }
-
-    // Save credentials if provided
-    if (password && password.length >= 8) {
-      try {
-        createClinicCredential(client.id, password);
-      } catch (err) {
-        console.error('Failed to create clinic credential:', err);
+      createClinicCredential(client.id, data.password);
+      // Accepted risk (ROADMAP A1 note): landing sign-ups get instant access without a
+      // mailbox round-trip. Outbound leads prove their mailbox through the claim token.
+      sql.prepare('INSERT OR REPLACE INTO clinic_email_verifications(client_id, verified_at) VALUES (?,?)').run(client.id, Date.now());
+      if (data.delivery_address) {
+        sql.exec(`CREATE TABLE IF NOT EXISTS stand_orders (
+          id TEXT PRIMARY KEY, client_id TEXT NOT NULL, plan TEXT NOT NULL, delivery_address TEXT NOT NULL,
+          created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')))`);
+        sql.prepare('INSERT INTO stand_orders (id, client_id, plan, delivery_address) VALUES (?, ?, ?, ?)')
+          .run(crypto.randomUUID(), client.id, data.plan || 'trial', data.delivery_address);
       }
+      sql.exec('COMMIT');
+    } catch (e) {
+      sql.exec('ROLLBACK');
+      throw e;
     }
 
-    // Mark email as verified for trial access
-    try {
-      db().prepare('INSERT OR REPLACE INTO clinic_email_verifications(client_id, verified_at) VALUES (?,?)').run(client.id, Date.now());
-    } catch (err) {
-      console.error('Failed to record verification:', err);
-    }
+    try { recordLeadConversion(client.email); recordLeadConversion(client.slug); }
+    catch (err) { console.error('Failed to record campaign conversion:', err); }
 
-    // Save order details / stand delivery address
-    try {
-      db().exec(`
-        CREATE TABLE IF NOT EXISTS stand_orders (
-          id TEXT PRIMARY KEY,
-          client_id TEXT NOT NULL,
-          plan TEXT NOT NULL,
-          delivery_address TEXT NOT NULL,
-          created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
-        );
-      `);
-      db().prepare('INSERT INTO stand_orders (id, client_id, plan, delivery_address) VALUES (?, ?, ?, ?)').run(
-        crypto.randomUUID(),
-        client.id,
-        plan || 'annual',
-        delivery_address || ''
-      );
-    } catch (err) {
-      console.error('Failed to save stand order record:', err);
-    }
-
-    // Issue clinic session for instant login
     const session = issueClinicSession(client.id);
-
-    // Dispatch emails in background
     sendWelcomeEmail(client.email, client.business_name, client.slug).catch(err => console.error('Welcome email error:', err));
     sendNewOrderAlertToAdmin({
-      business_name: client.business_name,
-      email: client.email,
-      slug: client.slug,
-      phone: client.phone,
-      plan: plan || 'annual',
-      delivery_address: delivery_address || ''
+      business_name: client.business_name, email: client.email, slug: client.slug, phone: client.phone,
+      plan: data.plan || 'trial', delivery_address: data.delivery_address || '',
     }).catch(err => console.error('Admin order alert error:', err));
 
-    const res = NextResponse.json({
-      ok: true,
-      slug: client.slug,
-      url: `/admin?clinic=${encodeURIComponent(client.slug)}#onboarding`
-    }, { status: 201 });
-
-    // Set authentication session cookie
+    const res = NextResponse.json({ ok: true, slug: client.slug, url: '/admin#onboarding' }, { status: 201 });
     res.cookies.set(SESSION_COOKIE, session.token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      path: '/',
-      maxAge: 8 * 3600,
-      sameSite: 'lax'
+      httpOnly: true, secure: appUrl().startsWith('https:'), path: '/', maxAge: 8 * 3600, sameSite: 'lax',
     });
-
     return res;
   } catch (err) {
     console.error('Checkout registration error:', err);

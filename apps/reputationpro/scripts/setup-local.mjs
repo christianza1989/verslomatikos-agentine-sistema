@@ -1,9 +1,9 @@
 import { existsSync,writeFileSync } from 'node:fs';
 import { randomBytes } from 'node:crypto';
-if(Number(process.versions.node.split('.')[0])<24)throw new Error('ReputationPro requires Node.js 24 or newer (node:sqlite).');
+if(Number(process.versions.node.split('.')[0])<22)throw new Error('ReputationPro requires Node.js 22 or newer (node:sqlite).');
 if(existsSync('.env.local')){console.log('Existing .env.local preserved.');process.exit(0);}
 writeFileSync('.env.local',[
-  'APP_URL=http://127.0.0.1:3000','NEXT_PUBLIC_APP_URL=http://127.0.0.1:3000','DATABASE_PATH=./data/reputation.db','DEMO_MODE=true',
+  'APP_URL=https://reputacija.verslomatika.lt','NEXT_PUBLIC_APP_URL=https://reputacija.verslomatika.lt','DATABASE_PATH=./data/reputation.db','DEMO_MODE=true',
   'ADMIN_EMAIL=owner@reputationpro.local','ADMIN_PASSWORD='+randomBytes(15).toString('base64url'),
   'SESSION_SECRET='+randomBytes(48).toString('hex'),'STRIPE_SECRET_KEY=','STRIPE_WEBHOOK_SECRET=','STRIPE_PRICE_ID=',''
 ].join('\n'),{mode:0o600});

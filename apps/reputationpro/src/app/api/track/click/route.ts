@@ -12,7 +12,15 @@ export async function GET(req: NextRequest) {
     const ip = req.headers.get('cf-connecting-ip') || req.headers.get('x-forwarded-for') || '';
     const ua = req.headers.get('user-agent') || '';
     try {
-      recordLeadClick(id, destination, ip, ua);
+      // Never store the one-time claim token (?k=) in tracking tables.
+      let logged = destination;
+      try {
+        const u = new URL(destination);
+        u.searchParams.delete('k');
+        u.pathname = u.pathname.replace(/^\/aktyvuoti\/[^/]+/, '/aktyvuoti/***');
+        logged = u.toString();
+      } catch { /* keep raw */ }
+      recordLeadClick(id, logged, ip, ua);
     } catch (e) {
       console.error('Tracking click error:', e);
     }

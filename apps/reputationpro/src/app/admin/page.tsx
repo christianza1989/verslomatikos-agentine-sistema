@@ -26,11 +26,14 @@ import { BillingPortal, ClinicForm, ClinicPicker, CopyLink, Logout } from '@/com
 import { FeedbackInbox } from '@/components/feedback-inbox';
 import { DashboardKPIs } from '@/components/dashboard-kpis';
 import { StandStudio } from '@/components/stand-studio';
+import { OnboardingChecklist } from '@/components/onboarding-checklist';
+import { PublicLinkToggle } from '@/components/public-link-toggle';
+import { isDirectReviewUrl } from '@/lib/validation';
 import { db, getClientById, getClients, getFeedback, getStats } from '@/lib/db';
 import { appUrl, currentPrincipal, demoEnabled } from '@/lib/security';
 
 export const dynamic = 'force-dynamic';
-export const metadata = { title: 'Klinikos Valdymo Skydelis · ReputationPro' };
+export const metadata = { title: 'Valdymo skydelis · ReputationPro' };
 
 const statuses: Record<string, string> = {
   demo_trial: 'Testinis 14 d. bandymas',
@@ -63,6 +66,7 @@ export default async function Admin({
   const stats = clinic ? getStats(clinic.id) : null;
   const feedback = clinic ? getFeedback(clinic.id) : [];
   const url = clinic ? `${appUrl()}/r/${clinic.slug}` : '';
+  const googleOk = clinic ? isDirectReviewUrl(clinic.google_review_url) : false;
 
   const qr = clinic
     ? await QRCode.toDataURL(url, {
@@ -133,7 +137,7 @@ export default async function Admin({
               {clinic ? clinic.business_name[0].toUpperCase() : 'K'}
             </span>
             <div className="owner-meta">
-              <strong>{clinic ? clinic.business_name : 'Klinikos erdvė'}</strong>
+              <strong>{clinic ? clinic.business_name : 'Jūsų erdvė'}</strong>
               <small>{principal.role === 'owner' ? 'Savininko prieiga' : 'Sertifikuota paskyra'}</small>
             </div>
           </div>
@@ -160,7 +164,7 @@ export default async function Admin({
                 rel="noopener noreferrer" 
                 className="topbar-action-link"
               >
-                <span>Paciento vaizdas</span>
+                <span>Kliento vaizdas</span>
                 <ExternalLink size={14} />
               </a>
             )}
@@ -177,11 +181,11 @@ export default async function Admin({
             <div className="hero-title-area">
               <div className="clinic-title-badge">
                 <Building2 size={16} />
-                <span>Klinikos Valdymo Centras</span>
+                <span>Valdymo centras</span>
               </div>
-              <h1>{clinic ? clinic.business_name : 'Jūsų klinikos erdvė'}</h1>
+              <h1>{clinic ? clinic.business_name : 'Jūsų erdvė'}</h1>
               <p>
-                Realaus laiko pacientų atsiliepimų filtras, registratūros stovelio valdymas ir apsauga nuo neigiamų Google Maps įvertinimų.
+                Klientų įvertinimai, privačios pastabos ir Jūsų QR kodas vienoje vietoje.
               </p>
             </div>
 
@@ -207,6 +211,16 @@ export default async function Admin({
 
           {clinic && stats ? (
             <>
+              {/* 0. First-run checklist (target of the /admin#onboarding redirect after activation) */}
+              <OnboardingChecklist
+                slug={clinic.slug}
+                businessName={clinic.business_name}
+                pageUrl={url}
+                qr={qr}
+                googleOk={googleOk}
+                ratings={stats.ratings}
+              />
+
               {/* 1. Executive Review Shield KPIs */}
               <DashboardKPIs 
                 stats={stats} 
@@ -231,8 +245,8 @@ export default async function Admin({
                 <section id="inbox" className="dashboard-panel inbox-panel">
                   <div className="panel-heading">
                     <div>
-                      <h2>Vadovo Dėžutė (Review Shield™ Triage)</h2>
-                      <p>Privačios pacientų pastabos, sulaikytos nuo viešo Google Maps. Išklausykite ir išspręskite tiesiogiai.</p>
+                      <h2>Vadovo dėžutė</h2>
+                      <p>Privačios klientų pastabos. Susisiekite ir išspręskite situaciją asmeniškai.</p>
                     </div>
                     <a 
                       className="icon-button" 
@@ -253,12 +267,12 @@ export default async function Admin({
                   <section className="dashboard-panel google-sync-card">
                     <div className="panel-heading">
                       <h3>Google Maps ryšys</h3>
-                      <div className="google-badge-live">
-                        <CheckCircle2 size={14} /> Susietas
-                      </div>
+                      {googleOk
+                        ? <div className="google-badge-live"><CheckCircle2 size={14} /> Susietas</div>
+                        : <div className="google-badge-warn">Patikslinkite</div>}
                     </div>
                     <p className="google-sync-desc">
-                      Visi 4–5★ pacientų įvertinimai nukreipiami tiesiai į šį Jūsų profilį:
+                      {googleOk ? 'Visi 4–5★ įvertinimai nukreipiami tiesiai į Jūsų Google atsiliepimų formą:' : 'Ši nuoroda neveda tiesiai į atsiliepimų formą. Pakeiskite ją nustatymuose į „Prašyti atsiliepimų“ nuorodą:'}
                     </p>
                     <div className="google-url-preview">
                       <span className="google-url-text">{clinic.google_review_url}</span>
@@ -277,14 +291,14 @@ export default async function Admin({
                   {/* Rating Distribution Breakdown */}
                   <section className="dashboard-panel distribution">
                     <div className="panel-heading">
-                      <h3>Registratūros įvertinimai</h3>
+                      <h3>Įvertinimai</h3>
                       <Star size={18} fill="#f59e0b" color="#f59e0b" />
                     </div>
-                    <p>Sąveikos pacientų puslapyje prieš nukreipimą.</p>
+                    <p>Klientų įvertinimai Jūsų puslapyje.</p>
                     
                     <div className="average-value">
-                      <strong>{stats.average?.toFixed(1) || '5.0'}</strong>
-                      <span>/ 5.0</span>
+                      <strong>{stats.ratings ? stats.average!.toFixed(1) : '–'}</strong>
+                      <span>{stats.ratings ? '/ 5.0' : 'Dar nėra įvertinimų'}</span>
                     </div>
 
                     <div className="ratings-histogram">
@@ -345,11 +359,12 @@ export default async function Admin({
               <section id="settings" className="dashboard-panel settings-panel">
                 <div className="panel-heading">
                   <div>
-                    <h2>Klinikos Nustatymai</h2>
-                    <p>Pakeitimai iškart atsispindės paciento atsiliepimų puslapyje ir NFC nukreipime.</p>
+                    <h2>Nustatymai</h2>
+                    <p>Pakeitimai iškart atsispindi Jūsų atsiliepimų puslapyje.</p>
                   </div>
                   <Settings size={21} />
                 </div>
+                <PublicLinkToggle clientId={clinic.id} initial={!!clinic.show_public_link_low} />
                 <ClinicForm client={clinic} />
               </section>
             </>

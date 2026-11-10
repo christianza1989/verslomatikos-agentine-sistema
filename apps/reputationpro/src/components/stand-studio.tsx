@@ -169,13 +169,13 @@ export function StandStudio({
 
           {/* Patient URL Copy Field */}
           <div className="url-copy-box">
-            <span className="url-copy-label">Tiesioginė paciento atsiliepimų nuoroda:</span>
+            <span className="url-copy-label">Tiesioginė atsiliepimų nuoroda:</span>
             <div className="url-copy-field">
               <input 
                 type="text" 
                 readOnly 
                 value={patientUrl} 
-                aria-label="Tiesioginė klinikos vertinimo nuoroda"
+                aria-label="Tiesioginė vertinimo nuoroda"
                 className="url-copy-input"
               />
               <button 
@@ -200,7 +200,7 @@ export function StandStudio({
                 <Truck size={19} className="truck-icon" />
                 <div>
                   <h3>Fizinio akrilinio stovelio pristatymas</h3>
-                  <small>Gaminamas pagal individualų klinikos užsakymą</small>
+                  <small>Gaminamas pagal individualų užsakymą</small>
                 </div>
               </div>
               <span className="tracker-status-pill in-production">
@@ -217,7 +217,7 @@ export function StandStudio({
                 </div>
                 <div className="step-content">
                   <strong>1. Užsakymas patvirtintas</strong>
-                  <p>Klinikos profilis ir nukreipimo algoritmai sukonfigūruoti.</p>
+                  <p>Įmonės profilis ir nukreipimas sukonfigūruoti.</p>
                 </div>
               </div>
 
@@ -278,22 +278,22 @@ export function StandStudio({
               <li>
                 <strong>Kada pasiūlyti:</strong>
                 <p>
-                  Pacientui atsiskaitant už paslaugas arba laukiant kvito:
+                  Klientui atsiskaitant arba laukiant kvito:
                   <em> „Gydytojas labai vertina Jūsų nuomonę – būsime dėkingi, jei priglausite telefoną prie šio stovelio.“</em>
                 </p>
               </li>
               <li>
                 <strong>Kaip veikia bekontaktis NFC:</strong>
                 <p>
-                  Nereikia diegti jokios programėlės. Pacientui pakanka atrakintą telefoną 
+                  Nereikia diegti jokios programėlės. Klientui pakanka atrakintą telefoną 
                   (iPhone viršumi arba Android nugarėle) priglausti prie stovelio. Langas atsidaro per 1 sekundę.
                 </p>
               </li>
               <li>
                 <strong>Saugi reputacija:</strong>
                 <p>
-                  Laimingi pacientai (4–5★) iškart atsiduria Google Maps atsiliepimų formoje. 
-                  Jei pacientas turi pastabų (1–3★), jos keliauja tiesiai į šį vadovo skydelį, o ne į internetą.
+                  Patenkinti klientai (4–5★) iškart atsiduria Google atsiliepimų formoje. 
+                  Jei klientas turi pastabų (1–3★), jos keliauja tiesiai į šį vadovo skydelį.
                 </p>
               </li>
             </ol>

@@ -7,6 +7,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
 from email import encoders
+from email.utils import formatdate, make_msgid
 from datetime import datetime
 from typing import List
 
@@ -29,10 +30,14 @@ class SMTPEmailSender:
         self.password = self.cfg["password"]
         self.display_name = self.cfg.get("display_name", "Tomas | Verslomatika B2B")
         self.reply_to = self.cfg.get("reply_to", self.user)
+        self.last_message_id = None
 
-    def send_email(self, to_email: str, subject: str, body_text: str, body_html: str = None, attachment_paths: List[str] = None) -> bool:
+    def send_email(self, to_email: str, subject: str, body_text: str, body_html: str = None, attachment_paths: List[str] = None, headers: dict = None) -> bool:
         """
         Išsiunčia el. laišką per verslomatika.lt SMTP serverį, pasirinktinai prisegant PDF ar kitus failus.
+        Grąžina True/False (NEKELIA klaidos). Po siuntimo self.last_message_id = laiško Message-ID
+        (naudojamas follow-up laiškų gijai: In-Reply-To / References).
+        headers: papildomos antraštės, pvz. {"In-Reply-To": "<...>", "List-Unsubscribe": "<mailto:...>"}.
         """
         if attachment_paths:
             msg = MIMEMultipart("mixed")
@@ -61,6 +66,13 @@ class SMTPEmailSender:
         msg["To"] = to_email
         msg["Subject"] = subject
         msg["Reply-To"] = self.reply_to
+        # Be Date / Message-ID laiškai dažniau patenka į šlamštą; Message-ID reikalingas ir gijoms.
+        msg["Date"] = formatdate(localtime=True)
+        self.last_message_id = make_msgid(domain=self.user.split("@")[-1])
+        msg["Message-ID"] = self.last_message_id
+        for key, value in (headers or {}).items():
+            if value:
+                msg[key] = value
 
         context = ssl.create_default_context()
         try:

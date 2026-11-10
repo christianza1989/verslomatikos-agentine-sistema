@@ -2,6 +2,8 @@ import Link from 'next/link';
 import { ArrowLeft, MessageCircle, BarChart3, QrCode } from 'lucide-react';
 import { ClinicForm } from '@/components/admin-controls';
 import { getClient } from '@/lib/db';
+import { redirect } from 'next/navigation';
+import { ClaimResend } from '@/components/claim-form';
 import styles from './checkout.module.css';
 
 export const dynamic = 'force-dynamic';
@@ -16,39 +18,25 @@ export default async function Checkout({
     name?: string;
     email?: string;
     google_review_url?: string;
+    claim?: string;
   }>;
 }) {
   const params = await searchParams;
+  // Outbound leads arrive with their one-time token; send them to the 1-step claim page.
+  if (params.claim) redirect(`/aktyvuoti/${encodeURIComponent(params.claim)}`);
   const { plan } = params;
   const initialPlan = plan === 'starter' || plan === 'pro' || plan === 'annual' ? plan : 'pro';
 
+  // SECURITY: never prefill from the database (it leaked client emails, see ROADMAP A1).
+  // Only values the visitor brought in the URL are reused.
   const cleanSlug = (params.slug || '').trim().toLowerCase();
   const existing = cleanSlug ? getClient(cleanSlug) : undefined;
+  const preparedDemo = existing && existing.is_demo === 1 ? { slug: existing.slug, business_name: existing.business_name } : null;
 
-  const business_name = params.name || existing?.business_name || '';
-  const email = params.email || existing?.email || '';
-  const slug = cleanSlug || existing?.slug || '';
-  const phone = existing?.phone || '';
-  
-  // Auto-fill Google Maps review link:
-  // 1. From URL param (if passed)
-  // 2. From existing client database record (researched official Maps URL)
-  // 3. Fallback: Search URL based on business name
-  const google_review_url =
-    params.google_review_url ||
-    existing?.google_review_url ||
-    (business_name ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(business_name)}` : '');
-
-  const client =
-    slug || business_name || email
-      ? {
-          slug,
-          business_name,
-          email,
-          google_review_url,
-          phone
-        }
-      : undefined;
+  const business_name = params.name || '';
+  const email = params.email || '';
+  const google_review_url = params.google_review_url || '';
+  const client = business_name || email ? { business_name, email, google_review_url } : undefined;
 
   return (
     <div className={styles.shell}>
@@ -110,6 +98,7 @@ export default async function Checkout({
           <p className={styles.description}>
             Užpildykite įmonės duomenis ir sukurkite asmeninę atsiliepimų nuorodą.
           </p>
+          {preparedDemo && <ClaimResend slug={preparedDemo.slug} businessName={preparedDemo.business_name} />}
           <ClinicForm client={client} checkout initialPlan={initialPlan} />
         </section>
       </main>

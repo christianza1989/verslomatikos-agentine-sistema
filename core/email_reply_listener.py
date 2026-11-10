@@ -25,6 +25,31 @@ if hasattr(sys.stdout, 'reconfigure'):
 
 DB_PATH = os.path.join(BASE_DIR, 'apps', 'reputationpro', 'data', 'reputation.db')
 
+OPT_OUT_PATTERNS = [
+    r"^\s*ne[\s.!,]*$", r"^\s*ne[,.!]", r"atsisakau", r"neaktualu", r"nedomina", r"nebesi[uų]sk", r"nera[sš]ykite",
+    r"i[sš]braukite", r"nenoriu gauti", r"unsubscribe", r"^\s*stop\b", r"remove me",
+]
+
+
+def is_opt_out(body_text: str) -> bool:
+    """ROADMAP C4: „ne“ / „atsisakau“ / „neaktualu“ atsakymai. Tikrinama tik nauja atsakymo dalis (be citatos)."""
+    fresh = re.split(r"\n\s*(?:>|On .+ wrote:|.+ ra[sš][eė]:|-----)", body_text or "", maxsplit=1)[0]
+    fresh = fresh.strip().lower()[:400]
+    return any(re.search(p, fresh, flags=re.MULTILINE) for p in OPT_OUT_PATTERNS)
+
+
+def record_opt_out(sender_email: str, body_text: str):
+    try:
+        from core.claim_tokens import ensure_schema, suppress
+        conn = sqlite3.connect(DB_PATH, timeout=5.0)
+        ensure_schema(conn)
+        suppress(conn, sender_email, "opt_out", (body_text or "")[:300])
+        conn.close()
+        print(f"[{datetime.now().strftime('%H:%M:%S')}] 🚫 [OPT-OUT] {sender_email} daugiau nebus kontaktuojamas.")
+    except Exception as e:
+        print(f"[DB Opt-out Error] {e}")
+
+
 def record_inbound_reply(sender_email: str, body_text: str):
     try:
         if not os.path.exists(DB_PATH):
@@ -177,7 +202,18 @@ def run_listener(target_sender: str = "lilijazap@gmail.com", poll_interval: int 
                                 print(f"[{datetime.now().strftime('%H:%M:%S')}] 🛑 [AUTO-REPLY / VACATION] Praleidžiamas automatinis atsakymas iš {sender_email}.")
                                 continue
                             
-                            # 1. Tikriname ar tai Apskaitos klientas arba nauja buhalterinė užklausa / dokumentai
+                            # 1. Pirmiausia ReputationPro kampanijos leadai: jų atsakymai su žodžiais
+                            #    „kaina“, „UAB“ ir pan. anksčiau klaidingai keliaudavo į buhalterijos srautą.
+                            campaign_emails = get_campaign_lead_emails()
+                            if sender_email in campaign_emails and sender_email != agent.email_user.lower():
+                                record_inbound_reply(sender_email, body.strip())
+                                if is_opt_out(body):
+                                    record_opt_out(sender_email, body.strip())
+                                else:
+                                    print(f"[{datetime.now().strftime('%H:%M:%S')}] 🔥 [HOT REPUTATION LEAD] Gautas atsakymas iš {sender_email}! Atsakykite asmeniškai.")
+                                continue
+
+                            # 2. Tikriname ar tai Apskaitos klientas arba nauja buhalterinė užklausa / dokumentai
                             accounting_leads = get_accounting_emails() | {"lilijazap@gmail.com"}
                             is_accounting_query = (
                                 sender_email in accounting_leads
@@ -194,9 +230,8 @@ def run_listener(target_sender: str = "lilijazap@gmail.com", poll_interval: int 
                                 accounting_pipe.process_inbound_reply(sender_email, subject, body.strip(), attachments)
                                 continue
 
-                            # 2. Tikriname ar tai B2B kampanijos atsiliepimų leadas
-                            campaign_emails = get_campaign_lead_emails()
-                            allowed_senders = {target_sender.lower(), "phengwey5@gmail.com", "memocasting.lt@gmail.com"} | campaign_emails
+                            # 3. Kiti leidžiami siuntėjai (testai)
+                            allowed_senders = {target_sender.lower(), "phengwey5@gmail.com", "memocasting.lt@gmail.com"}
                             
                             if sender_email in allowed_senders and sender_email != agent.email_user.lower():
                                 record_inbound_reply(sender_email, body.strip())

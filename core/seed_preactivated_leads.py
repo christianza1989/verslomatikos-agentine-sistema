@@ -59,13 +59,14 @@ def main():
 
         preview_url = f"https://reputacija.verslomatika.lt/r/{slug}"
         qr_url = f"https://reputacija.verslomatika.lt/api/qr?slug={slug}"
-        claim_url = f"https://reputacija.verslomatika.lt/checkout?slug={slug}&name={urllib.parse.quote(b_name)}&email={urllib.parse.quote(email)}"
+        claim_url = f"https://reputacija.verslomatika.lt/checkout?slug={slug}"  # aktyvavimas vyksta per claim tokeną laiške
 
         lead["preview_url"] = preview_url
         lead["qr_url"] = qr_url
         lead["claim_url"] = claim_url
 
-        google_search_url = f"https://www.google.com/maps/search/?api=1&query={urllib.parse.quote(b_name + ' ' + city)}"
+        from core.google_place_resolver import get_direct_review_url
+        google_search_url = get_direct_review_url(b_name, city)
 
         # Check if already exists in DB
         cur.execute("SELECT id FROM clients WHERE slug=?", (slug,))
@@ -80,8 +81,8 @@ def main():
             created_count += 1
         else:
             cur.execute("""
-                UPDATE clients SET business_name=?, email=?, google_review_url=? WHERE slug=?
-            """, (b_name, email, google_search_url, slug))
+                UPDATE clients SET business_name=?, email=?, google_review_url=? WHERE slug=? AND is_demo=1
+            """, (b_name, email, google_search_url, slug))  # ROADMAP A5: never touch claimed clients
             updated_count += 1
 
     con.commit()

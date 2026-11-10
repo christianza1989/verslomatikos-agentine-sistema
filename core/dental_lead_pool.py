@@ -6,7 +6,7 @@ import unicodedata
 import re
 import urllib.parse
 from datetime import datetime, timedelta
-from typing import List, Dict, Any
+from typing import Optional, List, Dict, Any
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DB_PATH = os.path.join(BASE_DIR, "apps", "reputationpro", "data", "reputation.db")
@@ -913,10 +913,11 @@ def get_uncontacted_dental_leads(limit: int = 25) -> List[Dict[str, Any]]:
                 "pain_point": item.get("pain_point", "pacientų atsiliepimai"),
                 "hook": item.get("hook", "kaip apsaugoti 5.0★ Google reitingą"),
                 "niche": "odontologija",
+                "industry": "clinic",
                 "slug": slug,
                 "preview_url": f"https://reputacija.verslomatika.lt/r/{slug}",
                 "qr_url": f"https://reputacija.verslomatika.lt/api/qr?slug={slug}",
-                "claim_url": f"https://reputacija.verslomatika.lt/checkout?slug={slug}&name={urllib.parse.quote(b_name)}&email={urllib.parse.quote(email)}"
+                "claim_url": f"https://reputacija.verslomatika.lt/checkout?slug={slug}"  # aktyvavimas per claim tokeną laiške (ROADMAP A3)
             }
             fresh_leads.append(lead_obj)
             if len(fresh_leads) >= limit:
@@ -924,33 +925,56 @@ def get_uncontacted_dental_leads(limit: int = 25) -> List[Dict[str, Any]]:
                 
     return fresh_leads
 
-def provision_lead_in_db(lead: Dict[str, Any]):
-    """Sukuria demonstracinį profilį `clients` lentelėje, jei dar nėra."""
+def provision_lead_in_db(lead: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """Sukuria arba atnaujina demonstracinį profilį `clients` lentelėje.
+
+    SAUGUMAS (ROADMAP A5): jau aktyvuoto kliento (is_demo=0) niekada neliečia.
+    Grąžina {"id", "google_review_url", "is_demo", ...} arba None, jei įvyko klaida.
+    """
     try:
+        from core.claim_tokens import ensure_schema
+        from core.google_place_resolver import get_direct_review_url
+
         conn = sqlite3.connect(DB_PATH)
+        conn.row_factory = sqlite3.Row
+        ensure_schema(conn)
         cur = conn.cursor()
         slug = lead["slug"]
         b_name = lead["business_name"]
-        email = lead["email"]
+        email = lead["email"].strip().lower()
         city = lead.get("city", "Vilnius")
+        industry = lead.get("industry") or ("clinic" if lead.get("niche") == "odontologija" else "general")
         trial_end = (datetime.now() + timedelta(days=14)).isoformat()
-        google_search_url = f"https://www.google.com/maps/search/?api=1&query={urllib.parse.quote(b_name + ' ' + city)}"
-        
-        cur.execute("SELECT id FROM clients WHERE slug=?", (slug,))
+
+        cur.execute("SELECT * FROM clients WHERE slug=? OR email=?", (slug, email))
         existing = cur.fetchone()
+        if existing and not existing["is_demo"]:
+            conn.close()
+            return dict(existing)  # tikras klientas: nieko nekeičiame
+
+        # Tyrimo metu patikrinta nuoroda (data/leads/research/*.json) turi pirmenybę prieš skrapinimą.
+        review_url = lead.get("google_review_url") or (existing["google_review_url"] if existing else None)
+        from core.claim_tokens import is_direct_review_url
+        if not review_url or not is_direct_review_url(review_url):
+            review_url = get_direct_review_url(b_name, city)
+
         if not existing:
             cur.execute("""
-                INSERT INTO clients (id, slug, business_name, email, google_review_url, phone, subscription_status, is_demo, trial_ends_at)
-                VALUES (?, ?, ?, ?, ?, '', 'demo_trial', 1, ?)
-            """, (f"pre-{slug}", slug, b_name, email, google_search_url, trial_end))
+                INSERT INTO clients (id, slug, business_name, email, google_review_url, phone, subscription_status, is_demo, trial_ends_at, industry)
+                VALUES (?, ?, ?, ?, ?, '', 'demo_trial', 1, ?, ?)
+            """, (f"pre-{slug}", slug, b_name, email, review_url, trial_end, industry))
         else:
             cur.execute("""
-                UPDATE clients SET business_name=?, email=?, google_review_url=? WHERE slug=?
-            """, (b_name, email, google_search_url, slug))
+                UPDATE clients SET business_name=?, google_review_url=?, industry=? WHERE id=? AND is_demo=1
+            """, (b_name, review_url, industry, existing["id"]))
         conn.commit()
+        cur.execute("SELECT * FROM clients WHERE slug=? OR email=?", (slug, email))
+        row = cur.fetchone()
         conn.close()
+        return dict(row) if row else None
     except Exception as e:
         print(f"[Provision Lead DB Error] {e}")
+        return None
 
 if __name__ == "__main__":
     leads = get_uncontacted_dental_leads(25)
