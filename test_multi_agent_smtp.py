@@ -102,7 +102,7 @@ def main():
 
     print("=" * 75)
     if all_ok:
-        print("✅ Visi 5 agentai sėkmingai prisijungė prie Hostinger SMTP!")
+        print("✅ Visi aktyvūs agentai sėkmingai prisijungė prie SMTP!")
     else:
         print("ℹ️ Įveskite trūkstamus slaptažodžius 'configs/reputation_agents/*.json' failuose.")
     print("=" * 75)

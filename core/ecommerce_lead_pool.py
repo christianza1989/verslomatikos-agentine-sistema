@@ -976,9 +976,9 @@ def get_uncontacted_ecommerce_leads(limit: int = 25) -> List[Dict[str, Any]]:
             results.append({
                 **lead,
                 "slug": slug,
-                "preview_url": f"https://verslomatika.lt/r/{slug}",
-                "claim_url": f"https://verslomatika.lt/checkout?slug={slug}",  # aktyvavimas per claim tokeną laiške (ROADMAP A3)
-                "qr_url": f"https://verslomatika.lt/api/qr?slug={slug}"
+                "preview_url": f"https://reputacija.verslomatika.lt/r/{slug}",
+                "claim_url": f"https://reputacija.verslomatika.lt/checkout?slug={slug}",  # aktyvavimas per claim tokeną laiške (ROADMAP A3)
+                "qr_url": f"https://reputacija.verslomatika.lt/api/qr?slug={slug}"
             })
             if len(results) >= limit:
                 break

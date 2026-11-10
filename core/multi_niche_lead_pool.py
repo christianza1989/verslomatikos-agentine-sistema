@@ -78,9 +78,9 @@ def get_uncontacted_leads_for_agent(target_industry: str, limit: int = 25, agent
             "niche": item.get("niche") or ind,
             "industry": ind,
             "slug": slug,
-            "preview_url": f"https://verslomatika.lt/r/{slug}",
-            "qr_url": f"https://verslomatika.lt/api/qr?slug={slug}",
-            "claim_url": f"https://verslomatika.lt/checkout?slug={slug}"
+            "preview_url": f"https://reputacija.verslomatika.lt/r/{slug}",
+            "qr_url": f"https://reputacija.verslomatika.lt/api/qr?slug={slug}",
+            "claim_url": f"https://reputacija.verslomatika.lt/checkout?slug={slug}"
         }
         fresh.append(lead_obj)
         seen_in_batch.add(email)

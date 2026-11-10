@@ -37,7 +37,7 @@ from core.claim_tokens import (ensure_schema, issue_claim_token, is_suppressed, 
 
 DB_PATH = os.path.join(BASE_DIR, "apps", "reputationpro", "data", "reputation.db")
 # Visa piltuvo logika (demo, sekimas, aktyvavimas) gyvena Next.js aplikacijoje šiame PC.
-APP_BASE = os.environ.get("REPUTATION_APP_URL", "https://verslomatika.lt").rstrip("/")
+APP_BASE = os.environ.get("REPUTATION_APP_URL", "https://reputacija.verslomatika.lt").rstrip("/")
 SENDER_NAME = "Tomas"
 SENDER_EMAIL = "tomas@verslomatika.lt"
 
