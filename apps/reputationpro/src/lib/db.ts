@@ -2,6 +2,7 @@ import { DatabaseSync } from 'node:sqlite';
 import { mkdirSync } from 'node:fs';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
+import { usableReviewUrl } from './validation.ts';
 
 export type Client = {
   id: string; slug: string; business_name: string; email: string; phone: string;
@@ -321,9 +322,15 @@ function migrateFeedbackRatings(sql: DatabaseSync) {
 }
 // node:sqlite returns null-prototype records. React Server Components require
 // normal objects at the server/client boundary; normalize all exported records.
-export function getClients() { return db().prepare('SELECT * FROM clients ORDER BY created_at DESC').all().map(row=>({...row})) as Client[]; }
-export function getClient(slug: string) { const row=db().prepare('SELECT * FROM clients WHERE slug=?').get(slug);return row?{...row} as Client:undefined; }
-export function getClientById(id: string) { const row=db().prepare('SELECT * FROM clients WHERE id=?').get(id);return row?{...row} as Client:undefined; }
+// Every client read goes through toClient(): plain object for RSC + never a broken Google link.
+function toClient(row: Record<string, unknown>): Client {
+  const c = { ...row } as Client;
+  c.google_review_url = usableReviewUrl(c.google_review_url, c.business_name);
+  return c;
+}
+export function getClients() { return db().prepare('SELECT * FROM clients ORDER BY created_at DESC').all().map((row) => toClient(row)); }
+export function getClient(slug: string) { const row=db().prepare('SELECT * FROM clients WHERE slug=?').get(slug);return row?toClient(row):undefined; }
+export function getClientById(id: string) { const row=db().prepare('SELECT * FROM clients WHERE id=?').get(id);return row?toClient(row):undefined; }
 export function getFeedback(clientId: string) { return db().prepare('SELECT * FROM internal_feedback WHERE client_id=? ORDER BY created_at DESC LIMIT 200').all(clientId).map(row=>({...row})) as Feedback[]; }
 export function getStats(clientId: string) {
   const events = db().prepare('SELECT COUNT(*) total, SUM(CASE WHEN rating>=4 THEN 1 ELSE 0 END) positive_ratings, AVG(rating) average FROM review_events WHERE client_id=?').get(clientId) as { total: number; positive_ratings: number | null; average: number | null };
@@ -587,7 +594,7 @@ export function recordDemoView(slug: string) {
 
 export function getClientByEmail(email: string) {
   const row = db().prepare('SELECT * FROM clients WHERE email=?').get(email.trim().toLowerCase());
-  return row ? { ...row } as Client : undefined;
+  return row ? toClient(row) : undefined;
 }
 
 export function getCampaignStats(campaignId?: string) {

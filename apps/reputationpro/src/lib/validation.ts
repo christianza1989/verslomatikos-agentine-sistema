@@ -18,6 +18,17 @@ export function isDirectReviewUrl(value: string|null|undefined) {
     return false;
   } catch { return false; }
 }
+// `writereview?q=…` (no placeid) makes Google answer "400. That's an error." – such links were
+// produced by an old resolver fallback. Serve a Maps search instead, which always opens.
+export function usableReviewUrl(value: string, businessName: string) {
+  try {
+    const u=new URL(value);
+    if(u.hostname==='search.google.com'&&u.pathname==='/local/writereview'&&!u.searchParams.get('placeid')){
+      return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(u.searchParams.get('q')||businessName);
+    }
+  } catch { /* keep as is */ }
+  return value;
+}
 export const clinicSchema=z.object({
   business_name:z.string().trim().min(2).max(120),
   email:z.email().trim().toLowerCase().max(254),

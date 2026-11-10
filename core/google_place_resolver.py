@@ -29,6 +29,8 @@ def resolve_google_place_id(business_name: str, city: str = "Vilnius") -> Option
         # Šmėlio g. 20, Vilnius (4,6★, 395). Patikrinta 2026-11-05 per maps/place/?q=place_id:…
         # NE V. Grybo g. 32 – tas filialas „uždarytas visam laikui“.
         "denticija": "ChIJkzBL2E2X3UYRyx6Uog2H2Hs",
+        # Buivydiškių veterinarijos klinika (Vilniaus r.). Patikrinta 2026-11-10 per maps/place/?q=place_id:…
+        "buivydiškių veterinarijos klinika": "ChIJQ53NxiuS3UYRqd7cotEWrg0",
     }
     
     for k, pid in KNOWN_PLACE_IDS.items():
@@ -55,14 +57,15 @@ def resolve_google_place_id(business_name: str, city: str = "Vilnius") -> Option
 
 def get_direct_review_url(business_name: str, city: str = "Vilnius", fallback_place_id: str = None) -> str:
     """
-    Grąžina TIK TIESIOGINĘ atsiliepimo modalo nuorodą (niekada paprasto maps paieškos puslapio).
+    Su Place ID: tiesioginė atsiliepimo formos nuoroda (writereview?placeid=…).
+    Be Place ID: Google Maps paieška (atsidaro visada; is_direct_review_url() ją laiko NEPATIKRINTA,
+    todėl kampanija tokiam lead'ui laiško nesiunčia – ROADMAP C2).
+    NIEKADA negrąžinti `writereview?q=…`: Google į ją atsako „400. That's an error.“ (patikrinta 2026-11-10).
     """
     pid = resolve_google_place_id(business_name, city) or fallback_place_id
     if pid:
         return f"https://search.google.com/local/writereview?placeid={pid}"
-        
-    # Jei Place ID nerastas – naudojamas saugus writereview nukreipimas su parametrų užklausa
-    return f"https://search.google.com/local/writereview?q={urllib.parse.quote(business_name + ' ' + city)}"
+    return "https://www.google.com/maps/search/?api=1&query=" + urllib.parse.quote(business_name + " " + city)
 
 if __name__ == "__main__":
     test_lead = "Baldų turgus"

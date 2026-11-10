@@ -7,7 +7,7 @@ import { randomUUID } from 'node:crypto';
 import { db, closeDb, createClient, getClientById } from '../src/lib/db.ts';
 import { authenticateClinic } from '../src/lib/clinic-access.ts';
 import { claimClient, claimTokenClient, issueClaimToken, maskEmail } from '../src/lib/claim.ts';
-import { isDirectReviewUrl } from '../src/lib/validation.ts';
+import { isDirectReviewUrl, usableReviewUrl } from '../src/lib/validation.ts';
 
 const dir = mkdtempSync(join(tmpdir(), 'rp-claim-'));
 process.env.DATABASE_PATH = join(dir, 'claim.db'); process.env.DEMO_MODE = 'false';
@@ -84,4 +84,9 @@ test('helpers: masked email and direct review link detection', () => {
   assert.equal(isDirectReviewUrl('https://g.page/r/CabcDEF/review'), true);
   assert.equal(isDirectReviewUrl('https://www.google.com/maps/search/?api=1&query=x'), false);
   assert.equal(isDirectReviewUrl('https://search.google.com/local/writereview?q=x'), false);
+  // Broken legacy fallback (Google answers 400) is replaced by a Maps search; valid links are untouched.
+  assert.equal(usableReviewUrl('https://search.google.com/local/writereview?q=Klinika%20Vilnius', 'Klinika'), 'https://www.google.com/maps/search/?api=1&query=Klinika%20Vilnius');
+  assert.equal(usableReviewUrl(GOOGLE, 'Klinika'), GOOGLE);
+  const broken = createClient({ business_name: 'Broken Link', email: 'broken@example.test', slug: 'broken-link', google_review_url: 'https://search.google.com/local/writereview?q=Broken' }, true);
+  assert.ok(getClientById(broken.id)!.google_review_url.startsWith('https://www.google.com/maps/search/'));
 });

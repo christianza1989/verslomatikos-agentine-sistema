@@ -141,6 +141,15 @@ Agentai/
 
 5. **Live app config**: `apps/reputationpro/.env.local` `APP_URL` must be `https://reputacija.verslomatika.lt`. A loopback value makes `sameOrigin()` reject every form on the live site with 403 (this happened until 2026-11-05).
 
+6. **Outbound links use ONLY `https://reputacija.verslomatika.lt` (incident 2026-11-10)**:
+   - `APP_BASE` in `core/morning_campaign_runner.py` and every demo/claim/tracking/QR URL must point to `reputacija.verslomatika.lt` (the Next.js app on the server PC).
+   - **Never** `https://verslomatika.lt/r/...`, `/api/track/*`, `/checkout`, `/aktyvuoti/*`: on that host the OLD Cloudflare edge worker answers (old demo without owner mode, fake private form, `/checkout` → pricing page). Commit 944e410 switched to it by mistake; 9f43a55 reverted. Until the edge redirect (ROADMAP A6) is deployed, such links show the old version.
+
+7. **Run campaigns only on the server PC (`E:\Verslomatika`), against the live DB**:
+   - Demo profiles and claim tokens are rows in `apps/reputationpro/data/reputation.db` that the live app reads. A campaign run on another computer writes to that computer's DB, so its emailed demo links 404 and activation tokens are invalid on the live site.
+   - Agent mailbox configs (`configs/reputation_agents/agent_*.json`, Git-ignored) must exist on the server PC. Without them `_resolve_agent_config()` falls back to the `.example.json` placeholders and that agent cannot send.
+   - When asked only to add agents, change only agent profiles/configs; do not touch URLs or funnel logic.
+
 > **Open work and its status:** [`ROADMAP_REPUTATIONPRO.md`](ROADMAP_REPUTATIONPRO.md) (checkbox roadmap for any LLM continuing the work).
 
 ---

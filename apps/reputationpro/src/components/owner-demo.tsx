@@ -4,7 +4,7 @@
 // sees on the phone (left) and what lands in their own inbox the same second (right) –
 // and can activate with one click. Nothing typed here is stored or emailed.
 import { useState } from 'react';
-import { ArrowRight, Bell, CheckCircle2, Mail, MessageSquare, QrCode, Send, Star, TrendingUp, Inbox } from 'lucide-react';
+import { ArrowRight, BatteryFull, Bell, CheckCircle2, Inbox, Lock, Mail, MessageSquare, QrCode, Send, Signal, Star, TrendingUp, Wifi } from 'lucide-react';
 import { ReviewGate, type DemoEvent } from './review-gate';
 
 type Props = {
@@ -34,7 +34,10 @@ export function OwnerDemo(p: Props) {
   const who = audience(p.industry);
   const [events, setEvents] = useState<(DemoEvent & { at: number })[]>([]);
   const [resetKey, setResetKey] = useState(0);
-  const add = (e: DemoEvent) => setEvents((list) => [{ ...e, at: Date.now() }, ...list].slice(0, 6));
+  const appHost = p.pageUrl.replace(/^https?:\/\//, '').split('/')[0];
+  const restart = () => setResetKey((k) => k + 1);
+  // Only the latest star click is shown (repeated clicks would clutter the inbox); private messages stack.
+  const add = (e: DemoEvent) => setEvents((list) => [{ ...e, at: Date.now() }, ...(e.kind === 'rating' ? list.filter((x) => x.kind !== 'rating') : list)].slice(0, 5));
   const privateCount = events.filter((e) => e.kind === 'private').length;
 
   // Honest projection for 3 months. The monthly pace scales with the business's current
@@ -61,12 +64,18 @@ export function OwnerDemo(p: Props) {
 
     <div className="od-split">
       <div className="od-phone-col">
-        <div className="od-phone"><div className="od-phone-notch"/>
+        <div className="od-phone" role="img" aria-label={`${p.name} atsiliepimų puslapis kliento telefone`}>
           <div className="od-phone-screen">
-            <ReviewGate key={resetKey} slug={p.slug} name={p.name} googleUrl={p.googleUrl} showPublicLow={p.showPublicLow} mode="demo" embedded onDemoEvent={add}/>
+            <div className="od-phone-island"/>
+            <div className="od-phone-status" aria-hidden="true"><span>9:41</span><span className="od-phone-icons"><Signal size={13}/><Wifi size={13}/><BatteryFull size={17}/></span></div>
+            <div className="od-phone-url" aria-hidden="true"><Lock size={11}/> {appHost}</div>
+            <div className="od-phone-scroll">
+              <ReviewGate key={resetKey} slug={p.slug} name={p.name} googleUrl={p.googleUrl} showPublicLow={p.showPublicLow} mode="demo" embedded onDemoEvent={add}/>
+            </div>
+            <div className="od-phone-home" aria-hidden="true"/>
           </div>
         </div>
-        <p className="od-caption"><Star size={14}/> Pabandykite: paspauskite <b>2★</b> ir parašykite pastabą, tada <b>5★</b>. {events.length > 0 && <button type="button" onClick={() => setResetKey((k) => k + 1)}>Iš naujo</button>}</p>
+        <p className="od-caption"><Star size={14}/> Pabandykite: paspauskite <b>2★</b> ir parašykite pastabą. Paspaudus <b>5★</b>, naujame lange atsidarys Jūsų tikra Google atsiliepimų forma. {events.length > 0 && <button type="button" onClick={restart}>Iš naujo</button>}</p>
       </div>
 
       <aside className="od-owner" aria-live="polite">
@@ -78,8 +87,8 @@ export function OwnerDemo(p: Props) {
         <ul className="od-events">
           {events.map((e) => <li key={e.at} className={`od-event od-event-${e.kind}`}>
             {e.kind === 'rating' && (e.rating >= 4
-              ? <p><CheckCircle2 size={16} className="ok"/> <b>{e.rating}★</b> – {who.one} nukreiptas į Jūsų <b>Google atsiliepimų formą</b>. Taip renkasi nauji vieši atsiliepimai.</p>
-              : <p><MessageSquare size={16} className="warn"/> <b>{e.rating}★</b> – {who.dat} rodoma privati forma vadovui{p.showPublicLow ? ' (su galimybe rašyti ir viešai)' : ''}.</p>)}
+              ? <p><CheckCircle2 size={16} className="ok"/><span><b>{e.rating}★</b> – {who.one} nukreiptas į Jūsų <b>Google atsiliepimų formą</b>. Taip renkasi nauji vieši atsiliepimai.</span></p>
+              : <p><MessageSquare size={16} className="warn"/><span><b>{e.rating}★</b> – {who.dat} rodoma privati forma vadovui{p.showPublicLow ? ' (su galimybe rašyti ir viešai)' : ''}.</span></p>)}
             {e.kind === 'private' && <div className="od-msg">
               <div className="od-msg-top"><span className="od-stars">{stars(e.rating)}</span><span className="od-new">Nauja</span></div>
               <p className="od-msg-text">„{e.text}“</p>

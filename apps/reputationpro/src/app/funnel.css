@@ -17,14 +17,23 @@
 .gate-public-link a { color: #64748b; text-decoration: underline; display: inline-flex; align-items: center; gap: 3px; }
 .gate-demo-redirect { margin-top: 8px; background: #fff; border: 1px dashed #6ee7b7; border-radius: 10px; padding: 10px 12px; font-size: 12.5px; line-height: 1.5; color: #065f46; }
 .gate-demo-redirect a { display: inline-flex; align-items: center; gap: 3px; text-decoration: underline; color: #047857; }
-.gate-card-embedded { box-shadow: none; padding: 22px 18px 18px; max-width: none; margin: 0; border-radius: 0; }
-.gate-card-embedded h1 { font-size: 22px; }
-.gate-card-embedded .clinic-name { margin-bottom: 16px; }
-.gate-card-embedded .gate-description { font-size: 13px; margin-top: 10px; }
-.gate-card-embedded .rating-fieldset { margin: 18px 0; }
-.gate-card-embedded .rating-stars { gap: 2px; }
-.gate-card-embedded .rating-stars button { min-width: 40px; min-height: 46px; padding: 2px; }
-.gate-card-embedded .form-row { grid-template-columns: 1fr; }
+/* Review card inside the demo phone: real-phone typography and spacing. */
+.gate-card-embedded { box-shadow: none; padding: 14px 18px 8px; max-width: none; margin: 0; border-radius: 0; }
+.gate-card-embedded .clinic-monogram { width: 48px; height: 48px; font-size: 15px; }
+.gate-card-embedded .clinic-name { margin: 8px 0 14px; font-size: 12.5px; }
+.gate-card-embedded h1 { font-size: 21px; line-height: 1.2; }
+.gate-card-embedded .gate-description { font-size: 13px; margin-top: 8px; line-height: 1.55; }
+.gate-card-embedded .rating-fieldset { margin: 16px 0 6px; }
+.gate-card-embedded .rating-stars { gap: 0; }
+.gate-card-embedded .rating-stars button { min-width: 44px; min-height: 48px; padding: 2px; }
+.gate-card-embedded .gate-options { margin-top: 14px; padding-top: 4px; border-top: 0; }
+.gate-card-embedded .gate-positive, .gate-card-embedded .gate-negative { padding: 12px 14px; margin-top: 8px; }
+.gate-card-embedded .feedback-form { padding-top: 14px; margin-top: 14px; }
+.gate-card-embedded .feedback-form textarea { font-size: 14px; }
+.gate-card-embedded .feedback-form > .form-row { grid-template-columns: 1fr; gap: 10px; margin-top: 12px; }
+.gate-card-embedded .checkbox-label { margin: 12px 0; }
+.gate-card-embedded .gate-success h1 { margin-top: 14px; }
+.gate-card-embedded .gate-success p { font-size: 13px; margin-top: 10px; }
 
 /* Claim / activation page */
 .claim-card { width: min(100%, 520px); }
@@ -63,9 +72,26 @@
 .od-hero p { margin-top: 14px; color: var(--muted); font-size: 15.5px; line-height: 1.65; }
 .od-split { max-width: 1120px; margin: 28px auto 0; padding: 0 16px; display: grid; grid-template-columns: minmax(0, 400px) minmax(0, 1fr); gap: 32px; align-items: start; }
 .od-phone-col { display: flex; flex-direction: column; align-items: center; }
-.od-phone { position: relative; width: 100%; max-width: 380px; background: #0f172a; border-radius: 40px; padding: 14px; box-shadow: 0 30px 60px -30px rgba(19, 17, 46, .55); }
-.od-phone-notch { position: absolute; top: 14px; left: 50%; transform: translateX(-50%); width: 110px; height: 20px; background: #0f172a; border-radius: 0 0 14px 14px; z-index: 2; }
-.od-phone-screen { background: #fff; border-radius: 28px; overflow: hidden; min-height: 560px; padding-top: 16px; }
+/* Standard modern phone: 9:19.5 screen (≈390×844 pt), thin bezel, Dynamic Island,
+   browser address bar (shows "no app needed") and content that scrolls INSIDE the screen. */
+.od-phone { position: relative; width: 330px; max-width: 100%; aspect-ratio: 9 / 19.5; min-height: 0; flex-shrink: 0; background: #0b1020; border-radius: 54px; padding: 11px; box-shadow: 0 0 0 2px #262d42, inset 0 0 0 1px #1c2335, 0 44px 70px -36px rgba(19, 17, 46, .6); }
+.od-phone::before, .od-phone::after { content: ""; position: absolute; width: 3px; background: #262d42; border-radius: 2px; }
+.od-phone::before { left: -4px; top: 21%; height: 11%; }
+.od-phone::after { right: -4px; top: 27%; height: 14%; }
+.od-phone-screen { position: relative; height: 100%; min-height: 0; background: #fff; border-radius: 44px; overflow: hidden; display: flex; flex-direction: column; }
+.od-phone-island { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); width: 96px; height: 28px; background: #000; border-radius: 20px; z-index: 3; }
+.od-phone-status { flex-shrink: 0; height: 46px; display: flex; align-items: flex-end; justify-content: space-between; padding: 0 24px 5px 32px; font: 600 13.5px/1 -apple-system, "SF Pro Text", system-ui, sans-serif; color: #0f172a; }
+.od-phone-icons { display: inline-flex; gap: 5px; align-items: center; }
+.od-phone-url { flex-shrink: 0; margin: 5px 14px 4px; height: 30px; border-radius: 10px; background: #f1f5f9; color: #334155; font-size: 12px; display: flex; align-items: center; justify-content: center; gap: 5px; }
+.od-phone-url svg { color: #64748b; }
+.od-phone-scroll { position: relative; flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none; -webkit-overflow-scrolling: touch; padding-bottom: 30px; scroll-behavior: smooth; }
+.od-phone-scroll::-webkit-scrollbar { display: none; }
+.od-phone-screen::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 34px; background: linear-gradient(to bottom, rgba(255, 255, 255, 0), #fff 70%); pointer-events: none; z-index: 2; }
+.od-phone-home { position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); width: 118px; height: 5px; border-radius: 3px; background: #0f172a; z-index: 3; }
+@media (max-width: 480px) {
+  .od-phone { width: min(300px, 84vw); border-radius: 48px; padding: 10px; }
+  .od-phone-screen { border-radius: 38px; }
+}
 .od-caption { margin-top: 14px; font-size: 13px; color: var(--muted); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: center; text-align: center; }
 .od-caption button { background: none; border: 0; color: var(--green); text-decoration: underline; font-size: 13px; }
 .od-owner { background: #fff; border: 1px solid #e4e1f5; border-radius: 18px; padding: 20px; position: sticky; top: 84px; box-shadow: 0 18px 40px -28px rgba(19, 17, 46, .35); }
@@ -81,6 +107,7 @@
 .od-event { animation: od-fade-in .35s ease; margin-top: 10px; }
 @keyframes od-fade-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 .od-event > p { font-size: 13.5px; line-height: 1.55; display: flex; gap: 8px; align-items: flex-start; }
+.od-event > p > span { flex: 1; min-width: 0; }
 .od-event > p svg { flex-shrink: 0; margin-top: 2px; }
 .od-event .ok { color: #059669; }
 .od-event .warn { color: #d97706; }

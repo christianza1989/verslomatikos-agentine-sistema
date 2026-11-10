@@ -1,5 +1,5 @@
 'use client';
-import { useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { Star, ArrowUpRight, ArrowLeft, ShieldCheck, Check, LoaderCircle, MessageSquare } from 'lucide-react';
 
@@ -25,6 +25,20 @@ export function ReviewGate({ slug, name, googleUrl, showPublicLow, mode = 'live'
   const [rating, setRating] = useState<number | null>(null), [hover, setHover] = useState(0), [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState(''), [sent, setSent] = useState(false), [showForm, setShowForm] = useState(false);
   const [submissionId] = useState(() => crypto.randomUUID());
+  const cardRef = useRef<HTMLElement>(null), optionsRef = useRef<HTMLElement>(null);
+
+  // Inside the demo phone the screen scrolls on its own (like a real phone). Bring what just
+  // appeared into view: the outcome/form after a star click, the top after sending.
+  useEffect(() => {
+    if (!embedded) return;
+    const box = cardRef.current?.closest('.od-phone-scroll') as HTMLElement | null;
+    if (!box) return;
+    if (sent) { box.scrollTo({ top: 0 }); return; }
+    const target = optionsRef.current;
+    if (!target) return;
+    const offset = target.getBoundingClientRect().top - box.getBoundingClientRect().top;
+    if (offset > box.clientHeight * 0.45) box.scrollTo({ top: box.scrollTop + offset - 16 });
+  }, [embedded, rating, showForm, sent]);
 
   async function choose(n: number) {
     if (busy) return;
@@ -34,7 +48,14 @@ export function ReviewGate({ slug, name, googleUrl, showPublicLow, mode = 'live'
       if (!res.ok && !demo) { const data = await res.json().catch(() => ({})); throw new Error(data.error); }
       setRating(n);
       onDemoEvent?.({ kind: 'rating', rating: n });
-      if (n >= 4 && !demo) { window.location.href = googleUrl; return; }
+      // 4–5★: the customer is taken straight to the business's real Google review form (live behaviour).
+      // In the demo phone the real form was already opened in a new tab by the click handler (Google
+      // cannot be shown inside another site), so the phone just keeps the chosen stars.
+      if (n >= 4) {
+        if (embedded && demo) { setShowForm(false); return; }
+        window.location.href = googleUrl;
+        return;
+      }
       setShowForm(n <= 3);
     } catch (e) { setProblem(e instanceof Error && e.message ? e.message : 'Nepavyko išsaugoti įvertinimo.'); }
     finally { setBusy(false); }
@@ -61,7 +82,7 @@ export function ReviewGate({ slug, name, googleUrl, showPublicLow, mode = 'live'
   const publicLink = <a href={googleUrl} target="_blank" rel="noopener noreferrer">Rašyti atsiliepimą Google <ArrowUpRight size={14}/></a>;
   const monogram = name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
 
-  const card = <main id={embedded ? undefined : 'main'} className={embedded ? 'gate-card gate-card-embedded' : 'gate-card'}>
+  const card = <main ref={cardRef} id={embedded ? undefined : 'main'} className={embedded ? 'gate-card gate-card-embedded' : 'gate-card'}>
     <div className="clinic-monogram">{monogram}</div><p className="clinic-name">{name}</p>
     {sent ? <div className="gate-success" role="status">
       <span className="success-circle"><Check size={30}/></span>
@@ -73,19 +94,17 @@ export function ReviewGate({ slug, name, googleUrl, showPublicLow, mode = 'live'
       <p className="gate-description">Jūsų nuomonė mums svarbi. Skirkite akimirką ir įvertinkite.</p>
       <fieldset className="rating-fieldset"><legend className="sr-only">Įvertinkite patirtį nuo 1 iki 5 žvaigždučių</legend>
         <div className="rating-stars" onMouseLeave={() => setHover(0)}>{[1, 2, 3, 4, 5].map((n) =>
-          <button type="button" key={n} disabled={busy} className={(hover || rating || 0) >= n ? 'selected' : ''} aria-label={`${n} ${n === 1 ? 'žvaigždutė' : 'žvaigždutės'}`} aria-pressed={rating === n} onMouseEnter={() => setHover(n)} onFocus={() => setHover(n)} onBlur={() => setHover(0)} onClick={() => choose(n)}>
-            <Star size={embedded ? 36 : 43} strokeWidth={1.4} fill={(hover || rating || 0) >= n ? 'currentColor' : 'none'}/>
+          <button type="button" key={n} disabled={busy} className={(hover || rating || 0) >= n ? 'selected' : ''} aria-label={`${n} ${n === 1 ? 'žvaigždutė' : 'žvaigždutės'}`} aria-pressed={rating === n} onMouseEnter={() => setHover(n)} onFocus={() => setHover(n)} onBlur={() => setHover(0)} onClick={() => { if (embedded && demo && n >= 4) window.open(googleUrl, '_blank', 'noopener,noreferrer'); choose(n); }}>
+            <Star size={embedded ? 34 : 43} strokeWidth={1.4} fill={(hover || rating || 0) >= n ? 'currentColor' : 'none'}/>
           </button>)}
         </div>
         <div className="rating-scale"><span>Galime geriau</span><span>Puikiai</span></div>
       </fieldset>
-      {rating !== null && <section className="gate-options" aria-label="Kaip norėtumėte pasidalinti?">
+      {rating !== null && !(embedded && demo && rating >= 4) && <section ref={optionsRef} className="gate-options" aria-label="Kaip norėtumėte pasidalinti?">
         {rating >= 4 ? <div className="gate-positive">
           <strong>Dėkojame už puikų įvertinimą!</strong>
           <span>Pasidalinkite savo patirtimi „Google“ – tai užtruks vos kelias sekundes.</span>
-          {demo
-            ? <div className="gate-demo-redirect">Tikras klientas čia būtų iškart nukreiptas į <b>{name}</b> Google atsiliepimų formą. <a href={googleUrl} target="_blank" rel="noopener noreferrer">Peržiūrėti formą <ArrowUpRight size={13}/></a></div>
-            : <a className="btn btn-primary btn-full gate-google-btn" href={googleUrl} target="_blank" rel="noopener noreferrer">Rašyti atsiliepimą Google <ArrowUpRight size={18}/></a>}
+          <a className="btn btn-primary btn-full gate-google-btn" href={googleUrl} target="_blank" rel="noopener noreferrer">Rašyti atsiliepimą Google <ArrowUpRight size={18}/></a>
           <button type="button" className="gate-secondary-link" onClick={() => setShowForm(!showForm)}><MessageSquare size={14}/> {showForm ? 'Uždaryti formą' : 'Arba parašyti asmeninę žinutę vadovui'}</button>
         </div> : <div className="gate-negative">
           <strong><ShieldCheck size={18}/> Jūsų nuomonė svarbi vadovui</strong>
