@@ -75,7 +75,7 @@ export function OwnerDemo(p: Props) {
             <div className="od-phone-home" aria-hidden="true"/>
           </div>
         </div>
-        <p className="od-caption"><Star size={14}/> Pabandykite: paspauskite <b>2★</b> ir parašykite pastabą. Paspaudus <b>5★</b>, naujame lange atsidarys Jūsų tikra Google atsiliepimų forma. {events.length > 0 && <button type="button" onClick={restart}>Iš naujo</button>}</p>
+        <p className="od-caption"><Star size={14}/> Pabandykite: paspauskite <b>2★</b> ir parašykite pastabą. Tada <b>5★</b>: mygtukas atvers Jūsų tikrą Google atsiliepimų formą. {events.length > 0 && <button type="button" onClick={restart}>Iš naujo</button>}</p>
       </div>
 
       <aside className="od-owner" aria-live="polite">
@@ -87,7 +87,7 @@ export function OwnerDemo(p: Props) {
         <ul className="od-events">
           {events.map((e) => <li key={e.at} className={`od-event od-event-${e.kind}`}>
             {e.kind === 'rating' && (e.rating >= 4
-              ? <p><CheckCircle2 size={16} className="ok"/><span><b>{e.rating}★</b> – {who.one} nukreiptas į Jūsų <b>Google atsiliepimų formą</b>. Taip renkasi nauji vieši atsiliepimai.</span></p>
+              ? <p><CheckCircle2 size={16} className="ok"/><span><b>{e.rating}★</b> – {who.dat} rodoma padėka ir mygtukas į Jūsų <b>Google atsiliepimų formą</b>. Taip renkasi nauji vieši atsiliepimai.</span></p>
               : <p><MessageSquare size={16} className="warn"/><span><b>{e.rating}★</b> – {who.dat} rodoma privati forma vadovui{p.showPublicLow ? ' (su galimybe rašyti ir viešai)' : ''}.</span></p>)}
             {e.kind === 'private' && <div className="od-msg">
               <div className="od-msg-top"><span className="od-stars">{stars(e.rating)}</span><span className="od-new">Nauja</span></div>

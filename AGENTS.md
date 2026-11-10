@@ -131,7 +131,7 @@ Agentai/
      ```
 
 3. **Public Google link after 1–3★ is the client's choice (owner decision 2026-11-05)**:
-   - 4–5★ → Google review form. 1–3★ → private form to the manager.
+   - 4–5★ → thank-you block with ONE button „Rašyti atsiliepimą Google“ to the business's real review form (no automatic redirect; owner decision 2026-11-10). 1–3★ → private form to the manager.
    - Whether the public Google link is also shown after 1–3★ is controlled per client by `clients.show_public_link_low` (default `0`), toggled in the dashboard (`src/components/public-link-toggle.tsx`, `PATCH /api/admin/settings`). The toggle shows a note about Google's policy. Do not hard-code either behaviour.
    - Marketing copy must not promise "100%" / "niekada nepateks į viešumą": customers can always post on Google directly.
 

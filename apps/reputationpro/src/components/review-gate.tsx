@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import Link from 'next/link';
-import { Star, ArrowUpRight, ArrowLeft, ShieldCheck, Check, LoaderCircle, MessageSquare } from 'lucide-react';
+import { Star, ArrowUpRight, ArrowLeft, ShieldCheck, Check, LoaderCircle, MessageSquare, Heart } from 'lucide-react';
 
 export type DemoEvent =
   | { kind: 'rating'; rating: number }
@@ -48,14 +48,8 @@ export function ReviewGate({ slug, name, googleUrl, showPublicLow, mode = 'live'
       if (!res.ok && !demo) { const data = await res.json().catch(() => ({})); throw new Error(data.error); }
       setRating(n);
       onDemoEvent?.({ kind: 'rating', rating: n });
-      // 4–5★: the customer is taken straight to the business's real Google review form (live behaviour).
-      // In the demo phone the real form was already opened in a new tab by the click handler (Google
-      // cannot be shown inside another site), so the phone just keeps the chosen stars.
-      if (n >= 4) {
-        if (embedded && demo) { setShowForm(false); return; }
-        window.location.href = googleUrl;
-        return;
-      }
+      // 4–5★: a thank-you and a clear request with a button to the business's real Google review form.
+      // No automatic redirect – the customer decides (same behaviour live, in preview and in the demo phone).
       setShowForm(n <= 3);
     } catch (e) { setProblem(e instanceof Error && e.message ? e.message : 'Nepavyko išsaugoti įvertinimo.'); }
     finally { setBusy(false); }
@@ -94,17 +88,18 @@ export function ReviewGate({ slug, name, googleUrl, showPublicLow, mode = 'live'
       <p className="gate-description">Jūsų nuomonė mums svarbi. Skirkite akimirką ir įvertinkite.</p>
       <fieldset className="rating-fieldset"><legend className="sr-only">Įvertinkite patirtį nuo 1 iki 5 žvaigždučių</legend>
         <div className="rating-stars" onMouseLeave={() => setHover(0)}>{[1, 2, 3, 4, 5].map((n) =>
-          <button type="button" key={n} disabled={busy} className={(hover || rating || 0) >= n ? 'selected' : ''} aria-label={`${n} ${n === 1 ? 'žvaigždutė' : 'žvaigždutės'}`} aria-pressed={rating === n} onMouseEnter={() => setHover(n)} onFocus={() => setHover(n)} onBlur={() => setHover(0)} onClick={() => { if (embedded && demo && n >= 4) window.open(googleUrl, '_blank', 'noopener,noreferrer'); choose(n); }}>
+          <button type="button" key={n} disabled={busy} className={(hover || rating || 0) >= n ? 'selected' : ''} aria-label={`${n} ${n === 1 ? 'žvaigždutė' : 'žvaigždutės'}`} aria-pressed={rating === n} onMouseEnter={() => setHover(n)} onFocus={() => setHover(n)} onBlur={() => setHover(0)} onClick={() => choose(n)}>
             <Star size={embedded ? 34 : 43} strokeWidth={1.4} fill={(hover || rating || 0) >= n ? 'currentColor' : 'none'}/>
           </button>)}
         </div>
         <div className="rating-scale"><span>Galime geriau</span><span>Puikiai</span></div>
       </fieldset>
-      {rating !== null && !(embedded && demo && rating >= 4) && <section ref={optionsRef} className="gate-options" aria-label="Kaip norėtumėte pasidalinti?">
+      {rating !== null && <section ref={optionsRef} className="gate-options" aria-label="Kaip norėtumėte pasidalinti?">
         {rating >= 4 ? <div className="gate-positive">
-          <strong>Dėkojame už puikų įvertinimą!</strong>
-          <span>Pasidalinkite savo patirtimi „Google“ – tai užtruks vos kelias sekundes.</span>
-          <a className="btn btn-primary btn-full gate-google-btn" href={googleUrl} target="_blank" rel="noopener noreferrer">Rašyti atsiliepimą Google <ArrowUpRight size={18}/></a>
+          <span className="gate-positive-icon" aria-hidden="true"><Heart size={26} fill="currentColor" strokeWidth={0}/></span>
+          <strong>Ačiū! Labai džiaugiamės.</strong>
+          <span>Ar galėtumėte pasidalinti savo patirtimi „Google“? Tai užtruks mažiau nei minutę, o Jūsų atsiliepimas padės kitiems mus atrasti.</span>
+          <a className="btn btn-primary btn-full gate-google-btn" href={googleUrl} target="_blank" rel="noopener noreferrer"><Star size={18} fill="currentColor" strokeWidth={0}/> Rašyti atsiliepimą Google</a>
           <button type="button" className="gate-secondary-link" onClick={() => setShowForm(!showForm)}><MessageSquare size={14}/> {showForm ? 'Uždaryti formą' : 'Arba parašyti asmeninę žinutę vadovui'}</button>
         </div> : <div className="gate-negative">
           <strong><ShieldCheck size={18}/> Jūsų nuomonė svarbi vadovui</strong>
