@@ -37,21 +37,74 @@ from core.claim_tokens import (ensure_schema, issue_claim_token, is_suppressed, 
 
 DB_PATH = os.path.join(BASE_DIR, "apps", "reputationpro", "data", "reputation.db")
 # Visa piltuvo logika (demo, sekimas, aktyvavimas) gyvena Next.js aplikacijoje šiame PC.
-APP_BASE = os.environ.get("REPUTATION_APP_URL", "https://reputacija.verslomatika.lt").rstrip("/")
+APP_BASE = os.environ.get("REPUTATION_APP_URL", "https://verslomatika.lt").rstrip("/")
 SENDER_NAME = "Tomas"
 SENDER_EMAIL = "tomas@verslomatika.lt"
 
-# Multi-agent sender profiles pool (lengva pridėti naujus domenus ir agentus)
+CONFIGS_REPUTATION_DIR = os.path.join(BASE_DIR, "configs", "reputation_agents")
+FALLBACK_CONFIG = os.path.join(BASE_DIR, "configs", "email_credentials.json")
+
+def _resolve_agent_config(cfg_name: str) -> str:
+    path = os.path.join(CONFIGS_REPUTATION_DIR, cfg_name)
+    if os.path.exists(path):
+        return path
+    example_path = path.replace(".json", ".example.json")
+    if os.path.exists(example_path):
+        return example_path
+    return FALLBACK_CONFIG
+
+# 2 Aktyvūs ReputationPro agentai klinikinėms įstaigoms (odontologija, klinikos, veterinarija)
+# Tomas (@verslomatika.lt) ir Marius (@verslomatika.eu). Kiti profiliai saugomi ateities plėtrai.
 AGENT_PROFILES = [
     {
         "agent_id": "agent-tomas",
-        "name": "Tomas | Verslo sprendimų vadovas",
-        "display_from": "Tomas | Verslomatika B2B",
-        "email": SENDER_EMAIL,
-        "config_path": os.path.join(BASE_DIR, "configs", "email_credentials.json"),
+        "name": "Tomas",
+        "display_from": "Tomas | Verslomatika Klinikos",
+        "email": "tomas@verslomatika.lt",
+        "config_path": FALLBACK_CONFIG,  # configs/email_credentials.json
         "daily_limit": 25,
-        "target_industry": "mixed",  # mixed (pakaitomis e-komercija ir klinikos), "ecommerce", arba "dental"
+        "target_industry": "clinic",
         "is_active": True
+    },
+    {
+        "agent_id": "agent-marius",
+        "name": "Marius",
+        "display_from": "Marius | Verslomatika Klinikos",
+        "email": "marius@verslomatika.eu",
+        "config_path": _resolve_agent_config("agent_marius.json"),
+        "daily_limit": 25,
+        "target_industry": "clinic",
+        "is_active": True
+    },
+    {
+        "agent_id": "agent-laura",
+        "name": "Laura",
+        "display_from": "Laura | Verslomatika Klinikos",
+        "email": "laura@verslomatika.eu",
+        "config_path": _resolve_agent_config("agent_laura.json"),
+        "daily_limit": 25,
+        "target_industry": "clinic",
+        "is_active": False
+    },
+    {
+        "agent_id": "agent-kamile",
+        "name": "Kamilė",
+        "display_from": "Kamilė | Verslomatika Grožis",
+        "email": "kamile@verslomatika.eu",
+        "config_path": _resolve_agent_config("agent_kamile.json"),
+        "daily_limit": 25,
+        "target_industry": "beauty",
+        "is_active": False
+    },
+    {
+        "agent_id": "agent-justas",
+        "name": "Justas",
+        "display_from": "Justas | Verslomatika Horeca",
+        "email": "justas@verslomatika.eu",
+        "config_path": _resolve_agent_config("agent_justas.json"),
+        "daily_limit": 25,
+        "target_industry": "horeca",
+        "is_active": False
     }
 ]
 
@@ -78,15 +131,27 @@ ECOMMERCE_KEYWORDS = ["shop", "parduotuv", "prekyb", "mada", "drabuž", "avalyn"
 
 
 def detect_industry(lead: dict) -> str:
-    explicit = (lead.get("industry") or "").lower()
-    if explicit in ("clinic", "ecommerce", "services"):
-        return explicit
-    if lead.get("niche") == "odontologija":
+    explicit = (lead.get("industry") or lead.get("niche") or "").lower()
+    if explicit in ("clinic", "dental", "odontologija", "veterinarija"):
         return "clinic"
-    name = lead["business_name"].lower()
-    if any(k in name for k in SERVICE_KEYWORDS):
-        return "services"
-    if any(k in name for k in ECOMMERCE_KEYWORDS):
+    if explicit in ("beauty", "estetika", "grozis", "spa"):
+        return "beauty"
+    if explicit in ("auto", "autoservisai", "servisai"):
+        return "auto"
+    if explicit in ("horeca", "restoranai", "spa_viesbuciai"):
+        return "horeca"
+    if explicit in ("ecommerce", "ecom", "baldai", "dovanos"):
+        return "ecommerce"
+    name = (lead.get("business_name") or "").lower()
+    if any(k in name for k in ["klinik", "dant", "odontol", "gyd", "dent"]):
+        return "clinic"
+    if any(k in name for k in ["groz", "estetik", "salonas", "spa", "kirpykl", "lazer", "beauty"]):
+        return "beauty"
+    if any(k in name for k in ["auto", "servis", "remont", "padang", "detal"]):
+        return "auto"
+    if any(k in name for k in ["restoran", "kavin", "baras", "hotel", "viesbut", "gastropub"]):
+        return "horeca"
+    if any(k in name for k in ["shop", "parduotuv", "prekyb", "mada", "drabuž"]):
         return "ecommerce"
     return "services"
 
@@ -102,6 +167,27 @@ TEMPLATES = {
         "offer": "Paruošėme „{name}“ atsiliepimų puslapį su QR kodu registratūrai. Per 30 sekundžių pamatysite, kaip jis atrodo paciento telefone ir ką tą pačią sekundę gaunate Jūs, kai pacientas lieka kuo nors nepatenkintas:",
         "subject_stats": "{name}: {rating}★ iš {count} atsiliepimų Google",
         "subject_generic": "{name}: pacientų atsiliepimai Google",
+    },
+    "beauty": {
+        "generic": "Klientės, rinkdamosi grožio ar estetikos saloną, labiausiai pasitiki Google atsiliepimais su nuotraukomis. Patenkintos lankytojos atsiliepimą palieka retai, nebent jas paskatina procedūros pabaigoje.",
+        "stats": "Pažiūrėjome į „{name}“ Google profilį: {rating}★ iš {count} atsiliepimų. Naujos klientės, rinkdamosi procedūras, pirmiausia patikrina būtent čia.",
+        "offer": "Paruošėme „{name}“ atsiliepimų puslapį su elegantišku QR stovelio maketu prie veidrodžio ar registratūroje. Per 30 sekundžių pamatysite, ką mato klientė ir kaip privati pastaba iškart pasiekia vadovę:",
+        "subject_stats": "{name}: {rating}★ iš {count} atsiliepimų Google",
+        "subject_generic": "{name}: klienčių atsiliepimai Google",
+    },
+    "auto": {
+        "generic": "Vairuotojai, ieškodami patikimo autoserviso, pirmiausia skaito Google atsiliepimus. Geras meistras dažnai neturi laiko prašyti įvertinimų, o atsitiktinis nesusipratimas gali numušti reitingą.",
+        "stats": "Pažiūrėjome į „{name}“ Google profilį: {rating}★ iš {count} atsiliepimų. Vairuotojai, rinkdamiesi kur remontuoti automobilį, žiūri būtent į šį skaičių.",
+        "offer": "Paruošėme „{name}“ atsiliepimų puslapį su QR kodu prie atsiėmimo kasos ir trumpa SMS nuoroda. Per 30 sekundžių pamatysite, kaip vairuotojas palieka 5★ ir kaip pastaba apie remontą sulaikoma privačiai:",
+        "subject_stats": "{name}: {rating}★ iš {count} atsiliepimų Google",
+        "subject_generic": "{name}: vairuotojų atsiliepimai Google",
+    },
+    "horeca": {
+        "generic": "Svečiai, ieškodami kur papietauti ar pavakarieniauti, pirmiausia atsiverčia Google Maps. Patenkintas svečias skaniai pavalgo ir išeina, o menkiausia smulkmena gali virsti viešu neigiamu įrašu.",
+        "stats": "Pažiūrėjome į „{name}“ Google profilį: {rating}★ iš {count} atsiliepimų. Miesto svečiai ir turistai restoranus renkasi tiesiai pagal Google Maps žvaigždutes.",
+        "offer": "Paruošėme „{name}“ atsiliepimų puslapį su stilingu QR kodu ant staliuko ar sąskaitos padėklo. Per 30 sekundžių pamatysite, ką mato svečias ir kaip skundas apie patiekalą akimirksniu pasiekia vadovą:",
+        "subject_stats": "{name}: {rating}★ iš {count} atsiliepimų Google",
+        "subject_generic": "{name}: svečių atsiliepimai Google",
     },
     "ecommerce": {
         "generic": "Pirkėjai prieš užsakydami internetu vis dažniau patikrina parduotuvės atsiliepimus Google. Patenkinti pirkėjai atsiliepimą palieka retai, o nepatenkintas beveik visada.",
@@ -120,7 +206,8 @@ TEMPLATES = {
 }
 
 
-def build_tracked_email(lead: dict, lead_id: str, demo_url: str = None, google_stats: dict = None) -> tuple:
+def build_tracked_email(lead: dict, lead_id: str, demo_url: str = None, google_stats: dict = None,
+                        sender_name: str = None, sender_email: str = None) -> tuple:
     """Grąžina (subject, text, html). Vienas CTA: asmeninis demo puslapis.
 
     demo_url: {APP_BASE}/r/{slug}?k={token} (be tokeno, tik peržiūrai).
@@ -143,6 +230,8 @@ def build_tracked_email(lead: dict, lead_id: str, demo_url: str = None, google_s
     closing = "Jei tiks, paskyrą aktyvuosite vienu paspaudimu: 14 dienų nemokamai, be banko kortelės."
     ps = "P.S. Jei neaktualu, tiesiog atsakykite „ne“ ir daugiau nerašysime."
 
+    s_name = sender_name or SENDER_NAME
+    s_email = sender_email or SENDER_EMAIL
     track_open_url = f"{APP_BASE}/api/track/open?id={urllib.parse.quote(lead_id)}"
     cta_url = f"{APP_BASE}/api/track/click?id={urllib.parse.quote(lead_id)}&to={urllib.parse.quote(demo_url, safe='')}"
 
@@ -155,8 +244,8 @@ def build_tracked_email(lead: dict, lead_id: str, demo_url: str = None, google_s
 
 {closing}
 
-{SENDER_NAME}
-Verslomatika · {SENDER_EMAIL}
+{s_name}
+Verslomatika · {s_email}
 
 {ps}
 """
@@ -171,7 +260,7 @@ Verslomatika · {SENDER_EMAIL}
 <p style="margin:0 0 18px;">{e(offer)}</p>
 <p style="margin:0 0 20px;"><a href="{e(cta_url)}" style="display:inline-block;background:#5636E8;color:#ffffff;text-decoration:none;font-weight:600;padding:12px 20px;border-radius:8px;">Peržiūrėti paruoštą puslapį →</a></p>
 <p style="margin:0 0 18px;">{e(closing)}</p>
-<p style="margin:0 0 18px;">{SENDER_NAME}<br><span style="color:#64748b;">Verslomatika · <a href="mailto:{SENDER_EMAIL}" style="color:#64748b;">{SENDER_EMAIL}</a></span></p>
+<p style="margin:0 0 18px;">{e(s_name)}<br><span style="color:#64748b;">Verslomatika · <a href="mailto:{e(s_email)}" style="color:#64748b;">{e(s_email)}</a></span></p>
 <p style="margin:0;color:#64748b;font-size:13px;">{e(ps)}</p>
 <p style="margin:18px 0 0;color:#94a3b8;font-size:11px;">MB Pinet · įm. k. 306067365 · Vilnius</p>
 </div>
@@ -185,22 +274,17 @@ Verslomatika · {SENDER_EMAIL}
 # Siuntimas
 # ---------------------------------------------------------------------------
 
-def _fetch_candidates(target_ind: str, needed: int) -> list:
+def _fetch_candidates(target_ind: str, needed: int, agent_id: str = "") -> list:
     """Paima daugiau kandidatų nei reikia, nes dalis bus praleista (suppressed / needs_review)."""
-    pool = needed * 3
-    if target_ind == "ecommerce":
-        return get_uncontacted_ecommerce_leads(limit=pool)
-    if target_ind == "dental":
+    try:
+        from core.multi_niche_lead_pool import get_uncontacted_leads_for_agent
+        return get_uncontacted_leads_for_agent(target_ind, limit=needed * 3, agent_id=agent_id)
+    except Exception as e:
+        print(f"[Fetch Candidates Fallback] {e}")
+        pool = needed * 3
+        if target_ind in ("ecommerce", "ecom"):
+            return get_uncontacted_ecommerce_leads(limit=pool)
         return get_uncontacted_dental_leads(limit=pool)
-    ecom = get_uncontacted_ecommerce_leads(limit=pool)
-    dental = get_uncontacted_dental_leads(limit=pool)
-    mixed = []
-    for i in range(max(len(ecom), len(dental))):  # pakaitomis: e-komercija, klinika, ...
-        if i < len(ecom):
-            mixed.append(ecom[i])
-        if i < len(dental):
-            mixed.append(dental[i])
-    return mixed
 
 
 def prepare_lead(conn: sqlite3.Connection, lead: dict):
@@ -245,7 +329,7 @@ def dispatch_daily_quota(target_agent_id: str = "agent-tomas", force_count: int 
     conn.row_factory = sqlite3.Row
     ensure_schema(conn)
 
-    candidates = _fetch_candidates(agent.get("target_industry", "mixed"), needed)
+    candidates = _fetch_candidates(agent.get("target_industry", "clinic"), needed, agent_id=agent["agent_id"])
     if not candidates:
         print("⚠️ Nėra naujų nekontaktuotų įmonių sąraše!")
         conn.close()
@@ -277,7 +361,8 @@ def dispatch_daily_quota(target_agent_id: str = "agent-tomas", force_count: int 
         token = "PERZIURA" if dry_run else issue_claim_token(conn, client["id"])
         demo_url = f"{APP_BASE}/r/{urllib.parse.quote(slug)}?k={token}"
         stats = {"rating": client.get("google_rating"), "count": client.get("google_reviews_count")}
-        subj, text, html = build_tracked_email({**lead, "industry": client.get("industry") or lead.get("industry")}, lead_id, demo_url, stats)
+        subj, text, html = build_tracked_email({**lead, "industry": client.get("industry") or lead.get("industry")}, lead_id, demo_url, stats,
+                                               sender_name=agent["name"], sender_email=agent["email"])
 
         if dry_run:
             os.makedirs(preview_dir, exist_ok=True)
@@ -291,7 +376,7 @@ def dispatch_daily_quota(target_agent_id: str = "agent-tomas", force_count: int 
         now_iso = datetime.datetime.now().isoformat()
         try:
             ok = sender.send_email(to_email=to_email, subject=subj, body_text=text, body_html=html,
-                                   headers={"List-Unsubscribe": f"<mailto:{SENDER_EMAIL}?subject=Atsisakau>"})
+                                   headers={"List-Unsubscribe": f"<mailto:{agent['email']}?subject=Atsisakau>"})
             if not ok:  # send_email klaidos nekelia – grąžina False
                 raise RuntimeError("SMTP serveris laiško nepriėmė")
             print("    ✓ Išsiųsta")
@@ -382,7 +467,7 @@ def send_manual_test(business_name: str, to_email: str, city: str = "Vilnius", i
     agent = AGENT_PROFILES[0]
     sender = SMTPEmailSender(config_path=agent["config_path"])
     ok = sender.send_email(to_email=lead["email"], subject=subj, body_text=text, body_html=html,
-                           headers={"List-Unsubscribe": f"<mailto:{SENDER_EMAIL}?subject=Atsisakau>"})
+                           headers={"List-Unsubscribe": f"<mailto:{agent['email']}?subject=Atsisakau>"})
     if not ok:
         print("✗ SMTP serveris laiško nepriėmė.")
         conn.close()
@@ -419,7 +504,7 @@ def build_custom_email(draft: dict, lead_id: str, demo_url: str) -> tuple:
 {body}
 <p style="margin:4px 0 20px;"><a href="{e(cta_url)}" style="display:inline-block;background:#5636E8;color:#ffffff;text-decoration:none;font-weight:600;padding:12px 20px;border-radius:8px;">{e(draft.get('cta_label', 'Peržiūrėti paruoštą puslapį'))} →</a></p>
 <p style="margin:0 0 18px;">{e(closing)}</p>
-<p style="margin:0 0 18px;">{SENDER_NAME}<br><span style="color:#64748b;">Verslomatika · <a href="mailto:{SENDER_EMAIL}" style="color:#64748b;">{SENDER_EMAIL}</a></span></p>
+<p style="margin:0 0 18px;">{e(s_name)}<br><span style="color:#64748b;">Verslomatika · <a href="mailto:{e(s_email)}" style="color:#64748b;">{e(s_email)}</a></span></p>
 <p style="margin:0;color:#64748b;font-size:13px;">{e(ps)}</p>
 <p style="margin:18px 0 0;color:#94a3b8;font-size:11px;">MB Pinet · įm. k. 306067365 · Vilnius</p>
 </div>
@@ -469,7 +554,7 @@ def send_researched(brief_path: str, send: bool = False) -> bool:
     subj, text, html = build_custom_email(brief["email_draft"], lead_id, f"{APP_BASE}/r/{urllib.parse.quote(brief['slug'])}?k={token}")
     sender = SMTPEmailSender(config_path=AGENT_PROFILES[0]["config_path"])
     ok = sender.send_email(to_email=lead["email"], subject=subj, body_text=text, body_html=html,
-                           headers={"List-Unsubscribe": f"<mailto:{SENDER_EMAIL}?subject=Atsisakau>"})
+                           headers={"List-Unsubscribe": f"<mailto:{agent['email']}?subject=Atsisakau>"})
     if not ok:
         print("✗ SMTP serveris laiško nepriėmė.")
         conn.close()
@@ -488,6 +573,23 @@ def send_researched(brief_path: str, send: bool = False) -> bool:
     return True
 
 
+def dispatch_all_agents(force_count: int = None, dry_run: bool = False) -> dict:
+    """Išsiunčia arba sugeneruoja peržiūras visiems aktyviems lietuviškiems agentams."""
+    results = {}
+    now_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    active_agents = [a for a in AGENT_PROFILES if a.get("is_active")]
+    print(f"\n{'#' * 75}")
+    print(f"[{now_str}] 🚀 PALEIDŽIAMI {len(active_agents)} REPUTATIONPRO AGENTAI ({'PERŽIŪRA' if dry_run else 'SIUNTIMAS'})")
+    print(f"{'#' * 75}")
+    for agent in active_agents:
+        cnt = dispatch_daily_quota(target_agent_id=agent["agent_id"], force_count=force_count, dry_run=dry_run)
+        results[agent["agent_id"]] = cnt
+    print(f"\n{'#' * 75}")
+    print(f"🏁 Visi agentai baigė darbą. Rezultatai: {results}")
+    print(f"{'#' * 75}")
+    return results
+
+
 if __name__ == "__main__":
     mode = sys.argv[1] if len(sys.argv) > 1 else "once"
     if mode == "research":
@@ -501,7 +603,11 @@ if __name__ == "__main__":
         a = sys.argv[2:]
         send_manual_test(a[0], a[1], a[2] if len(a) > 2 else "Vilnius", a[3] if len(a) > 3 else "clinic",
                          float(a[4]) if len(a) > 4 else None, int(a[5]) if len(a) > 5 else None)
+    elif mode == "all":
+        dispatch_all_agents(force_count=int(sys.argv[2]) if len(sys.argv) > 2 else None, dry_run="--dry-run" in sys.argv)
     elif mode == "preview":
-        dispatch_daily_quota(target_agent_id="agent-tomas", force_count=int(sys.argv[2]) if len(sys.argv) > 2 else 3, dry_run=True)
+        dispatch_all_agents(force_count=int(sys.argv[2]) if len(sys.argv) > 2 else 2, dry_run=True)
+    elif any(a["agent_id"] == mode for a in AGENT_PROFILES):
+        dispatch_daily_quota(target_agent_id=mode, force_count=int(sys.argv[2]) if len(sys.argv) > 2 else 25, dry_run="--dry-run" in sys.argv)
     else:
-        dispatch_daily_quota(target_agent_id="agent-tomas", force_count=25)
+        dispatch_all_agents(force_count=25)

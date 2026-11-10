@@ -1,0 +1,16 @@
+{
+  "agent_id": "agent-kamile",
+  "name": "Kamilė | Verslomatika Grožis",
+  "display_name": "Kamilė | Verslomatika Grožis",
+  "email": "kamile@verslomatika.eu",
+  "password": "HOSTINGER_PASSWORD_HERE",
+  "reply_to": "kamile@verslomatika.eu",
+  "smtp_host": "smtp.hostinger.com",
+  "smtp_port": 465,
+  "use_ssl": true,
+  "imap_host": "imap.hostinger.com",
+  "imap_port": 993,
+  "target_industry": "beauty",
+  "daily_limit": 25,
+  "is_active": true
+}

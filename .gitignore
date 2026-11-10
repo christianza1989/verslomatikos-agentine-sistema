@@ -57,6 +57,8 @@ data/operations/stripe-sandbox-private/
 */.env.*.local
 *.secrets.json
 configs/email_credentials.json
+configs/reputation_agents/*.json
+!configs/reputation_agents/*.example.json
 tunnel-token
 tunnel.json
 */data/operations/tunnel-token

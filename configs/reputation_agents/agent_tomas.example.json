@@ -1,0 +1,16 @@
+{
+  "agent_id": "agent-tomas",
+  "name": "Tomas | Verslomatika E-Commerce",
+  "display_name": "Tomas | Verslomatika E-Commerce",
+  "email": "tomas@verslomatika.eu",
+  "password": "HOSTINGER_PASSWORD_HERE",
+  "reply_to": "tomas@verslomatika.eu",
+  "smtp_host": "smtp.hostinger.com",
+  "smtp_port": 465,
+  "use_ssl": true,
+  "imap_host": "imap.hostinger.com",
+  "imap_port": 993,
+  "target_industry": "ecommerce",
+  "daily_limit": 25,
+  "is_active": true
+}

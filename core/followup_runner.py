@@ -136,7 +136,7 @@ def build_followup(step: str, lead: dict, links: dict, expiry: datetime.datetime
     """Grąžina (body_paragraphs, cta_label, cta_url). Paragrafai: str arba list (sąrašas)."""
     name = lead["business_name"].strip()
     niche = NICHE[detect_industry(lead)]
-    page = f"reputacija.verslomatika.lt/r/{lead['slug']}"
+    page = f"verslomatika.lt/r/{lead['slug']}"
 
     if step == "H1":
         return ([

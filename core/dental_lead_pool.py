@@ -915,9 +915,9 @@ def get_uncontacted_dental_leads(limit: int = 25) -> List[Dict[str, Any]]:
                 "niche": "odontologija",
                 "industry": "clinic",
                 "slug": slug,
-                "preview_url": f"https://reputacija.verslomatika.lt/r/{slug}",
-                "qr_url": f"https://reputacija.verslomatika.lt/api/qr?slug={slug}",
-                "claim_url": f"https://reputacija.verslomatika.lt/checkout?slug={slug}"  # aktyvavimas per claim tokeną laiške (ROADMAP A3)
+                "preview_url": f"https://verslomatika.lt/r/{slug}",
+                "qr_url": f"https://verslomatika.lt/api/qr?slug={slug}",
+                "claim_url": f"https://verslomatika.lt/checkout?slug={slug}"  # aktyvavimas per claim tokeną laiške (ROADMAP A3)
             }
             fresh_leads.append(lead_obj)
             if len(fresh_leads) >= limit:

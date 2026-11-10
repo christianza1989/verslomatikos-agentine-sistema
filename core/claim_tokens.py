@@ -5,8 +5,8 @@ Keep both sides in sync (see ROADMAP_REPUTATIONPRO.md, section 4 "gotchas").
 
 - A claim token is a random URL-safe string. Only sha256(token) is stored.
 - The raw token travels only inside the outbound email link:
-      https://reputacija.verslomatika.lt/r/{slug}?k={token}   (owner demo with personal CTA)
-      https://reputacija.verslomatika.lt/aktyvuoti/{token}    (1-step activation)
+      https://verslomatika.lt/r/{slug}?k={token}   (owner demo with personal CTA)
+      https://verslomatika.lt/aktyvuoti/{token}    (1-step activation)
 - campaign_suppressions(email, reason): never email these addresses again
   (reason: 'opt_out', 'needs_review', 'bounced', 'client').
 """

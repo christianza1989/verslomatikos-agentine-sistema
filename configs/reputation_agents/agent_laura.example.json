@@ -1,0 +1,16 @@
+{
+  "agent_id": "agent-laura",
+  "name": "Laura | Verslomatika Klinikos",
+  "display_name": "Laura | Verslomatika Klinikos",
+  "email": "laura@verslomatika.eu",
+  "password": "HOSTINGER_PASSWORD_HERE",
+  "reply_to": "laura@verslomatika.eu",
+  "smtp_host": "smtp.hostinger.com",
+  "smtp_port": 465,
+  "use_ssl": true,
+  "imap_host": "imap.hostinger.com",
+  "imap_port": 993,
+  "target_industry": "clinic",
+  "daily_limit": 25,
+  "is_active": true
+}

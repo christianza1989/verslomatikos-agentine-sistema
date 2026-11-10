@@ -1,0 +1,16 @@
+{
+  "agent_id": "agent-justas",
+  "name": "Justas | Verslomatika Horeca",
+  "display_name": "Justas | Verslomatika Horeca",
+  "email": "justas@verslomatika.eu",
+  "password": "HOSTINGER_PASSWORD_HERE",
+  "reply_to": "justas@verslomatika.eu",
+  "smtp_host": "smtp.hostinger.com",
+  "smtp_port": 465,
+  "use_ssl": true,
+  "imap_host": "imap.hostinger.com",
+  "imap_port": 993,
+  "target_industry": "horeca",
+  "daily_limit": 25,
+  "is_active": true
+}
