@@ -225,7 +225,7 @@ NO_GOOGLE = {
 
 def build_tracked_email(lead: dict, lead_id: str, demo_url: str = None, google_stats: dict = None,
                         sender_name: str = None, sender_email: str = None, no_google: bool = False,
-                        rk_stats: dict = None) -> tuple:
+                        rk_stats: dict = None, company_cities: list = None, cascade_city: str = None) -> tuple:
     """Grąžina (subject, text, html). Vienas CTA: asmeninis demo puslapis.
 
     demo_url: {APP_BASE}/r/{slug}?k={token} (be tokeno, tik peržiūrai).
@@ -248,6 +248,14 @@ def build_tracked_email(lead: dict, lead_id: str, demo_url: str = None, google_s
         subject = tpl["subject_generic"].format(name=name)
     offer = tpl["offer"].format(name=name)
     team = tpl.get("team")
+    # Etapas N: a company with branches gets ONE offer for all of them; a cascade email names the branch.
+    cities = [c for c in (company_cities or []) if c]
+    if len(cities) > 1:
+        subject = f"{name}: atsiliepimų puslapiai visiems {len(cities)} filialams"
+        team = (f"Puslapiai paruošti visiems Jūsų filialams: {', '.join(cities)}. Kiekvienas turi savo QR kodą ir atsiliepimų nuorodą, "
+                f"o aktyvuoti užtenka vieną kartą." + (f" {team}" if team else ""))
+    if cascade_city:
+        intro = f"rašome ir Jūsų filialui ({cascade_city}), nes galbūt ankstesnis laiškas nepasiekė atsakingo žmogaus. " + intro
     guide_line, guide = None, None
     if no_google:
         rk_rating, rk_count = (rk_stats or {}).get("rating"), (rk_stats or {}).get("count")
@@ -318,6 +326,91 @@ def _fetch_candidates(target_ind: str, needed: int, agent_id: str = "") -> list:
         return get_uncontacted_dental_leads(limit=pool)
 
 
+def _company_candidates(conn: sqlite3.Connection, agent: dict, needed: int) -> list:
+    """Etapas N: one primary lead per company; the other branches travel with it (`_branches`).
+    Companies already known (campaign_companies) or with any address already written to are skipped:
+    they continue through follow-ups / cascade, never as a new first email."""
+    from core.company_groups import company_key, group_leads, order_contacts, agent_for_company, get_company
+    from core.dental_lead_pool import slugify
+    pool = _fetch_candidates(agent.get("target_industry", "clinic"), needed * 4, agent_id="")
+    same_niche = [a["agent_id"] for a in AGENT_PROFILES if a.get("is_active") and a.get("target_industry") == agent.get("target_industry")]
+    contacted = {r[0] for r in conn.execute("SELECT LOWER(email) FROM campaign_leads WHERE sent_at IS NOT NULL")}
+    out = []
+    for key, members in group_leads(pool).items():
+        if same_niche and agent_for_company(key, same_niche) != agent["agent_id"]:
+            continue
+        if get_company(conn, key) or any((m.get("email") or "").lower() in contacted for m in members):
+            continue
+        ordered = order_contacts(members)
+        primary = dict(ordered[0])
+        used = {primary["slug"]}
+        branches = []
+        for m in members:
+            if m is ordered[0] or (m.get("slug") == primary["slug"] and m.get("city") == primary.get("city")):
+                continue
+            b = dict(m)
+            if b["slug"] in used:
+                b["slug"] = f"{b['slug']}-{slugify(b.get('city') or 'filialas')}"
+            used.add(b["slug"])
+            branches.append(b)
+        primary["_company_key"], primary["_branches"], primary["_members"] = key, branches, members
+        out.append(primary)
+        if len(out) >= needed * 2:
+            break
+    return out
+
+
+def _run_cascades(conn: sqlite3.Connection, agent: dict, sender, budget: int, dry_run: bool) -> int:
+    """Etapas N6: write to the next branch of a quiet company (one per company, max 3 addresses)."""
+    from core.company_groups import ensure_company_schema, get_company, next_cascade_contact, refresh_company_status, save_company
+    ensure_company_schema(conn)
+    sent = 0
+    now = datetime.datetime.now()
+    for row in conn.execute("SELECT company_key FROM campaign_companies WHERE status='active' AND agent_id=?", (agent["agent_id"],)).fetchall():
+        if sent >= budget:
+            break
+        company = get_company(conn, row[0])
+        if refresh_company_status(conn, company) != "active":
+            continue
+        m = next_cascade_contact(conn, company, now)
+        if not m or not company.get("root_client_id"):
+            continue
+        to_email = m["email"].strip().lower()
+        root = conn.execute("SELECT slug, google_rating, google_reviews_count, google_review_url, industry FROM clients WHERE id=?", (company["root_client_id"],)).fetchone()
+        if not root:
+            continue
+        branch_slug = m.get("slug") or root["slug"]
+        if not conn.execute("SELECT 1 FROM clients WHERE slug=?", (branch_slug,)).fetchone():
+            branch_slug = root["slug"]
+        lead_id = (conn.execute("SELECT id FROM campaign_leads WHERE email=?", (to_email,)).fetchone() or [str(uuid.uuid4())])[0]
+        token = "PERZIURA" if dry_run else issue_claim_token(conn, company["root_client_id"])
+        demo_url = f"{APP_BASE}/r/{urllib.parse.quote(branch_slug)}?k={token}"
+        cities = [x.get("city") for x in company["members"] if x.get("city")]
+        subj, text, html = build_tracked_email({"business_name": company["name"], "slug": branch_slug, "industry": root["industry"]}, lead_id, demo_url,
+                                               {"rating": root["google_rating"], "count": root["google_reviews_count"]},
+                                               sender_name=agent["name"], sender_email=agent["email"],
+                                               company_cities=sorted(set(cities), key=cities.index), cascade_city=m.get("city") or None)
+        if dry_run:
+            print(f"    👁 Kaskada {company['name']} → {to_email}: „{subj}“")
+            sent += 1
+            continue
+        if not sender.send_email(to_email=to_email, subject=subj, body_text=text, body_html=html,
+                                 headers={"List-Unsubscribe": f"<mailto:{agent['email']}?subject=Atsisakau>"}):
+            continue
+        now_iso = datetime.datetime.now().isoformat()
+        conn.execute("""INSERT INTO campaign_leads (id, campaign_id, business_name, email, slug, city, status, sent_at, created_at, updated_at, company_key)
+                        VALUES (?, 'company-cascade', ?, ?, ?, ?, 'sent', ?, ?, ?, ?)
+                        ON CONFLICT(email) DO UPDATE SET status='sent', sent_at=excluded.sent_at, company_key=excluded.company_key, updated_at=excluded.updated_at""",
+                     (lead_id, m.get("business_name") or company["name"], to_email, branch_slug, m.get("city") or "", now_iso, now_iso, now_iso, company["company_key"]))
+        conn.execute("INSERT INTO campaign_events (id, lead_id, event_type, details, created_at) VALUES (?, ?, 'sent', 'company-cascade', ?)", (str(uuid.uuid4()), lead_id, now_iso))
+        conn.commit()
+        record_message(conn, lead_id, "E0", sender.last_message_id, subj)
+        save_company(conn, company["company_key"], company["name"], company["agent_id"], company["root_client_id"], company["members"], company["contacted"] + [to_email])
+        print(f"    ✓ Kaskada: {company['name']} → {to_email} ({m.get('city') or ''})")
+        sent += 1
+    return sent
+
+
 def prepare_lead(conn: sqlite3.Connection, lead: dict):
     """Paruošia lead'ą siuntimui. Grąžina (client_row, priežastis_praleisti)."""
     email = lead["email"].strip().lower()
@@ -360,13 +453,17 @@ def dispatch_daily_quota(target_agent_id: str = "agent-tomas", force_count: int 
     conn.row_factory = sqlite3.Row
     ensure_schema(conn)
 
-    candidates = _fetch_candidates(agent.get("target_industry", "clinic"), needed, agent_id=agent["agent_id"])
-    if not candidates:
+    sender = None if dry_run else SMTPEmailSender(config_path=agent["config_path"])
+    # Etapas N: quiet companies get their next branch first, then new companies (one email per company).
+    from core.company_groups import backfill_companies
+    backfill_companies(conn, AGENT_PROFILES)
+    cascaded = _run_cascades(conn, agent, sender, needed, dry_run)
+    needed -= cascaded
+    candidates = _company_candidates(conn, agent, needed) if needed > 0 else []
+    if not candidates and not cascaded:
         print("⚠️ Nėra naujų nekontaktuotų įmonių sąraše!")
         conn.close()
         return 0
-
-    sender = None if dry_run else SMTPEmailSender(config_path=agent["config_path"])
     campaign_id = f"reputation-daily-{datetime.datetime.now().strftime('%Y%m%d')}"
     done = 0
     preview_dir = os.path.join(BASE_DIR, "data", "reports", "email_previews")
@@ -384,6 +481,11 @@ def dispatch_daily_quota(target_agent_id: str = "agent-tomas", force_count: int 
             if skip:
                 print(f"    ↷ Praleista {b_name} ({to_email}): {skip}")
                 continue
+            if lead.get("_branches"):
+                from core.company_groups import provision_company
+                from core.google_place_resolver import get_review_destination
+                provision_company(conn, lead, lead["_branches"],
+                                  lambda b: get_review_destination(b.get("business_name") or b_name, b.get("city") or "Vilnius", b.get("phone"), b.get("website"))[:2])
 
         # Naudojame esamą campaign_leads id, kitaip sekimo įvykiai nesusietų su lead'u.
         row = conn.execute("SELECT id FROM campaign_leads WHERE email=?", (to_email,)).fetchone()
@@ -394,9 +496,12 @@ def dispatch_daily_quota(target_agent_id: str = "agent-tomas", force_count: int 
         stats = {"rating": client.get("google_rating"), "count": client.get("google_reviews_count")}
         from core.claim_tokens import rekvizitai_review_url
         no_google = bool(rekvizitai_review_url(client.get("google_review_url") or lead.get("google_review_url") or ""))
+        members = lead.get("_members") or []
+        cities = [m.get("city") for m in members if m.get("city")]
         subj, text, html = build_tracked_email({**lead, "industry": client.get("industry") or lead.get("industry")}, lead_id, demo_url, stats,
                                                sender_name=agent["name"], sender_email=agent["email"], no_google=no_google,
-                                               rk_stats=lead.get("rekvizitai_stats"))
+                                               rk_stats=lead.get("rekvizitai_stats"),
+                                               company_cities=sorted(set(cities), key=cities.index) if len(members) > 1 else None)
 
         if dry_run:
             os.makedirs(preview_dir, exist_ok=True)
@@ -423,6 +528,11 @@ def dispatch_daily_quota(target_agent_id: str = "agent-tomas", force_count: int 
                          (str(uuid.uuid4()), lead_id, now_iso))
             conn.commit()
             record_message(conn, lead_id, "E0", sender.last_message_id, subj)  # follow-up'ų gijai
+            if lead.get("_company_key"):  # Etapas N: the company is now one conversation
+                from core.company_groups import save_company, ensure_company_schema
+                ensure_company_schema(conn)
+                conn.execute("UPDATE campaign_leads SET company_key=? WHERE email=?", (lead["_company_key"], to_email))
+                save_company(conn, lead["_company_key"], b_name, agent["agent_id"], client["id"], lead.get("_members") or [lead], [to_email])
             done += 1
             if done < needed:
                 delay = random.randint(delay_min, delay_max)
@@ -439,7 +549,7 @@ def dispatch_daily_quota(target_agent_id: str = "agent-tomas", force_count: int 
 
     conn.close()
     print(f"\n{'=' * 75}")
-    print(f"🏁 Baigta. {'Paruošta peržiūrų' if dry_run else 'Išsiųsta'}: {done}.")
+    print(f"🏁 Baigta. {'Paruošta peržiūrų' if dry_run else 'Išsiųsta'}: {done + cascaded} (iš jų kaskada filialams: {cascaded}).")
     print(f"{'=' * 75}")
     return done
 
@@ -613,6 +723,22 @@ def send_researched(brief_path: str, send: bool = False, test_to: str = None) ->
         print(f"✗ Nesiųsta: {skip}")
         conn.close()
         return False
+    # Etapas N8: the research brief may list the company's branches – one demo account for all of them.
+    branch_leads = []
+    for i, br in enumerate(brief.get("branches") or []):
+        from core.dental_lead_pool import slugify
+        br_slug = br.get("slug") or f"{slug}-{slugify(br.get('city') or br.get('location_label') or str(i + 2))}"
+        branch_leads.append({**br, "slug": br_slug, "business_name": br.get("business_name") or brief["business_name"],
+                             "city": br.get("city") or br.get("location_label") or ""})
+    if branch_leads:
+        from core.company_groups import provision_company
+        from core.claim_tokens import rekvizitai_review_url
+        def _branch_url(b):
+            if b.get("google_place_id"):
+                return f"https://search.google.com/local/writereview?placeid={b['google_place_id']}", "google"
+            rk = rekvizitai_review_url(b.get("rekvizitai_url") or "")
+            return (rk, "rekvizitai") if rk else (review_url, platform)
+        provision_company(conn, lead, branch_leads, _branch_url)
     if platform == "google":
         conn.execute("UPDATE clients SET google_place_id=?, google_rating=?, google_reviews_count=? WHERE id=?",
                      (brief["google_place_id"], brief.get("google_rating"), brief.get("google_reviews_count"), client["id"]))
@@ -653,6 +779,13 @@ def send_researched(brief_path: str, send: bool = False, test_to: str = None) ->
                  (str(uuid.uuid4()), lead_id, campaign, now_iso))
     conn.commit()
     record_message(conn, lead_id, "E0", sender.last_message_id, subj)
+    if not test_to:  # Etapas N: the researched company is one conversation (stops, cascade, owner panel)
+        from core.company_groups import company_key as _ck, save_company, ensure_company_schema
+        ensure_company_schema(conn)
+        key = _ck({"email": deliver_to, "website": brief.get("website", "")})
+        members = [{"email": deliver_to, "business_name": brief["business_name"], "city": lead["city"], "slug": slug}] +                   [{"email": b.get("email") or "", "business_name": b["business_name"], "city": b["city"], "slug": b["slug"]} for b in branch_leads]
+        conn.execute("UPDATE campaign_leads SET company_key=? WHERE email=?", (key, record_email))
+        save_company(conn, key, brief["business_name"], AGENT_PROFILES[0]["agent_id"], client["id"], members, [deliver_to])
     conn.close()
     print(f"✓ Išsiųsta: „{subj}“ → {deliver_to}{' (BANDYMAS, profilis ' + slug + ')' if test_to else ''}")
     return True

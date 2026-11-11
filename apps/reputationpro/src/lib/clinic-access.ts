@@ -53,7 +53,14 @@ export function accountActive(row:Omit<AccountRow,'id'>) {
   if(['trialing','active'].includes(row.subscription_status))return true;
   return !!row.stripe_subscription_id && !['pending','incomplete','incomplete_expired'].includes(row.subscription_status);
 }
-const ACCOUNT_COLUMNS='c.id,c.subscription_status,c.stripe_subscription_id,c.is_demo,v.verified_at';
+const ACCOUNT_COLUMNS='c.id,c.subscription_status,c.stripe_subscription_id,c.is_demo,c.parent_id,c.archived_at,v.verified_at';
+// Branch logins (ROADMAP N7): the branch must not be archived and the account's main profile must be active.
+function loginActive(row:AccountRow & {parent_id?:string|null;archived_at?:string|null}):boolean {
+  if(row.archived_at || !accountActive(row))return false;
+  if(!row.parent_id)return true;
+  const root=db().prepare('SELECT c.id,c.subscription_status,c.stripe_subscription_id,c.is_demo,c.archived_at,v.verified_at FROM clients c LEFT JOIN clinic_email_verifications v ON v.client_id=c.id WHERE c.id=?').get(row.parent_id) as (AccountRow & {archived_at:string|null})|undefined;
+  return !!root && !root.archived_at && accountActive(root);
+}
 export function authenticateClinic(email:string,password:string) {
   const row=db().prepare(`SELECT ${ACCOUNT_COLUMNS}
     FROM clients c JOIN clinic_credentials a ON a.client_id=c.id
@@ -62,7 +69,7 @@ export function authenticateClinic(email:string,password:string) {
   // Do a scrypt operation even for a missing email to reduce account probing.
   if(!row){digest(password,Buffer.alloc(16));return null;}
   if(!verifyClinicPassword(row.id,password))return null;
-  return accountActive(row)?row.id:null;
+  return loginActive(row)?row.id:null;
 }
 export function issueClinicSession(clientId:string) {
   const token=randomBytes(32).toString('hex'),expiresAt=Date.now()+8*60*60*1000;
@@ -76,6 +83,6 @@ export function clinicSession(token:string) {
     JOIN clinic_credentials a ON a.client_id=s.client_id JOIN clients c ON c.id=s.client_id
     LEFT JOIN clinic_email_verifications v ON v.client_id=c.id
     WHERE s.token_hash=? AND s.expires_at>?`).get(tokenHash(token),Date.now()) as AccountRow|undefined;
-  return row && accountActive(row) ? row.id : null;
+  return row && loginActive(row) ? row.id : null;
 }
 export function revokeClinicSession(token:string) { db().prepare('DELETE FROM clinic_sessions WHERE token_hash=?').run(tokenHash(token)); }

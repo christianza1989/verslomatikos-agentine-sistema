@@ -63,6 +63,11 @@ export function claimClient(token: string, password: string, googleReviewUrl?: s
       .run(new Date(now + TRIAL_MS).toISOString(), url || null, client.id);
     if (!updated.changes) { sql.exec('ROLLBACK'); return { ok: false, status: 409, error: 'Ši paskyra jau aktyvuota. Prisijunkite.' }; }
     if (changeEmail) sql.prepare('UPDATE clients SET email=? WHERE id=?').run(email, client.id);
+    // Etapas N: one activation activates the whole company – its demo branches follow the main profile.
+    sql.prepare(`UPDATE clients SET subscription_status='trialing', is_demo=0, trial_ends_at=? WHERE parent_id=? AND is_demo=1`)
+      .run(new Date(now + TRIAL_MS).toISOString(), client.id);
+    sql.prepare(`DELETE FROM review_events WHERE client_id IN (SELECT id FROM clients WHERE parent_id=?)`).run(client.id);
+    sql.prepare(`DELETE FROM internal_feedback WHERE client_id IN (SELECT id FROM clients WHERE parent_id=?)`).run(client.id);
     setClinicPassword(client.id, password);
     sql.prepare('INSERT OR REPLACE INTO clinic_email_verifications(client_id,verified_at) VALUES (?,?)').run(client.id, now);
     sql.prepare('UPDATE claim_tokens SET used_at=? WHERE client_id=? AND used_at IS NULL').run(now, client.id);

@@ -4,11 +4,12 @@
 // switches between them with ?clinic={slug}.
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { AlertTriangle, ArrowRight, Building2, Check, ExternalLink, LoaderCircle, MapPin, MessageSquare, Plus, Printer, Star, Trash2, X } from 'lucide-react';
+import { AlertTriangle, ArrowRight, Building2, Check, Copy, ExternalLink, LoaderCircle, Mail, MapPin, MessageSquare, Plus, Printer, Star, Trash2, UserPlus, X } from 'lucide-react';
 
 export type LocationView = {
   id: string; slug: string; business_name: string; location_label: string; is_root: boolean;
   platform: 'google' | 'rekvizitai'; link_ok: boolean; ratings: number; positive: number; ratings30: number; unread: number;
+  has_login: boolean; email: string | null;
 };
 
 type FormValues = { business_name: string; location_label: string; google_review_url: string; email: string; phone: string; slug?: string };
@@ -82,6 +83,32 @@ export function ArchiveBranch({ id, name }: { id: string; name: string }) {
   }}><Trash2 size={14}/> Pašalinti filialą</button>;
 }
 
+// ROADMAP N7: one-time link for a branch manager; the login sees only that branch.
+function BranchAccess({ l }: { l: LocationView }) {
+  const router = useRouter();
+  const [busy, setBusy] = useState(false);
+  const [link, setLink] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+  const call = async (method: 'POST' | 'DELETE') => {
+    setBusy(true);
+    const res = await fetch(`/api/admin/branches/invite?id=${encodeURIComponent(l.id)}`, { method }).catch(() => null);
+    const data = res ? await res.json().catch(() => ({})) : {};
+    setBusy(false);
+    if (!res?.ok) { alert(data.error || 'Nepavyko.'); return; }
+    if (method === 'POST') setLink(data.url); else router.refresh();
+  };
+  if (l.has_login) return <div className="bm-access is-on"><Check size={13}/> Prieiga: {l.email || 'filialo vadovas'}
+    <button type="button" disabled={busy} onClick={() => { if (confirm(`Atšaukti filialo vadovo prieigą (${l.email || l.business_name})?`)) call('DELETE'); }}>Atšaukti</button></div>;
+  if (!link) return <div className="bm-access"><button type="button" className="bm-invite" disabled={busy} onClick={() => call('POST')}><UserPlus size={14}/> Pakviesti filialo vadovą</button></div>;
+  const mail = `mailto:${l.email || ''}?subject=${encodeURIComponent(`Prieiga prie ${l.business_name} atsiliepimų`)}&body=${encodeURIComponent(`Sveiki,\n\nkviečiu valdyti ${l.business_name} klientų atsiliepimus ir QR kodus. Susikurkite prisijungimą (nuoroda galioja 14 d.):\n${link}\n`)}`;
+  return <div className="bm-access bm-access-link">
+    <code>{link}</code>
+    <button type="button" onClick={async () => { try { await navigator.clipboard.writeText(link); setCopied(true); setTimeout(() => setCopied(false), 1800); } catch { /* select manually */ } }}>{copied ? <Check size={13}/> : <Copy size={13}/>} {copied ? 'Nukopijuota' : 'Kopijuoti'}</button>
+    <a href={mail}><Mail size={13}/> Siųsti el. paštu</a>
+    <small>Nuoroda vienkartinė, galioja 14 d. Filialo vadovas matys tik šį filialą.</small>
+  </div>;
+}
+
 export function BranchManager({ rootId, rootName, rootEmail, locations, current, canAdd, max }: {
   rootId: string; rootName: string; rootEmail: string; locations: LocationView[]; current: string; canAdd: boolean; max: number;
 }) {
@@ -104,6 +131,7 @@ export function BranchManager({ rootId, rootName, rootEmail, locations, current,
           <b>{l.business_name}{l.is_root && <span className="bm-tag">Pagrindinis</span>}{l.slug === current && <span className="bm-tag bm-tag-on">Dabar valdote</span>}</b>
           <small>{l.location_label ? <><MapPin size={12}/> {l.location_label} · </> : null}/r/{l.slug}</small>
           <span className={`bm-link ${l.link_ok ? 'is-ok' : 'is-warn'}`}>{l.link_ok ? <Check size={12}/> : <AlertTriangle size={12}/>} {l.platform === 'rekvizitai' ? 'Rekvizitai.lt' : l.link_ok ? 'Google susieta' : 'Patikslinkite Google nuorodą'}</span>
+          {!l.is_root && <BranchAccess l={l}/>}
         </div>
         <div className="bm-stats">
           <span><Star size={13} fill="currentColor" strokeWidth={0}/> {l.ratings} <small>({l.ratings30} per 30 d.)</small></span>

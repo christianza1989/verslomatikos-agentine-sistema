@@ -741,3 +741,17 @@
 .ok-branches span { display: inline-flex; align-items: center; gap: 5px; font-size: 12.5px; color: #475569; }
 .ok-branches a { color: #4325d4 !important; }
 .ok-tag { display: inline-block; margin-left: 6px; font-size: 11px; font-weight: 700; padding: 1px 7px; border-radius: 999px; background: #ede9fe; color: #4325d4; vertical-align: middle; }
+
+/* Etapas N: company branches on the owner demo */
+.od-branches { margin: 2px 0 12px; display: flex; flex-wrap: wrap; gap: 6px; }
+.od-branches a { font-size: 13px; font-weight: 700; padding: 6px 12px; border-radius: 999px; border: 1px solid #ddd6fe; background: #fff; color: #4325d4; text-decoration: none; }
+.od-branches a.is-on { background: #13112e; border-color: #13112e; color: #fff; }
+
+/* Branch manager access (ROADMAP N7) */
+.bm-access { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 4px; font-size: 12.5px; color: #475569; }
+.bm-access.is-on { color: #15803d; font-weight: 600; }
+.bm-access button, .bm-access a { font: inherit; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 999px; border: 1px solid #ddd6fe; background: #f5f3ff; color: #4325d4; cursor: pointer; text-decoration: none; }
+.bm-access.is-on button { border-color: #fecaca; background: #fff; color: #b91c1c; }
+.bm-access-link { padding: 8px 10px; border: 1px dashed #c4b5fd; border-radius: 10px; background: #faf8ff; }
+.bm-access-link code { font-size: 11.5px; overflow-wrap: anywhere; color: #312e81; flex-basis: 100%; }
+.bm-access-link small { flex-basis: 100%; color: var(--muted); }

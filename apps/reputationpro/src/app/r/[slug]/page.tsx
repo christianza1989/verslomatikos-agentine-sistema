@@ -1,6 +1,6 @@
 import { notFound, redirect } from 'next/navigation';
 import QRCode from 'qrcode';
-import { getClient, recordDemoView } from '@/lib/db';
+import { getBranches, getClient, getClientById, isPlaceholderEmail, recordDemoView } from '@/lib/db';
 import { ReviewGate } from '@/components/review-gate';
 import { OwnerDemo } from '@/components/owner-demo';
 import { canCollectFeedback } from '@/lib/entitlements';
@@ -48,7 +48,10 @@ export default async function ReviewPage({ params, searchParams }: { params: Pro
   }
 
   const tokenClient = claimTokenClient(k);
-  const personal = !!tokenClient && tokenClient.id === client.id;
+  // Etapas N: the token belongs to the company's main profile; any of its branch pages is personal too.
+  const personal = !!tokenClient && (tokenClient.id === client.id || tokenClient.id === client.parent_id);
+  const root = client.parent_id ? getClientById(client.parent_id) ?? client : client;
+  const locations = [root, ...getBranches(root.id)].map((l) => ({ slug: l.slug, name: l.business_name, label: l.location_label }));
   if (personal) { try { recordDemoView(client.slug); } catch (e) { console.error('Demo view tracking failed:', e); } }
   const pageUrl = `${appUrl()}/r/${client.slug}`;
   const qr = await QRCode.toDataURL(pageUrl, { width: 300, margin: 1, color: { dark: '#0f172a', light: '#ffffff' } });
@@ -65,6 +68,9 @@ export default async function ReviewPage({ params, searchParams }: { params: Pro
     industry={client.industry || 'general'}
     googleRating={client.google_rating ?? null}
     googleReviews={client.google_reviews_count ?? null}
-    ownerEmail={personal && !client.email.endsWith('.invalid') ? client.email : null}
+    ownerEmail={personal ? [client.email, root.email].find((e) => !isPlaceholderEmail(e)) ?? null : null}
+    branches={locations}
+    accountName={root.business_name}
+    tokenQuery={personal && k ? `?k=${encodeURIComponent(k)}` : ''}
   />;
 }

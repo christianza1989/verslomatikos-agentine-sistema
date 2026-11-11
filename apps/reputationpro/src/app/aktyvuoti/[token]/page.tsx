@@ -4,6 +4,7 @@ import { CheckCircle2, AlertTriangle, ExternalLink, Clock } from 'lucide-react';
 import { Brand } from '@/components/brand';
 import { ClaimForm } from '@/components/claim-form';
 import { claimTokenClient } from '@/lib/claim';
+import { getBranches } from '@/lib/db';
 import { isDirectReviewUrl } from '@/lib/validation';
 import { platformCopy } from '@/lib/review-platforms';
 import { appUrl } from '@/lib/security';
@@ -32,6 +33,7 @@ export default async function ActivatePage({ params }: { params: Promise<{ token
   const pageUrl = `${appUrl()}/r/${client.slug}`;
   const qr = await QRCode.toDataURL(pageUrl, { width: 220, margin: 1, color: { dark: '#0f172a', light: '#ffffff' } });
   const googleOk = isDirectReviewUrl(client.google_review_url);
+  const branches = getBranches(client.id);
   const platform = platformCopy(client.google_review_url);
 
   return <div className="login-shell"><Brand/>
@@ -46,6 +48,8 @@ export default async function ActivatePage({ params }: { params: Promise<{ token
         <li>{googleOk ? <CheckCircle2 size={18} className="ok"/> : <AlertTriangle size={18} className="warn"/>}
           <div><strong>{platform.linkLabel}</strong><span>{googleOk ? `Susieta su Jūsų ${platform.name} profiliu` : 'Patikslinkite žemiau (arba vėliau nustatymuose)'}</span></div>
           <a href={client.google_review_url} target="_blank" rel="noopener noreferrer">Patikrinti <ExternalLink size={13}/></a></li>
+        {branches.length > 0 && <li><CheckCircle2 size={18} className="ok"/><div><strong>Filialai ({branches.length})</strong>
+          <span>{branches.map((b) => b.location_label || b.business_name).join(', ')}: aktyvuosite kartu, kiekvienas turi savo puslapį ir QR kodą</span></div></li>}
       </ul>
 
       <ClaimForm token={token} googleUrl={client.google_review_url} googleVerified={googleOk} email={client.email}/>

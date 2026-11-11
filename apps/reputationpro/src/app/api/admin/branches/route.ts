@@ -60,6 +60,7 @@ export async function DELETE(req: NextRequest) {
   const g = await guard(req); if ('fail' in g) return g.fail;
   const branch = getClientById(req.nextUrl.searchParams.get('id') || '');
   if (!branch || !branch.parent_id || !canAccessClient(g.principal, branch.id)) return error('Filialas nerastas.', 404);
+  if (g.principal.role === 'clinic' && g.principal.clientId !== branch.parent_id) return error('Filialą pašalinti gali tik pagrindinė paskyra.', 403);
   if (!archiveBranch(branch.id)) return error('Filialas jau pašalintas.', 409);
   return NextResponse.json({ ok: true });
 }

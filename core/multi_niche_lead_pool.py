@@ -59,7 +59,9 @@ def get_uncontacted_leads_for_agent(target_industry: str, limit: int = 25, agent
         email = (item.get("email") or "").strip().lower()
         if not email or "@" not in email:
             continue
-        if email in already_contacted or email in seen_in_batch:
+        # Etapas N: one address may serve several branches (info@ in Kaunas and Vilnius) – keep each branch.
+        batch_key = (email, (item.get("city") or "").strip().lower())
+        if email in already_contacted or batch_key in seen_in_batch:
             continue
 
         b_name = item.get("business_name") or "Įmonė"
@@ -83,7 +85,7 @@ def get_uncontacted_leads_for_agent(target_industry: str, limit: int = 25, agent
             "claim_url": f"https://reputacija.verslomatika.lt/checkout?slug={slug}"
         }
         fresh.append(lead_obj)
-        seen_in_batch.add(email)
+        seen_in_batch.add(batch_key)
 
     # Padalijimas tarp aktyvių agentų toje pačioje nišoje
     if agent_id == "agent-tomas":

@@ -25,6 +25,10 @@ type Props = {
   googleReviews: number | null;
   /** Shown in the sample notification email ("Kam: …"); only for the personal (token) demo. */
   ownerEmail?: string | null;
+  /** Etapas N: all locations of the company (main profile first) – one offer for every branch. */
+  branches?: { slug: string; name: string; label: string }[];
+  accountName?: string;
+  tokenQuery?: string;
 };
 
 type DemoTrackEvent = 'star_good' | 'star_care' | 'private_sent' | 'public_open' | 'tab' | 'ghost_done' | 'cta';
@@ -87,7 +91,8 @@ export function OwnerDemo(p: Props) {
   const [tipPos, setTipPos] = useState<{ x: number; y: number } | null>(null);
   const acted = useRef(false), ghostDone = useRef(false), run = useRef(0), ghostOn = useRef(false);
   const sample = complaintFor(p.industry);
-  const ctaLabel = p.personal ? 'Aktyvuoti nemokamai' : 'Išbandyti nemokamai';
+  const multi = (p.branches?.length ?? 0) > 1;
+  const ctaLabel = p.personal ? (multi ? 'Aktyvuoti visus filialus' : 'Aktyvuoti nemokamai') : 'Išbandyti nemokamai';
 
   const track = useCallback((event: DemoTrackEvent) => {
     fetch('/api/track/demo', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ slug: p.slug, event }), keepalive: true }).catch(() => undefined);
@@ -203,7 +208,13 @@ export function OwnerDemo(p: Props) {
 
     <section className="odh">
       <div className="odh-text">
-        <span className="od-greeting">{p.personal ? `Sveiki, ${p.name}! Tai Jūsų jau paruoštas atsiliepimų puslapis.` : `Pavyzdinis „${p.name}“ atsiliepimų puslapis`}</span>
+        <span className="od-greeting">{multi
+          ? `Sveiki, ${p.accountName || p.name}! Paruošėme puslapius visiems ${p.branches!.length} Jūsų filialams.`
+          : p.personal ? `Sveiki, ${p.name}! Tai Jūsų jau paruoštas atsiliepimų puslapis.` : `Pavyzdinis „${p.name}“ atsiliepimų puslapis`}</span>
+        {multi && <nav className="od-branches" aria-label="Jūsų filialai">
+          {p.branches!.map((b) => <a key={b.slug} href={`/r/${encodeURIComponent(b.slug)}${p.tokenQuery || ''}`} className={b.slug === p.slug ? 'is-on' : ''} aria-current={b.slug === p.slug ? 'page' : undefined}>
+            {b.label || b.name}</a>)}
+        </nav>}
         <h1>{rk ? 'Daugiau gerų atsiliepimų' : 'Daugiau 5★ atsiliepimų'} <span>{p.name}</span></h1>
         <p className="odh-sub">Patenkinti {who.many} palieka atsiliepimą {P}, o pastabos pirmiausia ateina Jūsų komandai. <b>Išbandykite telefone:</b> paspauskite žvaigždutę.</p>
         {rk

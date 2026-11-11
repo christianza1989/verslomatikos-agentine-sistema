@@ -33,3 +33,17 @@ export function CopyText({ text, label }: { text: string; label: string }) {
     try { await navigator.clipboard.writeText(text); setDone(true); setTimeout(() => setDone(false), 1800); } catch { /* select manually */ }
   }}>{done ? <Check size={13}/> : <Copy size={13}/>} {done ? 'Nukopijuota' : label}</button>;
 }
+
+// Etapas N9: stop / resume all outbound emails to one company.
+export function CompanyActions({ companyKey, status }: { companyKey: string; status: string }) {
+  const router = useRouter();
+  const [busy, setBusy] = useState(false);
+  const next = status === 'stopped' ? 'active' : 'stopped';
+  return <button type="button" className="btn btn-secondary btn-small" disabled={busy} onClick={async () => {
+    if (next === 'stopped' && !confirm('Sustabdyti visus laiškus šiai įmonei?')) return;
+    setBusy(true);
+    const res = await fetch('/api/admin/companies', { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ key: companyKey, status: next }) }).catch(() => null);
+    setBusy(false);
+    if (res?.ok) router.refresh(); else alert('Nepavyko.');
+  }}>{next === 'stopped' ? 'Stabdyti' : 'Tęsti'}</button>;
+}

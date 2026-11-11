@@ -67,10 +67,12 @@ export default async function Admin({
   const own = principal.role === 'clinic' ? getClientById(principal.clientId) : undefined;
   const clients = principal.role === 'owner'
     ? getClients().filter((c) => !c.archived_at)
-    : own ? [own, ...getBranches(own.id)] : [];
+    : own ? (own.parent_id ? [own] : [own, ...getBranches(own.id)]) : [];
+  // ROADMAP N7: a branch manager's login sees only its own branch.
+  const isBranchLogin = principal.role === 'clinic' && !!own?.parent_id;
   const clinic = clients.find((c) => c.slug === query.clinic) || (principal.role === 'owner' ? clients.find((c) => !c.parent_id) || clients[0] : own);
   const root = clinic ? getAccountRoot(clinic) : undefined;
-  const locationStats = root ? getLocationStats(root.id) : [];
+  const locationStats = root && !isBranchLogin ? getLocationStats(root.id) : [];
   const locations = locationStats.map((l) => ({ ...l, platform: reviewPlatform(l.google_review_url), link_ok: isDirectReviewUrl(l.google_review_url) }));
   const rootNames = new Map(clients.filter((c) => !c.parent_id).map((c) => [c.id, c.business_name]));
 
@@ -137,7 +139,7 @@ export default async function Admin({
               </a>
             )}
 
-            {clinic && !clinic.is_demo && (
+            {clinic && !clinic.is_demo && !isBranchLogin && (
               <a href="#filialai" className="sidebar-nav-item">
                 <MapPin size={18} />
                 <span>Filialai</span>
@@ -267,7 +269,7 @@ export default async function Admin({
               />
 
               {/* 1b. Branches (filialai): list, switch, add */}
-              {root && !root.is_demo && (
+              {root && !root.is_demo && !isBranchLogin && (
                 <BranchManager rootId={root.id} rootName={root.business_name} rootEmail={root.email} locations={locations} current={clinic.slug}
                   canAdd={locations.length - 1 < MAX_BRANCHES} max={MAX_BRANCHES} />
               )}
@@ -418,7 +420,7 @@ export default async function Admin({
                     <BranchForm mode="edit" rootName={root.business_name} rootEmail={root.email} branchId={clinic.id}
                       initial={{ business_name: clinic.business_name, location_label: clinic.location_label, google_review_url: clinic.google_review_url,
                         email: isPlaceholderEmail(clinic.email) ? '' : clinic.email, phone: clinic.phone, slug: clinic.slug }} />
-                    <ArchiveBranch id={clinic.id} name={clinic.business_name} />
+                    {!isBranchLogin && <ArchiveBranch id={clinic.id} name={clinic.business_name} />}
                   </div>
                 ) : (
                   <ClinicForm client={clinic} />

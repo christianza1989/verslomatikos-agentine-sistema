@@ -1,9 +1,9 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { ArrowLeft, Gift, MapPin, PackageCheck, Star, Truck, Users } from 'lucide-react';
-import { getActivatedClients, type StandOrder } from '@/lib/db';
+import { ArrowLeft, Building2, Gift, MapPin, PackageCheck, Star, Truck, Users } from 'lucide-react';
+import { getActivatedClients, getCompanyCampaigns, type StandOrder } from '@/lib/db';
 import { appUrl, currentPrincipal } from '@/lib/security';
-import { CopyText, OrderActions } from '@/components/owner-orders';
+import { CompanyActions, CopyText, OrderActions } from '@/components/owner-orders';
 
 // Owner overview (2026-11-11): every business that activated its account and every
 // free QR + NFC stand order, so the owner knows what to ship and to whom.
@@ -11,6 +11,7 @@ export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Klientai ir stoveliai · ReputationPro' };
 
 const STATUS: Record<StandOrder['status'], string> = { requested: 'Laukia išsiuntimo', sent: 'Išsiųsta', delivered: 'Pristatyta', canceled: 'Atšaukta' };
+const COMPANY_STATUS: Record<string, string> = { active: 'Vyksta', paused: 'Atsakė – atsakykite', stopped: 'Sustabdyta', converted: 'Aktyvavo' };
 const SUB: Record<string, string> = { trialing: '14 d. bandymas', active: 'Aktyvi prenumerata', past_due: 'Vėluoja mokėjimas', canceled: 'Atšaukta', pending: 'Laukia' };
 const day = (iso: string | null) => iso ? new Date(iso).toLocaleDateString('lt-LT') : '–';
 const dayTime = (iso: string | null) => iso ? new Date(iso).toLocaleString('lt-LT', { dateStyle: 'short', timeStyle: 'short' }) : '–';
@@ -21,6 +22,7 @@ export default async function OwnerClients() {
   if (principal.role !== 'owner') redirect('/admin');
 
   const rows = getActivatedClients();
+  const companies = getCompanyCampaigns();
   const base = appUrl();
   // Stand orders of main profiles and of their branches (filialai), one list.
   type OrderItem = { key: string; slug: string; title: string; sub: string | null; order: NonNullable<typeof rows[number]['order']> };
@@ -67,6 +69,22 @@ export default async function OwnerClients() {
           </article>;
         })}
       </div>
+    </section>
+
+    <section className="ok-panel">
+      <h2><Building2 size={18}/> Kampanijos pagal įmones</h2>
+      <p className="ok-empty">Viena įmonė = vienas pokalbis: pirmas laiškas pristato visus filialus, kitam filialo adresui rašoma tik jei tylima (kas 3 darbo d., iki 3 adresų).</p>
+      {companies.length === 0 ? <p className="ok-empty">Įmonių kampanijų dar nėra.</p> :
+      <div className="ok-table-wrap"><table className="ok-table">
+        <thead><tr><th>Įmonė</th><th>Filialai</th><th>Parašyta</th><th>Būsena</th><th></th></tr></thead>
+        <tbody>{companies.map((c) => <tr key={c.company_key}>
+          <td>{c.root_slug ? <Link href={`/r/${encodeURIComponent(c.root_slug)}`} target="_blank"><b>{c.name}</b></Link> : <b>{c.name}</b>}<small>{c.company_key.replace(/^[a-z]:/, '')}{c.agent_id ? ` · ${c.agent_id.replace('agent-', '')}` : ''}</small></td>
+          <td>{c.members.length}<small>{[...new Set(c.members.map((m) => m.city).filter(Boolean))].join(', ')}</small></td>
+          <td>{c.contacted.length}<small>{c.contacted.join(', ')}</small></td>
+          <td><span className={`ok-pill is-${c.status === 'converted' ? 'delivered' : c.status === 'active' ? 'sent' : c.status === 'paused' ? 'requested' : 'canceled'}`}>{COMPANY_STATUS[c.status] || c.status}</span>{c.reason && <small>{c.reason}</small>}</td>
+          <td>{c.status !== 'converted' && <CompanyActions companyKey={c.company_key} status={c.status}/>}</td>
+        </tr>)}</tbody>
+      </table></div>}
     </section>
 
     <section className="ok-panel">

@@ -543,11 +543,12 @@ export function archiveBranch(branchId: string) {
   return Number(db().prepare(`UPDATE clients SET archived_at=? WHERE id=? AND parent_id IS NOT NULL AND archived_at IS NULL`).run(new Date().toISOString(), branchId).changes) > 0;
 }
 export type LocationStat = { id: string; slug: string; business_name: string; location_label: string; is_root: boolean; google_review_url: string;
-  ratings: number; positive: number; ratings30: number; unread: number };
+  ratings: number; positive: number; ratings30: number; unread: number; has_login: boolean; email: string | null };
 /** One row per location of the account (main profile first) for the dashboard "Filialai" list. */
 export function getLocationStats(rootId: string): LocationStat[] {
   const since = new Date(Date.now() - 30 * 86400000).toISOString();
-  return db().prepare(`SELECT c.id, c.slug, c.business_name, c.location_label, c.parent_id, c.google_review_url,
+  return db().prepare(`SELECT c.id, c.slug, c.business_name, c.location_label, c.parent_id, c.google_review_url, c.email,
+      EXISTS(SELECT 1 FROM clinic_credentials a WHERE a.client_id=c.id) AS has_login,
       (SELECT COUNT(*) FROM review_events e WHERE e.client_id=c.id) AS ratings,
       (SELECT COUNT(*) FROM review_events e WHERE e.client_id=c.id AND e.rating>=4) AS positive,
       (SELECT COUNT(*) FROM review_events e WHERE e.client_id=c.id AND e.created_at>=?) AS ratings30,
@@ -557,6 +558,7 @@ export function getLocationStats(rootId: string): LocationStat[] {
       id: String(r.id), slug: String(r.slug), business_name: String(r.business_name), location_label: String(r.location_label || ''),
       is_root: r.parent_id == null, google_review_url: usableReviewUrl(String(r.google_review_url), String(r.business_name)),
       ratings: Number(r.ratings), positive: Number(r.positive || 0), ratings30: Number(r.ratings30), unread: Number(r.unread || 0),
+      has_login: !!Number(r.has_login), email: isPlaceholderEmail(String(r.email)) ? null : String(r.email),
     }));
 }
 
@@ -803,6 +805,26 @@ export function recordDemoEvent(slug: string, event: DemoEventName) {
   if (!lead) return false;
   db().prepare(`INSERT INTO campaign_events (id, lead_id, event_type, details) VALUES (?, ?, 'click', ?)`).run(randomUUID(), lead.id, `demo:${event}`);
   return true;
+}
+
+// Etapas N9: outbound campaigns grouped by company (table written by core/company_groups.py).
+export type CompanyCampaign = { company_key: string; name: string; agent_id: string | null; root_slug: string | null; status: string;
+  reason: string | null; members: { email: string; business_name: string; city: string; slug: string }[]; contacted: string[]; updated_at: string };
+export function getCompanyCampaigns(limit = 200): CompanyCampaign[] {
+  db().exec(`CREATE TABLE IF NOT EXISTS campaign_companies (company_key TEXT PRIMARY KEY, name TEXT NOT NULL, agent_id TEXT, root_client_id TEXT,
+    members TEXT NOT NULL DEFAULT '[]', contacted TEXT NOT NULL DEFAULT '[]', status TEXT NOT NULL DEFAULT 'active', reason TEXT,
+    created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')), updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')))`);
+  return db().prepare(`SELECT k.*, c.slug AS root_slug FROM campaign_companies k LEFT JOIN clients c ON c.id=k.root_client_id
+    ORDER BY k.updated_at DESC LIMIT ?`).all(limit).map((r) => ({
+      company_key: String(r.company_key), name: String(r.name), agent_id: (r.agent_id as string | null) ?? null,
+      root_slug: (r.root_slug as string | null) ?? null, status: String(r.status), reason: (r.reason as string | null) ?? null,
+      members: JSON.parse(String(r.members || '[]')), contacted: JSON.parse(String(r.contacted || '[]')), updated_at: String(r.updated_at),
+    }));
+}
+export function setCompanyCampaignStatus(key: string, status: 'active' | 'stopped') {
+  getCompanyCampaigns(1);
+  return Number(db().prepare(`UPDATE campaign_companies SET status=?, reason=?, updated_at=? WHERE company_key=?`)
+    .run(status, status === 'stopped' ? 'savininkas sustabdė' : 'savininkas tęsia', new Date().toISOString(), key).changes) > 0;
 }
 
 export function getClientByEmail(email: string) {

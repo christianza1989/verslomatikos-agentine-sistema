@@ -227,14 +227,25 @@ def lead_state(conn: sqlite3.Connection, lead: sqlite3.Row) -> dict:
     return {"sent_at": sent_at, "engaged_at": engaged, "steps": steps, "e0": e0, "client": client}
 
 
+from core.company_groups import active_thread_email, ensure_company_schema, get_company, refresh_company_status
+
+
 def due_followups(conn: sqlite3.Connection, now: datetime.datetime) -> list:
     """[(priority, lead, state, step)], karšti pirmiau."""
     out = []
+    ensure_company_schema(conn)
     rows = conn.execute("""SELECT * FROM campaign_leads
                            WHERE status IN ('sent','opened','clicked') AND sent_at IS NOT NULL""").fetchall()
     for lead in rows:
         if is_suppressed(conn, lead["email"]) or (lead["email"] or "").endswith(".invalid"):
             continue  # nesiųsti / bandomojo profilio vietos rezervavimo adresas (research --to)
+        # Etapas N: a company is one conversation. Stop when any address converted/replied/opted out,
+        # and follow up only the newest contacted address of the company.
+        key = lead["company_key"] if "company_key" in lead.keys() else None
+        if key:
+            company = get_company(conn, key)
+            if company and (refresh_company_status(conn, company) != "active" or active_thread_email(company) != (lead["email"] or "").lower()):
+                continue
         st = lead_state(conn, lead)
         if st["client"] is None or not st["client"]["is_demo"]:
             continue  # aktyvavo (arba profilio nėra) – nieko nesiunčiame
