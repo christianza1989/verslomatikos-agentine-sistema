@@ -2,8 +2,12 @@ import { createHash, randomBytes, scryptSync, timingSafeEqual } from 'node:crypt
 import { db } from './db.ts';
 
 export type Principal = {role:'owner'} | {role:'clinic';clientId:string};
+// A clinic login (the account's main profile) may manage that profile and its branches (filialai).
 export function canAccessClient(principal: Principal | null, clientId:string) {
-  return !!principal && (principal.role==='owner' || principal.clientId===clientId);
+  if(!principal)return false;
+  if(principal.role==='owner' || principal.clientId===clientId)return true;
+  const row=db().prepare('SELECT parent_id FROM clients WHERE id=?').get(clientId) as {parent_id:string|null}|undefined;
+  return !!row && row.parent_id===principal.clientId;
 }
 export function validClinicPassword(password:string) {
   return password.length>=8 && password.length<=128 && Buffer.byteLength(password,'utf8')<=512;

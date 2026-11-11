@@ -9,7 +9,7 @@
 import { createHash, randomBytes } from 'node:crypto';
 import { db, getClientById, type Client } from './db.ts';
 import { setClinicPassword, validClinicPassword } from './clinic-access.ts';
-import { validGoogleUrl } from './validation.ts';
+import { normalizeReviewUrl, validReviewUrl } from './validation.ts';
 
 export const CLAIM_TTL_MS = 30 * 86400000;
 export const TRIAL_MS = 14 * 86400000;
@@ -42,8 +42,9 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 // address is accepted; the route notifies the previous address about the change.
 export function claimClient(token: string, password: string, googleReviewUrl?: string, newEmail?: string): ClaimResult {
   if (!validClinicPassword(password)) return { ok: false, status: 400, error: 'Slaptažodis turi būti bent 8 simbolių.' };
-  const url = googleReviewUrl?.trim();
-  if (url && !validGoogleUrl(url)) return { ok: false, status: 400, error: 'Įveskite HTTPS Google Maps atsiliepimų nuorodą.' };
+  const raw = googleReviewUrl?.trim();
+  if (raw && !validReviewUrl(raw)) return { ok: false, status: 400, error: 'Įveskite Google arba Rekvizitai.lt atsiliepimų nuorodą (https://…).' };
+  const url = raw ? normalizeReviewUrl(raw) : raw;
   const email = newEmail?.trim().toLowerCase();
   if (email && (email.length > 254 || !EMAIL_RE.test(email))) return { ok: false, status: 400, error: 'Patikrinkite el. pašto adresą.' };
   const sql = db();

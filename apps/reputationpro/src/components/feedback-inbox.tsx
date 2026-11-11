@@ -112,7 +112,7 @@ export function FeedbackInbox({
       `Mūsų komandai itin svarbi kiekvieno kliento patirtis. Norėtume asmeniškai aptarti šią situaciją ir rasti Jums tinkamiausią sprendimą.\n\n` +
       `Kada Jums būtų patogu trumpam pasikalbėti telefonu?\n\n` +
       `Pagarbiai,\n` +
-      `${clinicName} vadovybė\n`
+      `${clinicName} komanda\n`
     );
     return `mailto:?subject=${subject}&body=${body}`;
   }
@@ -168,7 +168,7 @@ export function FeedbackInbox({
           <div className="empty-icon-circle">
             <MessageSquare size={28} />
           </div>
-          <h3>{items.length ? 'Pagal pasirinktą filtrą įrašų nerasta' : 'Vadovo dėžutė tuščia'}</h3>
+          <h3>{items.length ? 'Pagal pasirinktą filtrą įrašų nerasta' : 'Atsiliepimų dėžutė tuščia'}</h3>
           <p>
             {items.length
               ? 'Pakeiskite paieškos frazę arba pasirinkite kitą filtrą viršuje.'

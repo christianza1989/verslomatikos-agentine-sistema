@@ -53,7 +53,7 @@ export function DashboardKPIs({
           <h2>Dvigubo nukreipimo skydas saugo {clinicName} reputaciją</h2>
           <p>
             Kiekvienas įvertinimas apdorojamas akimirksniu: patenkinti klientai (4–5★) nukreipiami tiesiai į Jūsų 
-            Google atsiliepimų formą, o pastabos (1–3★) atkeliauja į vadovo dėžutę, kad galėtumėte greitai sureaguoti.
+            Google atsiliepimų formą, o pastabos (1–3★) atkeliauja į atsiliepimų dėžutę, kad komanda galėtų greitai sureaguoti.
           </p>
         </div>
         <div className="shield-hero-actions">
@@ -107,7 +107,7 @@ export function DashboardKPIs({
             </span>
           </div>
           <div className="stat-card-bottom">
-            <span>1–3★ pastabos, kurios nepasiekė viešo Google Maps ir liko vadovui</span>
+            <span>1–3★ pastabos, kurias klientai parašė pirmiausia Jūsų komandai</span>
           </div>
         </div>
 

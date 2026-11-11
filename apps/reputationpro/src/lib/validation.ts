@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { rekvizitaiReviewUrl } from './review-platforms.ts';
 export function validGoogleUrl(value: string) {
   try {
     const u=new URL(value); if(u.protocol!=='https:'||u.username||u.password||u.port)return false;
@@ -7,10 +8,16 @@ export function validGoogleUrl(value: string) {
     return ['google.com','www.google.com'].includes(u.hostname)&&/^\/maps(?:\/|$)/.test(u.pathname);
   } catch { return false; }
 }
-// True only for links that open the business's own "write a review" form directly
-// (not a Maps search). Used for honest "Susieta" badges and onboarding checks.
+// Public review destination: Google, or Rekvizitai.lt for businesses without a Google profile (Etapas R).
+export function validReviewUrl(value: string) { return validGoogleUrl(value) || !!rekvizitaiReviewUrl(value); }
+/** Stored form of a review link: Rekvizitai company/review URLs become the canonical review page. */
+export function normalizeReviewUrl(value: string) { return rekvizitaiReviewUrl(value) || value.trim(); }
+// True only for links that open the business's own review form directly (not a Maps search):
+// Google writereview?placeid / g.page review links, or a Rekvizitai.lt review page.
+// Used for honest "Susieta" badges and onboarding checks.
 export function isDirectReviewUrl(value: string|null|undefined) {
   if(!value)return false;
+  if(rekvizitaiReviewUrl(value))return true;
   try {
     const u=new URL(value);
     if(u.hostname==='search.google.com'&&u.pathname==='/local/writereview')return !!u.searchParams.get('placeid');
@@ -21,6 +28,8 @@ export function isDirectReviewUrl(value: string|null|undefined) {
 // `writereview?q=…` (no placeid) makes Google answer "400. That's an error." – such links were
 // produced by an old resolver fallback. Serve a Maps search instead, which always opens.
 export function usableReviewUrl(value: string, businessName: string) {
+  const rekvizitai = rekvizitaiReviewUrl(value);
+  if (rekvizitai) return rekvizitai;
   try {
     const u=new URL(value);
     if(u.hostname==='search.google.com'&&u.pathname==='/local/writereview'&&!u.searchParams.get('placeid')){
@@ -29,11 +38,35 @@ export function usableReviewUrl(value: string, businessName: string) {
   } catch { /* keep as is */ }
   return value;
 }
+// ROADMAP K5: who receives customer notes. The account email always does; up to 3 more
+// addresses (reception, administrator, manager) can be added in the dashboard.
+const EMAIL_RE = /^[^\s@<>,;"]+@[^\s@<>,;"]+\.[a-z]{2,}$/i;
+export const MAX_NOTIFY_EMAILS = 3;
+export function parseNotifyEmails(value: string | null | undefined) {
+  return [...new Set((value || '').split(/[,;\s]+/).map((e) => e.trim().toLowerCase()).filter((e) => EMAIL_RE.test(e) && e.length <= 254))].slice(0, MAX_NOTIFY_EMAILS);
+}
+export function notifyRecipients(client: { email: string; notify_emails?: string | null }, root?: { email: string } | null) {
+  // Branches: the account's main email always receives notes; a branch without its own email has a
+  // ".invalid" placeholder that is never emailed.
+  const own = client.email.trim().toLowerCase();
+  const list = [...(root ? [root.email.trim().toLowerCase()] : []), own, ...parseNotifyEmails(client.notify_emails)];
+  return [...new Set(list)].filter((e) => e && !e.endsWith('.invalid'));
+}
+// Branch (filialas) create/edit form. Email is optional: notes always reach the account email too.
+export const branchSchema = z.object({
+  business_name: z.string().trim().min(2, 'Įrašykite filialo pavadinimą.').max(120),
+  location_label: z.string().trim().max(120).optional().default(''),
+  google_review_url: z.string().trim().max(2000).refine(validReviewUrl, 'Įveskite Google arba Rekvizitai.lt atsiliepimų nuorodą (https://…).').transform(normalizeReviewUrl),
+  email: z.string().trim().toLowerCase().max(254).refine((v) => v === '' || EMAIL_RE.test(v), 'Patikrinkite el. pašto adresą.').optional().default(''),
+  phone: z.string().trim().max(40).optional().default(''),
+  slug: z.string().trim().min(3).max(70).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'Nuorodos vardas: mažosios raidės, skaičiai ir brūkšneliai.').optional(),
+});
+export const notifyEmailsSchema = z.array(z.string().trim().toLowerCase().max(254).regex(EMAIL_RE, 'Patikrinkite el. pašto adresą.')).max(MAX_NOTIFY_EMAILS);
 export const clinicSchema=z.object({
   business_name:z.string().trim().min(2).max(120),
   email:z.email().trim().toLowerCase().max(254),
   slug:z.string().trim().min(3).max(70).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
-  google_review_url:z.string().max(2000).refine(validGoogleUrl,'Įveskite HTTPS Google Maps arba g.page nuorodą.'),
+  google_review_url:z.string().max(2000).refine(validReviewUrl,'Įveskite Google atsiliepimų arba Rekvizitai.lt atsiliepimų nuorodą (https://…).').transform(normalizeReviewUrl),
   phone:z.string().trim().max(40).optional()
 });
 export const feedbackSchema=z.object({

@@ -65,5 +65,6 @@ export default async function ReviewPage({ params, searchParams }: { params: Pro
     industry={client.industry || 'general'}
     googleRating={client.google_rating ?? null}
     googleReviews={client.google_reviews_count ?? null}
+    ownerEmail={personal && !client.email.endsWith('.invalid') ? client.email : null}
   />;
 }

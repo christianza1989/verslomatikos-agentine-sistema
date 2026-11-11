@@ -19,17 +19,23 @@ import {
   MapPin,
   Sparkles,
   Building2,
-  Calendar
+  Calendar,
+  Gift,
+  Users
 } from 'lucide-react';
 import { Brand } from '@/components/brand';
 import { BillingPortal, ClinicForm, ClinicPicker, CopyLink, Logout } from '@/components/admin-controls';
 import { FeedbackInbox } from '@/components/feedback-inbox';
 import { DashboardKPIs } from '@/components/dashboard-kpis';
 import { QrKit } from '@/components/qr-kit';
+import { StandOrder } from '@/components/stand-order';
 import { OnboardingChecklist } from '@/components/onboarding-checklist';
 import { PublicLinkToggle } from '@/components/public-link-toggle';
-import { isDirectReviewUrl } from '@/lib/validation';
-import { db, getClientById, getClients, getFeedback, getStats, getSourceStats } from '@/lib/db';
+import { NotifyEmails } from '@/components/notify-emails';
+import { ArchiveBranch, BranchForm, BranchManager } from '@/components/branch-manager';
+import { isDirectReviewUrl, parseNotifyEmails } from '@/lib/validation';
+import { reviewPlatform, PLATFORM_COPY } from '@/lib/review-platforms';
+import { db, getAccountRoot, getBranches, getClientById, getClients, getFeedback, getLocationStats, getStats, getSourceStats, getStandOrder, isPlaceholderEmail, MAX_BRANCHES } from '@/lib/db';
 import { appUrl, currentPrincipal, demoEnabled } from '@/lib/security';
 
 export const dynamic = 'force-dynamic';
@@ -57,16 +63,23 @@ export default async function Admin({
   if (!principal) redirect('/admin/login');
 
   const query = await searchParams;
+  // Branches (filialai): a clinic login manages its main profile and all its branches (?clinic={slug}).
   const own = principal.role === 'clinic' ? getClientById(principal.clientId) : undefined;
-  const clients = principal.role === 'owner' ? getClients() : own ? [own] : [];
-  const clinic = principal.role === 'owner' 
-    ? (clients.find((c) => c.slug === query.clinic) || clients[0]) 
-    : own;
+  const clients = principal.role === 'owner'
+    ? getClients().filter((c) => !c.archived_at)
+    : own ? [own, ...getBranches(own.id)] : [];
+  const clinic = clients.find((c) => c.slug === query.clinic) || (principal.role === 'owner' ? clients.find((c) => !c.parent_id) || clients[0] : own);
+  const root = clinic ? getAccountRoot(clinic) : undefined;
+  const locationStats = root ? getLocationStats(root.id) : [];
+  const locations = locationStats.map((l) => ({ ...l, platform: reviewPlatform(l.google_review_url), link_ok: isDirectReviewUrl(l.google_review_url) }));
+  const rootNames = new Map(clients.filter((c) => !c.parent_id).map((c) => [c.id, c.business_name]));
 
   const stats = clinic ? getStats(clinic.id) : null;
   const feedback = clinic ? getFeedback(clinic.id) : [];
   const url = clinic ? `${appUrl()}/r/${clinic.slug}` : '';
   const googleOk = clinic ? isDirectReviewUrl(clinic.google_review_url) : false;
+  const platform = reviewPlatform(clinic?.google_review_url);
+  const pcopy = PLATFORM_COPY[platform];
 
   const qr = clinic
     ? await QRCode.toDataURL(url, {
@@ -97,7 +110,7 @@ export default async function Admin({
 
             <a href="#inbox" className="sidebar-nav-item">
               <MessageSquare size={18} /> 
-              <span>Vadovo dėžutė</span>
+              <span>Atsiliepimų dėžutė</span>
               {stats?.unread ? <b className="sidebar-badge">{stats.unread}</b> : null}
             </a>
 
@@ -117,11 +130,31 @@ export default async function Admin({
               </Link>
             )}
 
+            {clinic && !clinic.is_demo && (
+              <a href="#stovelis" className="sidebar-nav-item">
+                <Gift size={18} />
+                <span>Nemokamas stovelis</span>
+              </a>
+            )}
+
+            {clinic && !clinic.is_demo && (
+              <a href="#filialai" className="sidebar-nav-item">
+                <MapPin size={18} />
+                <span>Filialai</span>
+              </a>
+            )}
+
             <a href="#settings" className="sidebar-nav-item">
               <Settings size={18} /> 
               <span>Google & Nustatymai</span>
             </a>
 
+            {principal.role === 'owner' && (
+              <Link href="/admin/klientai" className="sidebar-nav-item">
+                <Users size={18} />
+                <span>Klientai ir stoveliai</span>
+              </Link>
+            )}
             {principal.role === 'owner' && (
               <Link href="/admin/campaigns" className="sidebar-nav-item sidebar-campaigns-link">
                 <Send size={18} /> 
@@ -134,10 +167,10 @@ export default async function Admin({
         <div className="sidebar-bottom">
           <div className="owner-label">
             <span className="owner-avatar">
-              {clinic ? clinic.business_name[0].toUpperCase() : 'K'}
+              {(root ?? clinic) ? (root ?? clinic)!.business_name[0].toUpperCase() : 'K'}
             </span>
             <div className="owner-meta">
-              <strong>{clinic ? clinic.business_name : 'Jūsų erdvė'}</strong>
+              <strong>{(root ?? clinic)?.business_name ?? 'Jūsų erdvė'}</strong>
               <small>{principal.role === 'owner' ? 'Savininko prieiga' : 'Sertifikuota paskyra'}</small>
             </div>
           </div>
@@ -181,7 +214,7 @@ export default async function Admin({
             <div className="hero-title-area">
               <div className="clinic-title-badge">
                 <Building2 size={16} />
-                <span>Valdymo centras</span>
+                <span>{clinic?.parent_id ? `Filialas${clinic.location_label ? ` · ${clinic.location_label}` : ''}` : 'Valdymo centras'}</span>
               </div>
               <h1>{clinic ? clinic.business_name : 'Jūsų erdvė'}</h1>
               <p>
@@ -189,11 +222,14 @@ export default async function Admin({
               </p>
             </div>
 
-            {clinic && principal.role === 'owner' && (
+            {clinic && (principal.role === 'owner' || locations.length > 1) && (
               <div className="clinic-switcher-wrapper">
-                <ClinicPicker 
-                  clinics={clients.map((c) => ({ slug: c.slug, business_name: c.business_name }))} 
-                  current={clinic.slug} 
+                <ClinicPicker
+                  label={principal.role === 'owner' ? 'Pasirinkite įmonę' : 'Pasirinkite filialą'}
+                  clinics={principal.role === 'owner'
+                    ? clients.map((c) => ({ slug: c.slug, business_name: c.business_name, label: c.parent_id ? `↳ ${c.business_name}${rootNames.get(c.parent_id) ? ` (${rootNames.get(c.parent_id)})` : ''}` : c.business_name }))
+                    : locations.map((l) => ({ slug: l.slug, business_name: l.business_name, label: `${l.is_root ? '★ ' : ''}${l.business_name}${l.location_label ? ` · ${l.location_label}` : ''}` }))}
+                  current={clinic.slug}
                 />
               </div>
             )}
@@ -218,6 +254,7 @@ export default async function Admin({
                 pageUrl={url}
                 qr={qr}
                 googleOk={googleOk}
+                platform={platform}
                 ratings={stats.ratings}
               />
 
@@ -226,11 +263,22 @@ export default async function Admin({
                 stats={stats} 
                 clinicName={clinic.business_name} 
                 slug={clinic.slug} 
-                googleReviewUrl={clinic.google_review_url} 
+                googleReviewUrl={clinic.google_review_url}
               />
 
+              {/* 1b. Branches (filialai): list, switch, add */}
+              {root && !root.is_demo && (
+                <BranchManager rootId={root.id} rootName={root.business_name} rootEmail={root.email} locations={locations} current={clinic.slug}
+                  canAdd={locations.length - 1 < MAX_BRANCHES} max={MAX_BRANCHES} />
+              )}
+
               {/* 2. QR codes and links for every way of sharing (ROADMAP D5) */}
-              <QrKit slug={clinic.slug} name={clinic.business_name} baseUrl={appUrl()} stats={getSourceStats(clinic.id)} />
+              <QrKit slug={clinic.slug} name={clinic.business_name} baseUrl={appUrl()} stats={getSourceStats(clinic.id)} shareLabel={pcopy.shareLabel} />
+
+              {/* 2b. Free QR + NFC stand: real order with delivery address (owner ships it, /admin/klientai) */}
+              {!clinic.is_demo && (
+                <StandOrder clientId={clinic.id} businessName={clinic.business_name} phone={clinic.phone} qr={qr} initial={getStandOrder(clinic.id) ?? null} />
+              )}
 
               {/* 3. Main Dashboard Grid: Smart Inbox & Side Analytics */}
               <div className="dashboard-grid">
@@ -238,7 +286,7 @@ export default async function Admin({
                 <section id="inbox" className="dashboard-panel inbox-panel">
                   <div className="panel-heading">
                     <div>
-                      <h2>Vadovo dėžutė</h2>
+                      <h2>Atsiliepimų dėžutė</h2>
                       <p>Privačios klientų pastabos. Susisiekite ir išspręskite situaciją asmeniškai.</p>
                     </div>
                     <a 
@@ -259,13 +307,13 @@ export default async function Admin({
                   {/* Google Maps Live Verification Card */}
                   <section className="dashboard-panel google-sync-card">
                     <div className="panel-heading">
-                      <h3>Google Maps ryšys</h3>
+                      <h3>{platform === 'rekvizitai' ? 'Rekvizitai.lt ryšys' : 'Google Maps ryšys'}</h3>
                       {googleOk
                         ? <div className="google-badge-live"><CheckCircle2 size={14} /> Susietas</div>
                         : <div className="google-badge-warn">Patikslinkite</div>}
                     </div>
                     <p className="google-sync-desc">
-                      {googleOk ? 'Visi 4–5★ įvertinimai nukreipiami tiesiai į Jūsų Google atsiliepimų formą:' : 'Ši nuoroda neveda tiesiai į atsiliepimų formą. Pakeiskite ją nustatymuose į „Prašyti atsiliepimų“ nuorodą:'}
+                      {platform === 'rekvizitai' ? 'Visi 4–5★ įvertinimai nukreipiami į Jūsų Rekvizitai.lt atsiliepimų puslapį:' : googleOk ? 'Visi 4–5★ įvertinimai nukreipiami tiesiai į Jūsų Google atsiliepimų formą:' : 'Ši nuoroda neveda tiesiai į atsiliepimų formą. Pakeiskite ją nustatymuose į „Prašyti atsiliepimų“ nuorodą:'}
                     </p>
                     <div className="google-url-preview">
                       <span className="google-url-text">{clinic.google_review_url}</span>
@@ -277,8 +325,13 @@ export default async function Admin({
                       className="btn btn-secondary btn-small btn-google-test"
                     >
                       <ExternalLink size={14} />
-                      <span>Tikrinti Google Maps langą</span>
+                      <span>{platform === 'rekvizitai' ? 'Tikrinti Rekvizitai.lt puslapį' : 'Tikrinti Google Maps langą'}</span>
                     </a>
+                    {platform === 'rekvizitai' && (
+                      <a href="/google-profilis" target="_blank" rel="noopener noreferrer" className="google-gbp-link">
+                        Neturite Google profilio? Instrukcija, kaip susikurti →
+                      </a>
+                    )}
                   </section>
 
                   {/* Rating Distribution Breakdown */}
@@ -357,8 +410,19 @@ export default async function Admin({
                   </div>
                   <Settings size={21} />
                 </div>
-                <PublicLinkToggle clientId={clinic.id} initial={!!clinic.show_public_link_low} />
-                <ClinicForm client={clinic} />
+                <PublicLinkToggle clientId={clinic.id} initial={!!clinic.show_public_link_low} platform={pcopy.name} />
+                <NotifyEmails clientId={clinic.id} accountEmail={clinic.email} initial={parseNotifyEmails(clinic.notify_emails)} />
+                {clinic.parent_id && root ? (
+                  <div className="bm-edit">
+                    <h3>Filialo duomenys</h3>
+                    <BranchForm mode="edit" rootName={root.business_name} rootEmail={root.email} branchId={clinic.id}
+                      initial={{ business_name: clinic.business_name, location_label: clinic.location_label, google_review_url: clinic.google_review_url,
+                        email: isPlaceholderEmail(clinic.email) ? '' : clinic.email, phone: clinic.phone, slug: clinic.slug }} />
+                    <ArchiveBranch id={clinic.id} name={clinic.business_name} />
+                  </div>
+                ) : (
+                  <ClinicForm client={clinic} />
+                )}
               </section>
             </>
           ) : (

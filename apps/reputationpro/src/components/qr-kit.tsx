@@ -6,7 +6,7 @@ import { BarChart3, Check, Contact, Copy, Download, ExternalLink, Globe, Link2, 
 import { channelLabel, channelUrl, type QrChannelId } from '@/lib/qr-channels';
 
 type SourceStat = { source: string | null; total: number; positive: number };
-type Props = { slug: string; name: string; baseUrl: string; stats: SourceStat[] };
+type Props = { slug: string; name: string; baseUrl: string; stats: SourceStat[]; shareLabel?: string };
 
 function useCopy() {
   const [copied, setCopied] = useState<string | null>(null);
@@ -32,7 +32,7 @@ function Card({ id, icon, title, text, children, tip }: { id: QrChannelId; icon:
   </article>;
 }
 
-export function QrKit({ slug, name, baseUrl, stats }: Props) {
+export function QrKit({ slug, name, baseUrl, stats, shareLabel = 'Įvertinkite mus Google' }: Props) {
   const { copied, copy } = useCopy();
   const link = (c: QrChannelId) => channelUrl(baseUrl, slug, c);
   const qrHref = (c: QrChannelId, extra = '') => `/api/admin/qr?slug=${encodeURIComponent(slug)}&s=${c}${extra}`;
@@ -43,8 +43,8 @@ export function QrKit({ slug, name, baseUrl, stats }: Props) {
     <button type="button" className={`btn btn-small ${copied === key ? 'btn-primary' : 'btn-secondary'}`} onClick={() => copy(key, text, html)}>{copied === key ? <Check size={14}/> : <Copy size={14}/>} {copied === key ? 'Nukopijuota' : label}</button>;
 
   const signatureUrl = link('parasas');
-  const signatureHtml = `<table cellpadding="0" cellspacing="0" border="0" style="font-family:Arial,Helvetica,sans-serif;"><tr><td style="padding:10px 0 4px;font-size:12px;color:#64748b;">Jūsų nuomonė mums svarbi</td></tr><tr><td><a href="${signatureUrl}" target="_blank" style="display:inline-block;background:#5636E8;color:#ffffff;text-decoration:none;font-weight:bold;font-size:13px;padding:9px 18px;border-radius:18px;">&#9733; Įvertinkite mus Google</a></td></tr></table>`;
-  const websiteHtml = `<a href="${link('svetaine')}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:8px;background:#5636E8;color:#ffffff;font:600 15px/1 Arial,Helvetica,sans-serif;text-decoration:none;padding:13px 22px;border-radius:999px;">&#9733; Įvertinkite mus Google</a>`;
+  const signatureHtml = `<table cellpadding="0" cellspacing="0" border="0" style="font-family:Arial,Helvetica,sans-serif;"><tr><td style="padding:10px 0 4px;font-size:12px;color:#64748b;">Jūsų nuomonė mums svarbi</td></tr><tr><td><a href="${signatureUrl}" target="_blank" style="display:inline-block;background:#5636E8;color:#ffffff;text-decoration:none;font-weight:bold;font-size:13px;padding:9px 18px;border-radius:18px;">&#9733; ${shareLabel}</a></td></tr></table>`;
+  const websiteHtml = `<a href="${link('svetaine')}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:8px;background:#5636E8;color:#ffffff;font:600 15px/1 Arial,Helvetica,sans-serif;text-decoration:none;padding:13px 22px;border-radius:999px;">&#9733; ${shareLabel}</a>`;
   const smsText = `Ačiū, kad pasirinkote ${name}! Būsime dėkingi už trumpą įvertinimą: ${link('sms')}`;
   const emailText = `Laba diena,\n\ndėkojame, kad pasirinkote ${name}. Būtume labai dėkingi, jei skirtumėte 30 sekundžių ir įvertintumėte savo patirtį:\n${link('sms')}\n\nPagarbiai,\n${name}`;
   const receiptLine = `Įvertinkite mus: ${link('kvitas')}`;
@@ -63,7 +63,7 @@ export function QrKit({ slug, name, baseUrl, stats }: Props) {
 
     <div className="qk-grid">
       <Card id="stovelis" icon={<Store size={20}/>} title="Stovelis ir plakatas" text="Prie kasos, registratūros, ant staliuko ar sienos."
-        tip={<>Akrilinio stovelio neturite? <a href={`mailto:tomas@verslomatika.lt?subject=${encodeURIComponent(`Stovelis – ${name}`)}`}>Parašykite mums</a> – padėsime užsisakyti.</>}>
+        tip={<>Norite tikro akrilinio stovelio su NFC? <a href="#stovelis">Užsisakykite nemokamai</a>, atsiųsime.</>}>
         <div className="qk-actions">
           {btn('A6 stovelio įdėklas', printHref('stand'), <Printer size={14}/>, false)}
           {btn('A4 plakatas', printHref('poster'), <Printer size={14}/>, false)}
@@ -102,10 +102,10 @@ export function QrKit({ slug, name, baseUrl, stats }: Props) {
         tip={<>Gmail: Nustatymai → Bendrieji → Parašas → įklijuokite. Outlook: Parametrai → Paštas → Parašai → įklijuokite.</>}>
         <div className="qk-preview qk-signature">
           <span>Jūsų nuomonė mums svarbi</span>
-          <a href={signatureUrl} target="_blank" rel="noopener noreferrer">★ Įvertinkite mus Google</a>
+          <a href={signatureUrl} target="_blank" rel="noopener noreferrer">★ {shareLabel}</a>
         </div>
         <div className="qk-actions">
-          {copyBtn('parasas', 'Kopijuoti parašą', `Įvertinkite mus Google: ${signatureUrl}`, signatureHtml)}
+          {copyBtn('parasas', 'Kopijuoti parašą', `${shareLabel}: ${signatureUrl}`, signatureHtml)}
           {copyBtn('parasas-html', 'Kopijuoti HTML kodą', signatureHtml)}
         </div>
       </Card>
@@ -121,7 +121,7 @@ export function QrKit({ slug, name, baseUrl, stats }: Props) {
 
       <Card id="svetaine" icon={<Globe size={20}/>} title="Svetainė" text="Mygtukas puslapyje „Kontaktai“ ar poraštėje."
         tip="Nukopijuotą kodą įklijuokite į svetainės HTML bloką (WordPress, Wix, Shopify ir kt.).">
-        <div className="qk-preview"><a className="qk-site-btn" href={link('svetaine')} target="_blank" rel="noopener noreferrer">★ Įvertinkite mus Google</a></div>
+        <div className="qk-preview"><a className="qk-site-btn" href={link('svetaine')} target="_blank" rel="noopener noreferrer">★ {shareLabel}</a></div>
         <div className="qk-actions">{copyBtn('svetaine', 'Kopijuoti HTML kodą', websiteHtml)}</div>
       </Card>
 

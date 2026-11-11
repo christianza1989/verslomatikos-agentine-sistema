@@ -28,6 +28,10 @@ CLIENT_COLUMNS = [
     ("google_place_id", "TEXT"),
     ("google_rating", "REAL"),
     ("google_reviews_count", "INTEGER"),
+    ("notify_emails", "TEXT NOT NULL DEFAULT ''"),
+    ("parent_id", "TEXT"),
+    ("location_label", "TEXT NOT NULL DEFAULT ''"),
+    ("archived_at", "TEXT"),
 ]
 
 
@@ -120,10 +124,38 @@ def count_sent_today(conn: sqlite3.Connection) -> int:
     return first + follow
 
 
+REKVIZITAI_HOSTS = {"rekvizitai.vz.lt", "www.rekvizitai.vz.lt", "rekvizitai.lt", "www.rekvizitai.lt"}
+
+
+def rekvizitai_review_url(url: str):
+    """Mirror of rekvizitaiReviewUrl() in src/lib/review-platforms.ts (ROADMAP Etapas R).
+
+    Company or review page on Rekvizitai.lt -> canonical review page
+    https://rekvizitai.vz.lt/imone/{company}/atsiliepimai/ ; anything else -> None.
+    """
+    import re
+    from urllib.parse import urlparse
+
+    try:
+        u = urlparse((url or "").strip())
+    except ValueError:
+        return None
+    if u.scheme != "https" or u.username or u.password or u.port or u.hostname not in REKVIZITAI_HOSTS:
+        return None
+    m = re.match(r"^/imone/([a-z0-9_]{2,120})(?:/(?:atsiliepimai/?)?)?$", u.path)
+    return f"https://rekvizitai.vz.lt/imone/{m.group(1)}/atsiliepimai/" if m else None
+
+
 def is_direct_review_url(url: str) -> bool:
-    """Mirror of isDirectReviewUrl() in src/lib/validation.ts."""
+    """Mirror of isDirectReviewUrl() in src/lib/validation.ts.
+
+    True for links that open the business's own review form: Google writereview?placeid / g.page,
+    or a Rekvizitai.lt review page (businesses without a Google profile, Etapas R).
+    """
     from urllib.parse import urlparse, parse_qs
 
+    if rekvizitai_review_url(url):
+        return True
     try:
         u = urlparse(url or "")
     except ValueError:

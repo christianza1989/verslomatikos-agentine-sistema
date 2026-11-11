@@ -89,14 +89,14 @@ export function HomeInteractiveDemo() {
             </div>
             <h4>Sulaikymas: atsiliepimas NEPATENKA į Google!</h4>
             <p>
-              Klientui atveriama privati konfidenciali forma tiesiai į vadovo el. paštą.
+              Klientui atveriama privati forma: žinutė ateina Jūsų komandai el. paštu.
               Pyktis išliejamas saugiai, o Jūs gaunate šansą išspręsti problemą ir išsaugoti klientą.
             </p>
 
             <div className="simulated-private-form">
               <div className="private-form-header">
                 <MessageSquare size={17} className="text-emerald-700" />
-                <span>Privati žinutė įmonės vadovui</span>
+                <span>Privati žinutė įmonės komandai</span>
               </div>
               <div className="private-input-fake">
                 „Gydytojas puikus, tačiau registratūroje teko laukti 25 minutes be paaiškinimo...“
@@ -105,7 +105,7 @@ export function HomeInteractiveDemo() {
                 <span className="shield-tag">
                   <ShieldCheck size={14} /> Neįkeliama į Google Maps
                 </span>
-                <span className="sent-tag">Atsidurs tik vadovo dėžutėje</span>
+                <span className="sent-tag">Atkeliaus į atsiliepimų dėžutę</span>
               </div>
             </div>
           </div>

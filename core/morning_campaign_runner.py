@@ -12,6 +12,7 @@ Piltuvas (ROADMAP_REPUTATIONPRO.md §1):
     Asmens duomenys (el. paštas, vardas) į URL nededami.
 """
 import os
+import re
 import sys
 import time
 import random
@@ -167,13 +168,15 @@ TEMPLATES = {
         "offer": "Paruošėme „{name}“ atsiliepimų puslapį su QR kodu registratūrai. Per 30 sekundžių pamatysite, kaip jis atrodo paciento telefone ir ką tą pačią sekundę gaunate Jūs, kai pacientas lieka kuo nors nepatenkintas:",
         "subject_stats": "{name}: {rating}★ iš {count} atsiliepimų Google",
         "subject_generic": "{name}: pacientų atsiliepimai Google",
+        "team": "Registratūrai mažiau streso: pastaba pirmiausia ateina Jūsų komandai, todėl situaciją galima išspręsti, kol pacientas neparašė viešai.",
     },
     "beauty": {
         "generic": "Klientės, rinkdamosi grožio ar estetikos saloną, labiausiai pasitiki Google atsiliepimais su nuotraukomis. Patenkintos lankytojos atsiliepimą palieka retai, nebent jas paskatina procedūros pabaigoje.",
         "stats": "Pažiūrėjome į „{name}“ Google profilį: {rating}★ iš {count} atsiliepimų. Naujos klientės, rinkdamosi procedūras, pirmiausia patikrina būtent čia.",
-        "offer": "Paruošėme „{name}“ atsiliepimų puslapį su elegantišku QR stovelio maketu prie veidrodžio ar registratūroje. Per 30 sekundžių pamatysite, ką mato klientė ir kaip privati pastaba iškart pasiekia vadovę:",
+        "offer": "Paruošėme „{name}“ atsiliepimų puslapį su elegantišku QR stovelio maketu prie veidrodžio ar registratūroje. Per 30 sekundžių pamatysite, ką mato klientė ir kaip privati pastaba iškart pasiekia Jūsų komandą:",
         "subject_stats": "{name}: {rating}★ iš {count} atsiliepimų Google",
         "subject_generic": "{name}: klienčių atsiliepimai Google",
+        "team": "Mažiau streso meistrėms: pastaba pirmiausia ateina Jūsų komandai, o ne į Google.",
     },
     "auto": {
         "generic": "Vairuotojai, ieškodami patikimo autoserviso, pirmiausia skaito Google atsiliepimus. Geras meistras dažnai neturi laiko prašyti įvertinimų, o atsitiktinis nesusipratimas gali numušti reitingą.",
@@ -181,13 +184,15 @@ TEMPLATES = {
         "offer": "Paruošėme „{name}“ atsiliepimų puslapį su QR kodu prie atsiėmimo kasos ir trumpa SMS nuoroda. Per 30 sekundžių pamatysite, kaip vairuotojas palieka 5★ ir kaip pastaba apie remontą sulaikoma privačiai:",
         "subject_stats": "{name}: {rating}★ iš {count} atsiliepimų Google",
         "subject_generic": "{name}: vairuotojų atsiliepimai Google",
+        "team": "Mažiau streso meistrams: pastaba apie remontą pirmiausia ateina Jūsų komandai, o ne į Google.",
     },
     "horeca": {
         "generic": "Svečiai, ieškodami kur papietauti ar pavakarieniauti, pirmiausia atsiverčia Google Maps. Patenkintas svečias skaniai pavalgo ir išeina, o menkiausia smulkmena gali virsti viešu neigiamu įrašu.",
         "stats": "Pažiūrėjome į „{name}“ Google profilį: {rating}★ iš {count} atsiliepimų. Miesto svečiai ir turistai restoranus renkasi tiesiai pagal Google Maps žvaigždutes.",
-        "offer": "Paruošėme „{name}“ atsiliepimų puslapį su stilingu QR kodu ant staliuko ar sąskaitos padėklo. Per 30 sekundžių pamatysite, ką mato svečias ir kaip skundas apie patiekalą akimirksniu pasiekia vadovą:",
+        "offer": "Paruošėme „{name}“ atsiliepimų puslapį su stilingu QR kodu ant staliuko ar sąskaitos padėklo. Per 30 sekundžių pamatysite, ką mato svečias ir kaip pastaba apie patiekalą akimirksniu pasiekia Jūsų komandą:",
         "subject_stats": "{name}: {rating}★ iš {count} atsiliepimų Google",
         "subject_generic": "{name}: svečių atsiliepimai Google",
+        "team": "Mažiau streso padavėjams: pastaba pirmiausia ateina Jūsų komandai, todėl ją galima išspręsti dar tą patį vakarą.",
     },
     "ecommerce": {
         "generic": "Pirkėjai prieš užsakydami internetu vis dažniau patikrina parduotuvės atsiliepimus Google. Patenkinti pirkėjai atsiliepimą palieka retai, o nepatenkintas beveik visada.",
@@ -195,6 +200,7 @@ TEMPLATES = {
         "offer": "Paruošėme „{name}“ atsiliepimų puslapį. Nuorodą galima įdėti į užsakymo ar pristatymo laišką. Per 30 sekundžių pamatysite, ką mato pirkėjas ir ką tą pačią sekundę gaunate Jūs, jei jis kuo nors nepatenkintas:",
         "subject_stats": "{name}: {rating}★ iš {count} atsiliepimų Google",
         "subject_generic": "{name}: pirkėjų atsiliepimai Google",
+        "team": "Mažiau streso klientų aptarnavimui: pastaba apie užsakymą pirmiausia ateina Jūsų komandai, o ne į Google.",
     },
     "services": {
         "generic": "Klientai, rinkdamiesi paslaugų teikėją, pirmiausia žiūri Google atsiliepimus. Patenkinti klientai atsiliepimą palieka retai, nes niekas jų nepaprašo tinkamu momentu.",
@@ -202,16 +208,30 @@ TEMPLATES = {
         "offer": "Paruošėme „{name}“ atsiliepimų puslapį su QR kodu (prie kasos ar registratūros) ir nuoroda SMS žinutei po apsilankymo. Per 30 sekundžių pamatysite, ką mato klientas ir ką tą pačią sekundę gaunate Jūs:",
         "subject_stats": "{name}: {rating}★ iš {count} atsiliepimų Google",
         "subject_generic": "{name}: klientų atsiliepimai Google",
+        "team": "Mažiau streso darbuotojams: pastaba pirmiausia ateina Jūsų komandai, todėl ją galima išspręsti, kol klientas neparašė viešai.",
     },
 }
 
 
+NO_GOOGLE = {
+    # Etapas R: įmonė neturi Google verslo profilio, atsiliepimai renkami Rekvizitai.lt.
+    "intro": "Ieškodami Google žemėlapiuose „{name}“ profilio neradome. Žmonės, rinkdamiesi, pirmiausia mato tas įmones, kurios ten turi žvaigždučių ir atsiliepimų.",
+    "intro_rk": "Ieškodami Google žemėlapiuose „{name}“ profilio neradome, nors Rekvizitai.lt turite {rating}/10 iš {count} įvertinimų. Žmonės, rinkdamiesi, pirmiausia mato tas įmones, kurios turi žvaigždučių ir atsiliepimų.",
+    "offer": "Todėl paruošėme „{name}“ atsiliepimų puslapį su QR kodu: jau dabar patenkinti klientai nukreipiami į Jūsų Rekvizitai.lt profilį, o pastabos pirmiausia ateina Jūsų komandai. Per 30 sekundžių pamatysite, kaip tai atrodo:",
+    "guide": "Google profilį galite susikurti nemokamai per ~15 min.: parašėme paprastą instrukciją. Susikūrę įklijuosite nuorodą, ir tas pats QR kodas ims vesti į Google.",
+    "subject": "{name} Google žemėlapiuose",
+}
+
+
 def build_tracked_email(lead: dict, lead_id: str, demo_url: str = None, google_stats: dict = None,
-                        sender_name: str = None, sender_email: str = None) -> tuple:
+                        sender_name: str = None, sender_email: str = None, no_google: bool = False,
+                        rk_stats: dict = None) -> tuple:
     """Grąžina (subject, text, html). Vienas CTA: asmeninis demo puslapis.
 
     demo_url: {APP_BASE}/r/{slug}?k={token} (be tokeno, tik peržiūrai).
     google_stats: {"rating": 4.6, "count": 87}, jei žinoma (ROADMAP B3).
+    no_google: įmonė be Google profilio (atsiliepimai -> Rekvizitai.lt). rk_stats: {"rating": 8.3, "count": 19}.
+    Instrukcijos nuoroda – antraeilė teksto nuoroda, ne antras mygtukas (Etapas R6).
     """
     name = lead["business_name"].strip()
     slug = lead.get("slug") or "demo"
@@ -227,6 +247,15 @@ def build_tracked_email(lead: dict, lead_id: str, demo_url: str = None, google_s
         intro = tpl["generic"]
         subject = tpl["subject_generic"].format(name=name)
     offer = tpl["offer"].format(name=name)
+    team = tpl.get("team")
+    guide_line, guide = None, None
+    if no_google:
+        rk_rating, rk_count = (rk_stats or {}).get("rating"), (rk_stats or {}).get("count")
+        intro = (NO_GOOGLE["intro_rk"].format(name=name, rating=_fmt_rating(rk_rating), count=rk_count)
+                 if rk_rating and rk_count else NO_GOOGLE["intro"].format(name=name))
+        offer = NO_GOOGLE["offer"].format(name=name)
+        subject = NO_GOOGLE["subject"].format(name=name)
+        guide_line, guide = NO_GOOGLE["guide"], guide_url(slug)
     closing = "Jei tiks, paskyrą aktyvuosite vienu paspaudimu: 14 dienų nemokamai, be banko kortelės."
     ps = "P.S. Jei neaktualu, tiesiog atsakykite „ne“ ir daugiau nerašysime."
 
@@ -239,11 +268,11 @@ def build_tracked_email(lead: dict, lead_id: str, demo_url: str = None, google_s
 
 {intro}
 
-{offer}
+{team + chr(10) + chr(10) if team else ""}{offer}
 {cta_url}
 
 {closing}
-
+{f"{chr(10)}{guide_line}{chr(10)}{guide}{chr(10)}" if guide else ""}
 {s_name}
 Verslomatika · {s_email}
 
@@ -257,9 +286,11 @@ Verslomatika · {s_email}
 <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.6;color:#1e293b;max-width:560px;padding:8px 4px;">
 <p style="margin:0 0 14px;">Laba diena,</p>
 <p style="margin:0 0 14px;">{e(intro)}</p>
+{f'<p style="margin:0 0 14px;">{e(team)}</p>' if team else ''}
 <p style="margin:0 0 18px;">{e(offer)}</p>
 <p style="margin:0 0 20px;"><a href="{e(cta_url)}" style="display:inline-block;background:#5636E8;color:#ffffff;text-decoration:none;font-weight:600;padding:12px 20px;border-radius:8px;">Peržiūrėti paruoštą puslapį →</a></p>
 <p style="margin:0 0 18px;">{e(closing)}</p>
+{f'<p style="margin:0 0 18px;">{e(guide_line)} <a href="{e(guide)}" style="color:#5636E8;">Instrukcija čia</a>.</p>' if guide else ''}
 <p style="margin:0 0 18px;">{e(s_name)}<br><span style="color:#64748b;">Verslomatika · <a href="mailto:{e(s_email)}" style="color:#64748b;">{e(s_email)}</a></span></p>
 <p style="margin:0;color:#64748b;font-size:13px;">{e(ps)}</p>
 <p style="margin:18px 0 0;color:#94a3b8;font-size:11px;">MB Pinet · įm. k. 306067365 · Vilnius</p>
@@ -361,8 +392,11 @@ def dispatch_daily_quota(target_agent_id: str = "agent-tomas", force_count: int 
         token = "PERZIURA" if dry_run else issue_claim_token(conn, client["id"])
         demo_url = f"{APP_BASE}/r/{urllib.parse.quote(slug)}?k={token}"
         stats = {"rating": client.get("google_rating"), "count": client.get("google_reviews_count")}
+        from core.claim_tokens import rekvizitai_review_url
+        no_google = bool(rekvizitai_review_url(client.get("google_review_url") or lead.get("google_review_url") or ""))
         subj, text, html = build_tracked_email({**lead, "industry": client.get("industry") or lead.get("industry")}, lead_id, demo_url, stats,
-                                               sender_name=agent["name"], sender_email=agent["email"])
+                                               sender_name=agent["name"], sender_email=agent["email"], no_google=no_google,
+                                               rk_stats=lead.get("rekvizitai_stats"))
 
         if dry_run:
             os.makedirs(preview_dir, exist_ok=True)
@@ -486,16 +520,33 @@ def send_manual_test(business_name: str, to_email: str, city: str = "Vilnius", i
     return True
 
 
-def build_custom_email(draft: dict, lead_id: str, demo_url: str) -> tuple:
-    """Individualus laiškas pagal agento tyrimą (data/leads/research/*.json → email_draft). Tas pats stilius ir vienas CTA."""
+def guide_url(slug: str) -> str:
+    """Public instructions how to create a Google Business Profile (Etapas R4), on the app host."""
+    return f"{APP_BASE}/google-profilis?imone={urllib.parse.quote(slug)}"
+
+
+def build_custom_email(draft: dict, lead_id: str, demo_url: str, sender_name: str = None, sender_email: str = None,
+                       guide: str = None) -> tuple:
+    """Individualus laiškas pagal agento tyrimą (data/leads/research/*.json → email_draft). Tas pats stilius ir vienas CTA.
+
+    guide: Google profilio instrukcijos URL (Etapas R6) – antraeilė teksto nuoroda po CTA, ne antras mygtukas.
+    Teksto eilutė imama iš draft["guide_text"].
+    """
     e = html_lib.escape
+    s_name = sender_name or SENDER_NAME
+    s_email = sender_email or SENDER_EMAIL
     paragraphs = draft["paragraphs"]
     closing = draft.get("closing", "Jei tiks, paskyrą aktyvuosite vienu paspaudimu: 14 dienų nemokamai, be banko kortelės.")
     ps = "P.S. Jei neaktualu, tiesiog atsakykite „ne“ ir daugiau nerašysime."
     cta_url = f"{APP_BASE}/api/track/click?id={urllib.parse.quote(lead_id)}&to={urllib.parse.quote(demo_url, safe='')}"
     track_open_url = f"{APP_BASE}/api/track/open?id={urllib.parse.quote(lead_id)}"
-    text = "Laba diena,\n\n" + "\n\n".join(paragraphs) + f"\n{cta_url}\n\n{closing}\n\n{SENDER_NAME}\nVerslomatika · {SENDER_EMAIL}\n\n{ps}\n"
+    guide_text = draft.get("guide_text") if guide else None
+    text = ("Laba diena,\n\n" + "\n\n".join(paragraphs) + f"\n{cta_url}\n\n{closing}\n\n"
+            + (f"{guide_text}\n{guide}\n\n" if guide_text else "")
+            + f"{s_name}\nVerslomatika · {s_email}\n\n{ps}\n")
     body = "".join(f'<p style="margin:0 0 14px;">{e(p)}</p>' for p in paragraphs)
+    guide_html = (f'<p style="margin:0 0 18px;">{e(guide_text)} <a href="{e(guide)}" style="color:#5636E8;">Instrukcija čia</a>.</p>'
+                  if guide_text else "")
     html = f"""<!DOCTYPE html>
 <html lang="lt"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
 <body style="margin:0;padding:0;background:#ffffff;">
@@ -504,6 +555,7 @@ def build_custom_email(draft: dict, lead_id: str, demo_url: str) -> tuple:
 {body}
 <p style="margin:4px 0 20px;"><a href="{e(cta_url)}" style="display:inline-block;background:#5636E8;color:#ffffff;text-decoration:none;font-weight:600;padding:12px 20px;border-radius:8px;">{e(draft.get('cta_label', 'Peržiūrėti paruoštą puslapį'))} →</a></p>
 <p style="margin:0 0 18px;">{e(closing)}</p>
+{guide_html}
 <p style="margin:0 0 18px;">{e(s_name)}<br><span style="color:#64748b;">Verslomatika · <a href="mailto:{e(s_email)}" style="color:#64748b;">{e(s_email)}</a></span></p>
 <p style="margin:0;color:#64748b;font-size:13px;">{e(ps)}</p>
 <p style="margin:18px 0 0;color:#94a3b8;font-size:11px;">MB Pinet · įm. k. 306067365 · Vilnius</p>
@@ -514,62 +566,95 @@ def build_custom_email(draft: dict, lead_id: str, demo_url: str) -> tuple:
     return draft["subject"], text, html
 
 
-def send_researched(brief_path: str, send: bool = False) -> bool:
+def _brief_review_url(brief: dict) -> tuple:
+    """(review_url, platform) from a research brief: Google place ID first, else a Rekvizitai.lt page (Etapas R)."""
+    from core.claim_tokens import rekvizitai_review_url
+    if brief.get("google_place_id"):
+        return f"https://search.google.com/local/writereview?placeid={brief['google_place_id']}", "google"
+    rk = rekvizitai_review_url(brief.get("rekvizitai_url") or "")
+    if rk:
+        return rk, "rekvizitai"
+    raise SystemExit("✗ Tyrime nėra nei google_place_id, nei rekvizitai_url – laiško nesiųsime (ROADMAP C2).")
+
+
+def send_researched(brief_path: str, send: bool = False, test_to: str = None) -> bool:
     """Agento ištirtas lead'as (data/leads/research/{slug}.json).
 
     Be --send: paruošia demo profilį (niekam nieko nesiunčia) ir įrašo laiško peržiūrą į
     data/reports/email_previews/{slug}.html. Su --send: išsiunčia tikrą laišką.
+
+    test_to (--to=adresas): BANDYMAS. Atskiras demo profilis {slug}-testas su vietos rezervavimo
+    el. paštu {slug}-testas@testas.invalid (jam niekas nesiunčiama), o laiškas keliauja tiksliai
+    į test_to. Tikras lead'as ir test_to adreso įrašai nepaliečiami (adresas gali priklausyti jau
+    aktyvuotam testiniam klientui – tada įprastas kelias jį pažymėtų „client“ ir nebesiųstų).
     """
     import json
     with open(brief_path, encoding="utf-8") as f:
         brief = json.load(f)
-    review_url = f"https://search.google.com/local/writereview?placeid={brief['google_place_id']}"
-    lead = {"business_name": brief["business_name"], "email": brief["email"].strip().lower(), "slug": brief["slug"],
-            "city": brief.get("city", "Lietuva"), "industry": brief.get("industry", "services"), "google_review_url": review_url}
+    review_url, platform = _brief_review_url(brief)
+    if not test_to and not re.match(r"^[^@\s]+@[^@\s]+\.[a-z]{2,}$", (brief.get("email") or "").strip().lower()):
+        print("✗ Tyrime nėra patvirtinto gavėjo el. pašto (laukas „email“). Bandymui naudokite --to=jusu@adresas.")
+        return False
+    slug = brief["slug"] + ("-testas" if test_to else "")
+    record_email = f"{slug}@testas.invalid" if test_to else brief["email"].strip().lower()
+    deliver_to = (test_to or brief["email"]).strip().lower()
+    lead = {"business_name": brief["business_name"], "email": record_email, "slug": slug,
+            "city": brief.get("city", "Lietuva"), "industry": brief.get("industry", "services"), "google_review_url": review_url,
+            "phone": brief.get("phone", ""), "website": brief.get("website", "")}
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     ensure_schema(conn)
+    if not test_to and is_suppressed(conn, deliver_to):
+        print(f"✗ Nesiųsta: {deliver_to} yra nesiuntimo sąraše.")
+        conn.close()
+        return False
     client, skip = prepare_lead(conn, lead)
     if skip:
         print(f"✗ Nesiųsta: {skip}")
         conn.close()
         return False
-    conn.execute("UPDATE clients SET google_place_id=?, google_rating=?, google_reviews_count=? WHERE id=?",
-                 (brief["google_place_id"], brief.get("google_rating"), brief.get("google_reviews_count"), client["id"]))
-    conn.commit()
-    row = conn.execute("SELECT id FROM campaign_leads WHERE email=?", (lead["email"],)).fetchone()
+    if platform == "google":
+        conn.execute("UPDATE clients SET google_place_id=?, google_rating=?, google_reviews_count=? WHERE id=?",
+                     (brief["google_place_id"], brief.get("google_rating"), brief.get("google_reviews_count"), client["id"]))
+        conn.commit()
+    row = conn.execute("SELECT id FROM campaign_leads WHERE email=?", (record_email,)).fetchone()
     lead_id = row["id"] if row else str(uuid.uuid4())
+    guide = guide_url(slug) if platform == "rekvizitai" else None
 
     if not send:
-        subj, text, html = build_custom_email(brief["email_draft"], lead_id, f"{APP_BASE}/r/{brief['slug']}?k=PERZIURA")
-        out = os.path.join(BASE_DIR, "data", "reports", "email_previews", f"{brief['slug']}.html")
+        subj, text, html = build_custom_email(brief["email_draft"], lead_id, f"{APP_BASE}/r/{slug}?k=PERZIURA", guide=guide)
+        out = os.path.join(BASE_DIR, "data", "reports", "email_previews", f"{slug}.html")
         os.makedirs(os.path.dirname(out), exist_ok=True)
         with open(out, "w", encoding="utf-8") as f:
-            f.write(f"<!-- Tema: {html_lib.escape(subj)} | Kam: {lead['email']} -->\n" + html)
-        print(f"👁 PERŽIŪRA (neišsiųsta)\nKam: {lead['email']}\nTema: {subj}\n\n{text}\nFailas: {out}\nDemo: {APP_BASE}/r/{brief['slug']}")
+            f.write(f"<!-- Tema: {html_lib.escape(subj)} | Kam: {deliver_to} -->\n" + html)
+        print(f"👁 PERŽIŪRA (neišsiųsta)\nKam: {deliver_to}\nTema: {subj}\nPlatforma: {platform}\n\n{text}\nFailas: {out}\nDemo: {APP_BASE}/r/{slug}")
         conn.close()
         return True
 
     token = issue_claim_token(conn, client["id"])
-    subj, text, html = build_custom_email(brief["email_draft"], lead_id, f"{APP_BASE}/r/{urllib.parse.quote(brief['slug'])}?k={token}")
-    sender = SMTPEmailSender(config_path=AGENT_PROFILES[0]["config_path"])
-    ok = sender.send_email(to_email=lead["email"], subject=subj, body_text=text, body_html=html,
+    agent = AGENT_PROFILES[0]
+    subj, text, html = build_custom_email(brief["email_draft"], lead_id, f"{APP_BASE}/r/{urllib.parse.quote(slug)}?k={token}",
+                                          agent["name"], agent["email"], guide=guide)
+    sender = SMTPEmailSender(config_path=agent["config_path"])
+    ok = sender.send_email(to_email=deliver_to, subject=subj, body_text=text, body_html=html,
                            headers={"List-Unsubscribe": f"<mailto:{agent['email']}?subject=Atsisakau>"})
     if not ok:
         print("✗ SMTP serveris laiško nepriėmė.")
         conn.close()
         return False
     now_iso = datetime.datetime.now().isoformat()
+    campaign = "manual-test" if test_to else "researched"
     conn.execute("""
         INSERT INTO campaign_leads (id, campaign_id, business_name, email, slug, city, website, phone, status, sent_at, created_at, updated_at)
-        VALUES (?, 'researched', ?, ?, ?, ?, ?, ?, 'sent', ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'sent', ?, ?, ?)
         ON CONFLICT(email) DO UPDATE SET status='sent', sent_at=excluded.sent_at, slug=excluded.slug, updated_at=excluded.updated_at
-    """, (lead_id, brief["business_name"], lead["email"], brief["slug"], lead["city"], brief.get("website", ""), brief.get("phone", ""), now_iso, now_iso, now_iso))
-    conn.execute("INSERT INTO campaign_events (id, lead_id, event_type, details, created_at) VALUES (?, ?, 'sent', 'researched', ?)", (str(uuid.uuid4()), lead_id, now_iso))
+    """, (lead_id, campaign, brief["business_name"], record_email, slug, lead["city"], brief.get("website", ""), brief.get("phone", ""), now_iso, now_iso, now_iso))
+    conn.execute("INSERT INTO campaign_events (id, lead_id, event_type, details, created_at) VALUES (?, ?, 'sent', ?, ?)",
+                 (str(uuid.uuid4()), lead_id, campaign, now_iso))
     conn.commit()
     record_message(conn, lead_id, "E0", sender.last_message_id, subj)
     conn.close()
-    print(f"✓ Išsiųsta: „{subj}“ → {lead['email']}")
+    print(f"✓ Išsiųsta: „{subj}“ → {deliver_to}{' (BANDYMAS, profilis ' + slug + ')' if test_to else ''}")
     return True
 
 
@@ -594,7 +679,8 @@ if __name__ == "__main__":
     mode = sys.argv[1] if len(sys.argv) > 1 else "once"
     if mode == "research":
         # python core/morning_campaign_runner.py research data/leads/research/memory-casting.json [--send]
-        send_researched(sys.argv[2], send="--send" in sys.argv[3:])
+        send_researched(sys.argv[2], send="--send" in sys.argv[3:],
+                        test_to=next((a.split("=", 1)[1] for a in sys.argv[3:] if a.startswith("--to=")), None))
         sys.exit(0)
     if mode == "daemon":
         run_daily_morning_daemon(target_hour=8, target_minute=30)

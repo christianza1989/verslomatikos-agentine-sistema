@@ -9,9 +9,9 @@ export function Logout(){
   return <div><button className="logout-btn" disabled={busy} onClick={async()=>{setBusy(true);try{const res=await fetch('/api/auth/logout',{method:'POST'});if(!res.ok)throw new Error();router.push('/admin/login');router.refresh();}catch{setError('Nepavyko atsijungti.');setBusy(false);}}}><LogOut size={17}/> {busy?'Atsijungiama…':'Atsijungti'}</button>{error&&<span role="alert">{error}</span>}</div>;
 }
 
-export function ClinicPicker({clinics,current}:{clinics:{slug:string;business_name:string}[];current:string}){
+export function ClinicPicker({clinics,current,label='Pasirinkite įmonę'}:{clinics:{slug:string;business_name:string;label?:string}[];current:string;label?:string}){
   const router=useRouter();
-  return <label className="clinic-picker">Pasirinkite įmonę<select aria-label="Pasirinkite įmonę" value={current} onChange={e=>router.push('/admin?clinic='+encodeURIComponent(e.target.value))}>{clinics.map(c=><option value={c.slug} key={c.slug}>{c.business_name}</option>)}</select></label>;
+  return <label className="clinic-picker">{label}<select aria-label={label} value={current} onChange={e=>router.push('/admin?clinic='+encodeURIComponent(e.target.value))}>{clinics.map(c=><option value={c.slug} key={c.slug}>{c.label||c.business_name}</option>)}</select></label>;
 }
 
 export function CopyLink({url}:{url:string}){
@@ -95,7 +95,7 @@ export function ClinicForm({
         : <label>Nuorodos vardas<input required name="slug" minLength={3} maxLength={70} value={slug} pattern="[a-z0-9]+(-[a-z0-9]+)*" onChange={e=>{setManualSlug(true);setSlug(e.target.value);}} placeholder="jusu-verslas"/><small>/r/{slug||'jusu-verslas'}</small></label>}
       <label>Telefonas <span>(nebūtina)</span><input name="phone" type="tel" autoComplete="tel" maxLength={40} defaultValue={client?.phone} placeholder="+370"/></label>
     </div>
-    <label>Google Maps atsiliepimų nuoroda<input required name="google_review_url" type="url" maxLength={2000} defaultValue={client?.google_review_url} placeholder="https://g.page/r/…/review"/><small>Google verslo profilyje spauskite „Prašyti atsiliepimų“ ir nukopijuokite nuorodą. Nerandate? Įveskite bet kokią savo įmonės Google Maps nuorodą – patikslinsime kartu.</small></label>
+    <label>Viešų atsiliepimų nuoroda (Google arba Rekvizitai.lt)<input required name="google_review_url" type="url" maxLength={2000} defaultValue={client?.google_review_url} placeholder="https://g.page/r/…/review"/><small>Google verslo profilyje spauskite „Prašyti atsiliepimų“ ir nukopijuokite nuorodą. Neturite Google profilio? Įklijuokite savo įmonės Rekvizitai.lt nuorodą arba <a href="/google-profilis" target="_blank" rel="noopener noreferrer">susikurkite Google profilį pagal instrukciją</a>.</small></label>
     {checkout&&<div className="form-row"><label>Prisijungimo slaptažodis<input required name="password" type="password" autoComplete="new-password" minLength={8} maxLength={128}/><small>Mažiausiai 8 simboliai.</small></label><label>Pakartokite slaptažodį<input required name="password_confirm" type="password" autoComplete="new-password" minLength={8} maxLength={128}/></label></div>}
     {problem&&<p role="alert" className="form-error">{problem}</p>}
     {saved&&<p className="success-text" role="status"><Check size={17}/> Nustatymai išsaugoti.</p>}

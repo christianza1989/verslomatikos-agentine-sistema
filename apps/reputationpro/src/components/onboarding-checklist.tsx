@@ -17,8 +17,10 @@ function CopyButton({ text, onCopied, label }: { text: string; onCopied: () => v
   }}>{done ? <Check size={14}/> : <Copy size={14}/>} {done ? 'Nukopijuota' : label}</button>;
 }
 
-export function OnboardingChecklist({ slug, businessName, pageUrl, qr, googleOk, ratings }: {
+export function OnboardingChecklist({ slug, businessName, pageUrl, qr, googleOk, ratings, platform = 'google' }: {
   slug: string; businessName: string; pageUrl: string; qr: string; googleOk: boolean; ratings: number;
+  /** Etapas R: 'rekvizitai' = business without a Google profile, reviews go to Rekvizitai.lt. */
+  platform?: 'google' | 'rekvizitai';
 }) {
   const [local, setLocal] = useState<Local>({});
   useEffect(() => { setLocal(readLocal(slug)); }, [slug]);
@@ -45,9 +47,13 @@ export function OnboardingChecklist({ slug, businessName, pageUrl, qr, googleOk,
     </div>
     <ol className="onb-steps">
       <li className={googleOk ? 'is-done' : ''}><Icon ok={googleOk}/><div>
-        <b>Patikrinkite Google nuorodą</b>
-        <p>{googleOk ? 'Nuoroda atveria Jūsų Google atsiliepimų formą.' : 'Nuoroda dar neveda tiesiai į Jūsų atsiliepimų formą. Google verslo profilyje spauskite „Prašyti atsiliepimų“ ir įklijuokite nuorodą nustatymuose.'}</p>
-        {!googleOk && <a className="btn btn-secondary btn-small" href="#settings">Atidaryti nustatymus</a>}
+        <b>{platform === 'rekvizitai' ? 'Rekvizitai.lt nuoroda veikia' : 'Patikrinkite Google nuorodą'}</b>
+        <p>{platform === 'rekvizitai'
+          ? 'Patenkinti klientai nukreipiami į Jūsų Rekvizitai.lt atsiliepimų puslapį. Susikūrę Google profilį, įklijuokite jo nuorodą nustatymuose: viskas persijungs automatiškai.'
+          : googleOk ? 'Nuoroda atveria Jūsų Google atsiliepimų formą.' : 'Nuoroda dar neveda tiesiai į Jūsų atsiliepimų formą. Google verslo profilyje spauskite „Prašyti atsiliepimų“ ir įklijuokite nuorodą nustatymuose.'}</p>
+        {platform === 'rekvizitai'
+          ? <a className="btn btn-secondary btn-small" href="/google-profilis" target="_blank" rel="noopener noreferrer"><ExternalLink size={14}/> Kaip susikurti Google profilį</a>
+          : !googleOk && <a className="btn btn-secondary btn-small" href="#settings">Atidaryti nustatymus</a>}
       </div></li>
       <li className={local.qr ? 'is-done' : ''}><Icon ok={!!local.qr}/><div>
         <b>Paruoškite QR kodą</b>

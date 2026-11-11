@@ -933,7 +933,7 @@ def provision_lead_in_db(lead: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     """
     try:
         from core.claim_tokens import ensure_schema
-        from core.google_place_resolver import get_direct_review_url
+        from core.google_place_resolver import get_review_destination
 
         conn = sqlite3.connect(DB_PATH)
         conn.row_factory = sqlite3.Row
@@ -956,7 +956,10 @@ def provision_lead_in_db(lead: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         review_url = lead.get("google_review_url") or (existing["google_review_url"] if existing else None)
         from core.claim_tokens import is_direct_review_url
         if not review_url or not is_direct_review_url(review_url):
-            review_url = get_direct_review_url(b_name, city)
+            # Google first; without a Google profile a Rekvizitai.lt page proven by phone/website (Etapas R).
+            review_url, _platform, rk_info = get_review_destination(b_name, city, lead.get("phone"), lead.get("website"))
+            if rk_info:  # laiškui: „Rekvizitai.lt turite 8,3/10 iš 19 įvertinimų“
+                lead["rekvizitai_stats"] = {"rating": rk_info.get("rating"), "count": rk_info.get("ratings_count")}
 
         if not existing:
             cur.execute("""

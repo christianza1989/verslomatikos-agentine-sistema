@@ -14,6 +14,7 @@ async function save(req:NextRequest,update:boolean) {
       const id=req.nextUrl.searchParams.get('id') || '';
       const current=getClientById(id);
       if(!current || !canAccessClient(principal,id))return error('Klinika nerasta.',404);
+      if(current.parent_id)return error('Filialą redaguokite skiltyje „Filialai“.',400);
       const c=parsed.data;
       if(principal.role==='clinic' && c.email!==current.email)return error('El. pašto keitimui susisiekite su paslaugos teikėju.',403);
       db().prepare('UPDATE clients SET business_name=?,email=?,slug=?,google_review_url=?,phone=? WHERE id=?').run(c.business_name,c.email,c.slug,c.google_review_url,c.phone||'',id);

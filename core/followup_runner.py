@@ -132,8 +132,12 @@ def tracked(lead_id: str, url: str) -> str:
     return f"{APP_BASE}/api/track/click?id={urllib.parse.quote(lead_id)}&to={urllib.parse.quote(url, safe='')}"
 
 
-def build_followup(step: str, lead: dict, links: dict, expiry: datetime.datetime) -> tuple:
-    """Grąžina (body_paragraphs, cta_label, cta_url). Paragrafai: str arba list (sąrašas)."""
+def build_followup(step: str, lead: dict, links: dict, expiry: datetime.datetime, platform: str = "google") -> tuple:
+    """Grąžina (body_paragraphs, cta_label, cta_url). Paragrafai: str arba list (sąrašas).
+
+    platform: "google" arba "rekvizitai" (įmonė be Google profilio, Etapas R) – keičia tik žodžius apie platformą.
+    """
+    rk = platform == "rekvizitai"
     name = lead["business_name"].strip()
     niche = NICHE[detect_industry(lead)]
     page = f"reputacija.verslomatika.lt/r/{lead['slug']}"
@@ -158,15 +162,15 @@ def build_followup(step: str, lead: dict, links: dict, expiry: datetime.datetime
 
     if step == "B1":
         return ([
-            "gal mano laiškas pateko ne tam žmogui? Jei atsiliepimais „Google“ rūpinasi kolega ar vadovas, būsiu dėkingas, jei persiųsite.",
-            f"Trumpai: paruošėme „{name}“ atsiliepimų puslapį {niche['asset']}. Patenkinti {niche['people']} nukreipiami palikti atsiliepimą „Google“, o pastabos ateina Jums asmeniškai, kad galėtumėte greitai sureaguoti.",
+            f"gal mano laiškas pateko ne tam žmogui? Jei atsiliepimais {'internete' if rk else '„Google“'} rūpinasi kolega ar vadovas, būsiu dėkingas, jei persiųsite.",
+            f"Trumpai: paruošėme „{name}“ atsiliepimų puslapį {niche['asset']}. Patenkinti {niche['people']} nukreipiami palikti atsiliepimą {'Rekvizitai.lt' if rk else '„Google“'}, o pastabos pirmiausia ateina Jūsų komandai, kad darbuotojai galėtų greitai sureaguoti.",
         ], "Peržiūrėti puslapį (30 s)", links["demo"])
 
     if step == "F":
         return ([
             "daugiau nerašysiu, kad neužimčiau Jūsų laiko.",
             f"„{name}“ puslapis lieka paruoštas, o aktyvavimo nuoroda galioja iki {lt_date(expiry)}",
-            "Jei atsiliepimai „Google“ taps aktualūs vėliau, tiesiog atsakykite į šį laišką.",
+            f"Jei atsiliepimai {'internete' if rk else '„Google“'} taps aktualūs vėliau, tiesiog atsakykite į šį laišką.",
         ], "Aktyvuoti paskyrą", links["activate"])
 
     raise ValueError(step)
@@ -229,8 +233,8 @@ def due_followups(conn: sqlite3.Connection, now: datetime.datetime) -> list:
     rows = conn.execute("""SELECT * FROM campaign_leads
                            WHERE status IN ('sent','opened','clicked') AND sent_at IS NOT NULL""").fetchall()
     for lead in rows:
-        if is_suppressed(conn, lead["email"]):
-            continue
+        if is_suppressed(conn, lead["email"]) or (lead["email"] or "").endswith(".invalid"):
+            continue  # nesiųsti / bandomojo profilio vietos rezervavimo adresas (research --to)
         st = lead_state(conn, lead)
         if st["client"] is None or not st["client"]["is_demo"]:
             continue  # aktyvavo (arba profilio nėra) – nieko nesiunčiame
@@ -250,10 +254,12 @@ def compose(conn: sqlite3.Connection, lead, st: dict, step: str, dry_run: bool) 
         "demo": tracked(lead["id"], f"{APP_BASE}/r/{urllib.parse.quote(lead['slug'])}?k={token}"),
     }
     lead_dict = {"business_name": lead["business_name"], "slug": lead["slug"], "industry": client["industry"] if "industry" in client.keys() else None}
-    paragraphs, label, url = build_followup(step, lead_dict, links, expiry)
+    from core.claim_tokens import rekvizitai_review_url
+    platform = "rekvizitai" if rekvizitai_review_url(client["google_review_url"] or "") else "google"
+    paragraphs, label, url = build_followup(step, lead_dict, links, expiry, platform)
     text, html = render(paragraphs, label, url)
     e0 = st["e0"]
-    base_subject = (e0["subject"] if e0 else None) or f"{lead['business_name']}: atsiliepimai Google"
+    base_subject = (e0["subject"] if e0 else None) or f"{lead['business_name']}: klientų atsiliepimai{'' if platform == 'rekvizitai' else ' Google'}"
     headers = {"List-Unsubscribe": f"<mailto:{SENDER_EMAIL}?subject=Atsisakau>"}
     if e0 and e0["message_id"]:
         headers["In-Reply-To"] = e0["message_id"]

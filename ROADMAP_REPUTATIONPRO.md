@@ -13,6 +13,7 @@
 2. **Apmokėjimai paskutiniame etape.** Kol jo nėra, 14 d. bandymas techniškai nesibaigia (`trialing` lieka aktyvus), o tęsimą tvarkome rankiniu būdu.
 3. **Serveris yra šis PC** (`E:\Verslomatika`), veikia 24/7. `reputacija.verslomatika.lt` per Cloudflare Tunnel rodo į šį PC (Next.js, portas 3000). VPS nebus.
 4. **Pagrindinė piltuvo logika gyvena Next.js aplikacijoje** (`apps/reputationpro`), ne Cloudflare edge worker'yje. Laiškų nuorodos veda į `https://reputacija.verslomatika.lt/...`, nes ten yra DB, sekimas ir aktyvavimas.
+5. **Įmonės be Google profilio nepraleidžiamos (2026-11-11).** Jų klientai nukreipiami į Rekvizitai.lt atsiliepimus, o laiške pateikiama nuoroda į mūsų instrukciją, kaip susikurti Google profilį. Plačiau: Etapas R.
 
 ---
 
@@ -133,6 +134,95 @@
   - [x] D5.5 Kanalų matavimas: `review_events.source`, `/api/rating` priima `source`, skydelyje rodoma „Iš kur ateina įvertinimai“.
   - [x] D5.6 `src/components/qr-kit.tsx` pakeičia `StandStudio` skydelyje, šoninis meniu „QR kodai ir nuorodos“ (`#qr`).
 
+### Etapas R: įmonės be Google profilio → Rekvizitai.lt atsiliepimai (savininko sprendimas 2026-11-11)
+
+Kontekstas: Ergonomic.lt (2026-11-11) neturi Google Maps profilio, bet Rekvizitai.lt turi 8,3/10 (19 įvertinimų, 9 atsiliepimai). Iki šiol tokie leadai buvo praleidžiami (`needs_review`, C2). Dabar jiems siunčiame atskirą laišką, o jų klientus nukreipiame į Rekvizitai.lt atsiliepimų formą. Ta forma veikia be registracijos: vardas, el. paštas, tekstas, įvertinimas 1–10 (patikrinta 2026-11-11).
+
+- [x] **R1. Atsiliepimų platforma kliento profilyje.** _(Padaryta 2026-11-11, paprasčiau nei planuota: be naujų stulpelių.)_ Vieša nuoroda lieka `clients.google_review_url` (istorinis pavadinimas = „viešų atsiliepimų nuoroda“), o platforma nustatoma iš pačios nuorodos: `src/lib/review-platforms.ts` (`rekvizitaiReviewUrl`, `reviewPlatform`, `PLATFORM_COPY`), Python veidrodis `core/claim_tokens.py::rekvizitai_review_url`. Baltasis sąrašas: tik `https://rekvizitai.vz.lt/imone/{įmonė}/atsiliepimai/` (įklijuota įmonės nuoroda paverčiama šia). `validReviewUrl` / `normalizeReviewUrl` naudoja aktyvavimas, nustatymai ir registracija. Klientui įklijavus Google nuorodą, viskas persijungia į Google automatiškai.
+- [x] **R2. Kliento puslapis `/r/{slug}`.** 4–5★: „Rašyti atsiliepimą Rekvizitai.lt“ ir užuomina „Atsidariusiame puslapyje spauskite „Parašykite savo atsiliepimą“. Registruotis nereikia.“ (Rekvizitai forma atsiveria tik paspaudus tą mygtuką.) Žodžio „Google“ Rekvizitai klientams nėra. `#rating=10` Rekvizitai formoje įvertinimo NEPAŽYMI (patikrinta), todėl nenaudojama.
+- [x] **R3. Savininko demo ir skydelis.** Demo tekstai, iliustracijos (`usage-scenes.tsx` `platform` parametras), blokas „Dar neturite Google profilio? Pradėsime be jo.“, DUK „Kodėl Rekvizitai.lt“. Skydelyje: kortelė „Rekvizitai.lt ryšys“ + nuoroda į instrukciją, jungiklio tekstai, onboarding 1 žingsnis, QR rinkinio etiketės, aktyvavimo puslapis ir formos laukas „Google arba Rekvizitai.lt“.
+- [x] **R4. Instrukcijos puslapis `https://reputacija.verslomatika.lt/google-profilis`** (`src/app/google-profilis/page.tsx`, `?imone={slug}` personalizuoja antraštę). Žingsniai sutikrinti su Google pagalba 2026-11-11 (support.google.com/business 2911778, 7107242, 16816815). Header/footer bendri: `src/components/vm-chrome.tsx`. Nukreipimas iš `verslomatika.lt/google-profilis` – kartu su A6.
+- [x] **R5. Agentų tyrimas.** `core/google_place_resolver.py`: `fetch_rekvizitai`, `verify_rekvizitai` (atitikimas tik pagal telefoną ar svetainės domeną), `find_rekvizitai` (paieška pagal pavadinimą, geriausios pastangos: prekės ženklas dažnai ≠ juridinis pavadinimas, pvz. Ergonomic.lt nerandamas), `get_review_destination` → `(url, platform, info)`. `provision_lead_in_db()` naudoja jį, kai Google nuorodos nėra. Tyrimo JSON: `rekvizitai_url`, `google_place_id` neprivalomas.
+- [x] **R6. Laiškas „be Google“.** `NO_GOOGLE` šablonas `build_tracked_email(no_google=True, rk_stats=…)`, individualus laiškas `build_custom_email(guide=…)` su `email_draft.guide_text`. Instrukcijos nuoroda – teksto nuoroda, vienas CTA mygtukas. Follow-up'ai (`build_followup(platform=…)`) be „Google“ žodžių.
+- [x] **R7. Testai ir peržiūra.** `tests/review-platforms.test.ts`, `tests/stand-order.test.ts`, iš viso 27/27. Patikrinta naršyklėje DB kopijoje: demo, 5★ mygtukas → Rekvizitai, instrukcijos puslapis. Bandomasis laiškas: `python core/morning_campaign_runner.py research data/leads/research/ergonomic-lt.json --send --to=savininko@adresas` (siųsti TIK po diegimo, kitaip demo rodys seną versiją).
+- [ ] **R8. Pirmas tikras laiškas: Ergonomic.lt** (`data/leads/research/ergonomic-lt.json` paruoštas, `email` tuščias – be jo tikras siuntimas blokuojamas).
+  - Rekvizitai: `https://rekvizitai.vz.lt/imone/a_z_prekyba/atsiliepimai/`. Atitikimas patvirtintas telefonu +370 691 99833 (2026-11-11). Įvertinimas 8,3/10 iš 19, 9 atsiliepimai.
+  - Google Maps profilio nėra (tikrinta 2026-11-11). Konkurentai: Trukmė 4,5★/94, Ergolain 4,9★/42, Ergostalas 5,0★/36.
+  - Laiške ir demo naudoti tik „Ergonomic.lt“ (savininko nurodymas).
+  - Gavėjo adresą patvirtinti su savininku prieš siunčiant (pirmas nurodytas adresas buvo be @). Domenas ergonomic.lt priima paštą (Google Workspace MX).
+
+### Etapas S: nemokamas QR + NFC stovelis (savininko sprendimas 2026-11-11)
+
+- [x] **S1. Užsakymas kliento skydelyje** (`#stovelis`, `src/components/stand-order.tsx`): gavėjas, telefonas, įmonė, adresas, pašto kodas, kiekis 1–3, pastabos. Būsena tikra (`stand_orders.status`: `requested` → `sent` → `delivered`, `canceled`), adresą galima keisti, kol neišsiųsta. Tik aktyvuotoms paskyroms (`is_demo=0`). API: `POST /api/admin/stand-order`.
+- [x] **S2. Savininkui pranešimas el. paštu** (`sendStandOrderAlert` → tomas@verslomatika.lt) su adresu ir NFC nuoroda `…/r/{slug}?s=stovelis`.
+- [x] **S3. Savininko puslapis `/admin/klientai`**: visos aktyvuotos paskyros (aktyvavimo data, planas, įvertinimai, neperskaitytos pastabos, stovelio būsena) ir stovelių užsakymai su mygtukais „Išsiųsta“ / „Pristatyta“ (`PATCH`, tik savininkui). Seni `stand_orders` įrašai be adreso (2026-11-05 registracijos) laikomi neužsakytais.
+- [x] **S4. Demo „Ką gaunate“ ir DUK** mini nemokamą stovelį aktyvavus.
+- [ ] **S5. Patikrinti, ar VIC ir „Vilniaus Šypsena Pro“ (`is_demo=0`, 2026-11-05) yra tikri klientai, ar seni testiniai įrašai.** Jie rodomi `/admin/klientai`.
+
+### Etapas H: demo hero, kuriame telefonas valdo sistemos schemą (planas 2026-11-11, peržiūrėtas)
+
+Tikslas: per 10 sekundžių savininkas supranta visą paslaugą: kur klientas pamato kodą, kas nutinka po gero ir po blogo įvertinimo, ką reikia daryti jam pačiam.
+
+Pirmos versijos (atskiras 20 s „filmukas“ šalia telefono) problemos, todėl ji atmesta:
+- du judantys centrai: autoplay animacija atitraukia akį nuo telefono, kurį norime, kad paspaustų;
+- animacijos viduje būtų antras telefonas;
+- svarbiausia mintis tik ~10 sekundę, o dauguma tiek nežiūri;
+- 5 būdai vienu metu sukuria grūstį, nors kiekvienai veiklai aktualūs 2–3;
+- telefone (pusė atidarymų) animacija būtų po telefonu ir jos niekas nepamatytų;
+- akcentas „blogi atsiliepimai nepatenka į Google“ prieštarauja AGENTS.md invariantui 3 ir Google taisyklėms.
+
+Principas: vienas dėmesio centras, tikras telefonas. Viskas kita reaguoja į jį. Animacija kodu (SVG + CSS, `src/components/hero-motion.tsx`), ne MP4: asmeniška (pavadinimas, QR, Google arba Rekvizitai.lt) ir ~30 KB.
+
+- [x] **H1. Antraštė pasako naudą be animacijos.** Pvz. „Daugiau 5★ atsiliepimų {Įmonė}. Pastabos pirmiausia ateina Jums.“, viena eilutė paaiškinimo, CTA „Aktyvuoti nemokamai“, 3 punktai (14 d. nemokamai, be kortelės, nemokamas QR + NFC stovelis). Jei žinoma: asmeninis skaičius („Google šiandien 4,6★ iš 395“ arba „Google žemėlapiuose Jūsų nėra“).
+- [x] **H2. Scena: kairėje telefonas, dešinėje skydelis „Kas vyksta toliau“** su 3 būsenomis:
+  - *Laukia*: kaip klientai pasiekia puslapį: 3 būdai pagal veiklą (klinika: stovelis registratūroje, SMS po vizito, kvitas; el. parduotuvė: lipdukas ant siuntinio, laiškas po užsakymo, parašas; kavinė/paslaugos: kvitas, stovelis, SMS). Rodyklė „Paspauskite žvaigždutę telefone“.
+  - *Po 4–5★*: linija į Google (arba Rekvizitai.lt) kortelę, „+1 ★★★★★“, reitingo skaitiklis.
+  - *Po 1–3★*: pastaba keliauja į „Vadovo dėžutę“ + el. pašto pranešimo pavyzdys „Nauja pastaba nuo kliento“ + „Galite paskambinti ir išspręsti“. Mažu šriftu sąžiningai: „Klientas visada gali parašyti ir viešai.“ (kai jungiklis įjungtas, rodoma ir viešo atsiliepimo nuoroda).
+- [x] **H3. „Vaiduoklio“ demonstracija.** Jei per ~6 s po hero pasirodymo niekas nespaudžia, pats telefonas parodo pirštą, kuris paspaudžia 5★ (skydelis rodo kelią į Google), tada atsistato ir paspaudžia 2★ (kelias vadovui). Tik vieną kartą; bet koks paspaudimas ją sustabdo.
+- [x] **H4. Telefonuose iš pradžių.** <900 px: antraštė → telefonas → skydelis „Kas vyksta toliau“ atsiranda iškart po žvaigždutėmis, kaip įslenkanti kortelė; būdai rodomi kaip slenkanti juosta virš telefono.
+- [x] **H5. Kokybė.** Tik `transform`/`opacity`, sustoja nematoma, `prefers-reduced-motion` → statiški kadrai, jokio CLS, antraštė yra LCP. Tikrinti Chrome, Safari iOS, Android, 375 / 768 / 1280 / 1920 px.
+- [x] **H6. Matavimas sąžiningai.** Per mažas srautas (~25 laiškai/d.) A/B testui, todėl matuoti įsitraukimą: dalis žmonių, paspaudusių žvaigždutę, paslinkusių iki CTA, paspaudusių CTA, ir aktyvavimus per savaitę prieš ir po.
+_Padaryta 2026-11-11 (laukia diegimo): `src/components/hero-motion.tsx`, `owner-demo.tsx` (orkestracija), `review-gate.tsx` (`control`, `highlightPublic`). Savininko idėja: po 1–3★ pastaba „įrašoma“ akyse ir „išsiunčiama“ (lankytojas gali perimti), skydelyje atkeliauja laiškas su tuo tekstu ir „Kam: {įmonės el. paštas}“ (tik asmeninėje nuorodoje). Demo įvertinimai nebesiunčiami į `/api/rating`, o API demo profiliams jų nesaugo. Matavimas: `POST /api/track/demo` → `campaign_events` (`click`, `demo:{įvykis}`). Patikrinta naršyklėje 1280 ir 390 px DB kopijoje._
+- [ ] **H7. (Vėliau) žmogaus balsas.** 30–40 s įrašas su Tomo balsu ir subtitrais (B2B pasitikėjimui) ir GIF miniatiūra laiškams. Testuoti tik po H1–H6.
+
+### Etapas K: „Mažiau streso darbuotojams“ (2026-11-11, K1–K6 padaryta, laukia diegimo)
+
+Problema: visur rašoma „vadovui“. Laišką ar demo dažnai pirmas perskaito registratūros ar aptarnavimo darbuotojas ir supranta, kad kiekviena klaida keliaus vadovui. Toks žmogus laiško nepersiųs. Pozicionavimas turi būti priešingas: sistema saugo darbuotojus. Nusivylęs klientas pirmiausia parašo įmonės komandai, o ne Google, ir darbuotojas gali pats išspręsti problemą, kol klientas skubotai neparašė viešai. Ypač svarbu naujiems darbuotojams.
+
+Sąžiningumas (AGENTS.md invariantas 3): niekada nerašyti „apsaugos nuo blogų atsiliepimų“. Rašyti „suteikia progą išspręsti pirmiems“; klientas visada gali parašyti ir viešai.
+
+- [x] **K1. Kliento puslapis (telefone, 1:1 su gyvu).** „vadovui“ → neutralu:
+  - „Jūsų nuomonė svarbi vadovui“ → „Mums svarbu tai išspręsti“.
+  - „Parašykite tiesiai vadovui – jis galės asmeniškai išspręsti situaciją“ → „Parašykite mums – atsakingas darbuotojas susisieks ir padės išspręsti“.
+  - „Žinutė bus perduota tiesiogiai įmonės vadovui“ → „Žinutę gaus įmonės komanda. Viešai ji neskelbiama“.
+  - Mygtukai: „Siųsti tiesiai vadovui“ → „Siųsti žinutę“; „Arba parašyti asmeninę žinutę vadovui“ → „Arba parašyti mums asmeniškai“; sutikime „įmonės vadovas“ → „įmonės atstovas“; padėkoje „perduota vadovui“ → „perduota“.
+  - Kompromisas: piktam klientui „vadovas“ skamba rimčiau. „Atsakingas darbuotojas susisieks“ tą patį pažada nebaugindamas komandos.
+- [x] **K2. Skydelis ir prisijungimas.** „Vadovo dėžutė“ → „Atsiliepimų dėžutė“ (šoninis meniu, antraštė, tuščia būsena, kampanijų puslapis); „Prisijungimas vadovui“ → „Prisijungti“; KPI „liko vadovui“ → „liko Jūsų komandai“; jungiklio tekstai be „vadovui“; pranešimo laiško tema „Nauja kliento pastaba“.
+- [x] **K3. Demo tekstai.** Hero „pastabos pirmiausia ateina Jums“ → „Jūsų komandai“; „Kas vyksta toliau“ 2★ scena „Pastaba ateina Jūsų komandai: darbuotojas gali paskambinti ir išspręsti“; „Kaip veikia“ kortelė; DUK „Kas mato privačias pastabas? Jūsų komanda“.
+- [x] **K4. Nauja demo sekcija „Mažiau streso Jūsų darbuotojams“** (po „Kaip veikia“, su vektorine iliustracija: 2★ → skambutis → išspręsta → padėka):
+  - „Klaida – ne viešas skandalas“: suklydus nusivylimas pirmiausia tampa žinute komandai, o ne 1★, kuri kabo metų metus.
+  - „Išspręskite tą pačią dieną“: darbuotojas paskambina, atsiprašo, pasiūlo sprendimą. Išspręsta problema dažnai virsta gera rekomendacija.
+  - „Ramiau naujiems darbuotojams“: mokosi iš pastabų ramiai, be baimės būti viešai sukritikuoti.
+  - „Padėkas mato visa komanda“: 5★ atsiliepimai motyvuoja.
+  - Smulkiu šriftu: „Klientas visada gali parašyti ir viešai. Sistema tik suteikia progą išspręsti pirmiems.“
+- [x] **K5. Komandos pranešimai (funkcija, kad žinutė būtų tiesa).** Nustatymuose „Kas gauna pastabas“: iki 3 el. paštų (pvz. registratūra, administratorius, vadovas). Stulpelis `clients.notify_emails`, validacija, `sendFeedbackAlert` siunčia visiems. Būsenos „Nauja / Sprendžiama / Išspręsta“ jau yra.
+- [x] **K6. Laiškai ir follow-up'ai.** Viena eilutė apie komandą pagal veiklą (klinika: „registratūrai mažiau streso“, el. parduotuvė: „klientų aptarnavimo komandai“, kavinė: „padavėjams“). B1 „persiųskite kolegai, kuris rūpinasi atsiliepimais“.
+_K5 įgyvendinta: `clients.notify_emails` (abiejose schemos pusėse), `parseNotifyEmails` / `notifyRecipients` (`src/lib/validation.ts`), `PATCH /api/admin/settings` priima `notify_emails`, nustatymuose `src/components/notify-emails.tsx`. Testai: `tests/team-notify.test.ts`. Patikrinta naršyklėje DB kopijoje: kliento puslapio tekstai, „Atsiliepimų dėžutė“, demo sekcija, adresų išsaugojimas._
+- [ ] **K7. `verslomatika.lt/reputacija` sekcija** su ta pačia žinute: kitas repo (edge worker), daryti kartu su A6.
+
+### Etapas M: filialai, kelios vietos vienoje paskyroje (2026-11-11, padaryta, laukia diegimo)
+
+Verslas su keliais padaliniais (pvz. kituose miestuose) skydelyje susikuria filialų profilius. Kiekvienas filialas turi savo atsiliepimų puslapį `/r/{slug}`, QR kodus, pastabų dėžutę, statistiką, nustatymus, pranešimų gavėjus ir nemokamo stovelio užsakymą.
+
+- [x] **M1. Duomenys.** Filialas yra `clients` eilutė su `parent_id` (pagrindinis profilis, tik vienas lygis), `location_label` (miestas ar adresas) ir `archived_at` (pašalintas). Stulpeliai abiejose schemos pusėse (`db.ts` `CLIENT_COLUMNS`, `core/claim_tokens.py`). `clients.email` UNIQUE, todėl filialas be savo el. pašto gauna `filialas-…@filialai.invalid` vietos rezervavimo adresą, kuriam niekas nesiunčiama. Funkcijos: `createBranch`, `updateBranch`, `archiveBranch`, `getBranches`, `getAccountRoot`, `getLocationStats`; `MAX_BRANCHES = 25` (apsauga, kol nėra kainodaros).
+- [x] **M2. Prieiga.** Prisijungiama tik pagrindiniu profiliu; `canAccessClient` leidžia valdyti savo pagrindinį profilį ir jo filialus, niekada kitos paskyros. QR (`/api/admin/qr?slug`), spausdinimas (`/admin/print?slug`), pastabų būsenos, stovelio užsakymas ir nustatymai veikia pasirinktam filialui.
+- [x] **M3. Prenumerata.** `canCollectFeedback(filialas)` tikrina pagrindinio profilio būseną ir bandymą; pašalintas filialas nebeima įvertinimų (puslapis 404).
+- [x] **M4. Pranešimai.** Pastaba iš filialo ateina pagrindiniam paskyros el. paštui + filialo el. paštui (jei įrašytas) + filialo papildomiems adresams (`notifyRecipients(client, root)`).
+- [x] **M5. Skydelis.** Perjungiklis „Pasirinkite filialą“ (`?clinic={slug}`), skiltis „Filialai ir vietos“ (`src/components/branch-manager.tsx`: sąrašas su įvertinimais ir neperskaitytomis pastabomis, „Valdyti“, „QR“, „Puslapis“, „Pridėti filialą“). Sukūrus filialą atveriami jo QR kodai. Nustatymuose filialo duomenys (pavadinimas, vieta, atsiliepimų nuoroda, el. paštas, telefonas, puslapio adresas su perspėjimu dėl QR) ir „Pašalinti filialą“. API: `POST/PATCH/DELETE /api/admin/branches`.
+- [x] **M6. Savininko panelė.** `/admin/klientai`: paskyros su filialų sąrašu, bendru įvertinimų skaičiumi, filialų stovelių užsakymais; savininko perjungiklyje filialai pažymėti „↳“. Savininkas gali kurti filialą bet kuriai paskyrai.
+- [x] **M7. Testai.** `tests/branches.test.ts` (6): planas ir unikalus adresas, prieiga tik prie savų filialų, prenumerata iš pagrindinio, archyvas, pranešimų gavėjai, savininko apžvalga, formos validacija. Iš viso 36/36. Patikrinta naršyklėje DB kopijoje.
+- [ ] **M8. Kainodara (su Etapu G).** Variantai: (a) pagrindinis planas + X €/mėn. už kiekvieną filialą, (b) planas su neribotais filialais. Įgyvendinti: plano laukas (pvz. `clients.plan`), filialų limitas pagal planą vietoj `MAX_BRANCHES`, Stripe kiekis (`quantity` = filialų skaičius), sąskaitoje filialų sąrašas.
+
 ### Etapas E: serveris = šis PC (patikimumas)
 
 - [~] **E1. Automatinis paleidimas po perkrovimo:** Next.js (3000), Cloudflare Tunnel, `morning_campaign_runner.py daemon`, `email_reply_listener.py` (Windows Task Scheduler „At startup“ arba NSSM servisai).
@@ -200,3 +290,7 @@ Laiško peržiūra be siuntimo: `python test_email_preview.py`.
 | 2026-11-05 | Claude (Opus 5.5) | C3 follow-up agentas (B1/H1/H2/F), SMTP antraštės, bendra kvota. Patikrinta DB kopijoje: karšti → H1, skeneris/šalti → B1, aktyvavę ir atsisakę – stop. |
 | 2026-11-05 | Claude (Opus 5.5) | D2, E2, E3, A6 instrukcija, AGENTS.md atnaujintas. Patikrinta naršyklėje su DB kopija: demo → aktyvavimas → skydelis → jungiklis. |
 | 2026-11-05 | Claude (Opus 5.5) | A3, A5, C1, C2, C4 (Python). `python core/morning_campaign_runner.py preview 4` sugeneruoja peržiūras į `data/reports/email_previews/`. `python test_email_preview.py` 8/8 OK |
+| 2026-11-11 | Claude (Opus 5.5) | D5 QR rinkinys (žymė `v1`). Pataisytas `research` siuntimas: po Gemini pakeitimų `build_custom_email`/`send_researched` naudojo neapibrėžtus `s_name`, `s_email`, `agent` (būtų nulūžęs). Suplanuotas Etapas R (be Google → Rekvizitai.lt). |
+| 2026-11-11 | Claude (Opus 5.5) | Etapas R (be Google → Rekvizitai.lt, `/google-profilis`, agentų patikra, laiškai) ir Etapas S (nemokamo stovelio užsakymas, `/admin/klientai`). 27/27 testų, patikrinta naršyklėje DB kopijoje. Laukia diegimo ir R8 adreso. |
+| 2026-11-11 | Claude (Opus 5.5) | Etapas H (demo hero: telefonas valdo „Kas vyksta toliau“, automatinė demonstracija, demo įvertinimai nebesaugomi) ir Etapas K (komanda vietoj „vadovo“, „Atsiliepimų dėžutė“, sekcija „Mažiau streso darbuotojams“, kelių gavėjų pranešimai). 30/30 testų. |
+| 2026-11-11 | Claude (Opus 5.5) | Etapas M: filialai (kelios vietos vienoje paskyroje), plačiau hero (1440 px, scenos be persidengimų). 36/36 testų. |

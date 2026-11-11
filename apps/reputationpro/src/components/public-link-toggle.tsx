@@ -2,8 +2,8 @@
 import { useState } from 'react';
 import { LoaderCircle } from 'lucide-react';
 
-// Owner decides whether customers who rate 1–3★ also see the public Google link.
-export function PublicLinkToggle({ clientId, initial }: { clientId: string; initial: boolean }) {
+// Owner decides whether customers who rate 1–3★ also see the public review link (Google or Rekvizitai.lt).
+export function PublicLinkToggle({ clientId, initial, platform = 'Google' }: { clientId: string; initial: boolean; platform?: string }) {
   const [on, setOn] = useState(initial);
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState('');
@@ -24,11 +24,11 @@ export function PublicLinkToggle({ clientId, initial }: { clientId: string; init
     <label className="switch-row">
       <span className="switch"><input type="checkbox" role="switch" checked={on} disabled={busy} onChange={(e) => toggle(e.target.checked)}/><i/></span>
       <span className="switch-text">
-        <strong>Rodyti viešo Google atsiliepimo nuorodą ir po 1–3★ įvertinimo</strong>
+        <strong>Rodyti viešo {platform} atsiliepimo nuorodą ir po 1–3★ įvertinimo</strong>
         <small>{on
-          ? 'Įjungta: po žemo įvertinimo klientas mato privačią formą vadovui ir mažą nuorodą „Rašyti atsiliepimą Google“.'
-          : 'Išjungta: po žemo įvertinimo klientas mato tik privačią formą vadovui.'}</small>
-        <small className="switch-note">Google taisyklės draudžia atgrasyti klientus nuo neigiamų atsiliepimų. Įjungus nuorodą, šios rizikos išvengiama. Sprendimas Jūsų.</small>
+          ? `Įjungta: po žemo įvertinimo klientas mato privačią formą Jūsų komandai ir mažą nuorodą „Rašyti atsiliepimą ${platform}“.`
+          : 'Išjungta: po žemo įvertinimo klientas mato tik privačią formą Jūsų komandai.'}</small>
+        <small className="switch-note">{platform === 'Google' ? 'Google taisyklės draudžia atgrasyti klientus nuo neigiamų atsiliepimų. Įjungus nuorodą, šios rizikos išvengiama. Sprendimas Jūsų.' : 'Viešą atsiliepimą klientas visada gali parašyti ir pats. Sprendimas Jūsų.'}</small>
       </span>
       {busy && <LoaderCircle size={16} className="spin"/>}
     </label>

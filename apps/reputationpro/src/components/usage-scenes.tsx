@@ -3,7 +3,7 @@
 // sees their own material. Pure SVG (no image files, no third-party logos).
 import type React from 'react';
 
-type SceneProps = { qr: string; name: string };
+type SceneProps = { qr: string; name: string; platform?: string };
 
 /** Split a business name into at most `max` lines of ~`perLine` characters; ellipsis only if it truly doesn't fit. */
 function nameLines(name: string, perLine: number, max = 2) {
@@ -73,7 +73,7 @@ function Stand({ qr, name }: SceneProps) {
 }
 
 // 2. Business card (front + back with the QR)
-function BusinessCard({ qr, name }: SceneProps) {
+function BusinessCard({ qr, name, platform = 'Google' }: SceneProps) {
   const nl = nameLines(name, 16, 3);
   return <svg viewBox="0 0 320 220" role="img" aria-label={`QR kodas vizitinėje kortelėje: ${name}`}>
     <defs>{BG}{BRAND}{SHADOW}</defs>
@@ -96,7 +96,7 @@ function BusinessCard({ qr, name }: SceneProps) {
       <rect x="154" y="80" width="72" height="74" rx="7" fill="#f5f3ff"/>
       <image href={qr} x="159" y="86" width="62" height="62"/>
       <text x="234" y="100" fontSize="9.6" fontWeight="800" fill="#13112e">Įvertinkite</text>
-      <text x="234" y="112" fontSize="9.6" fontWeight="800" fill="#13112e">mus Google</text>
+      <text x="234" y="112" fontSize="9.6" fontWeight="800" fill="#13112e">{platform ? `mus ${platform}` : 'mus'}</text>
       <text x="234" y="127" fontSize="9.5" fill="#f59e0b">★★★★★</text>
       <text x="234" y="142" fontSize="6.6" fill="#64748b">Nuskenuokite</text>
     </g>
@@ -137,7 +137,7 @@ function Package({ qr, name }: SceneProps) {
 }
 
 // 4. Email signature with a review button
-function EmailSignature({ qr, name }: SceneProps) {
+function EmailSignature({ qr, name, platform = 'Google' }: SceneProps) {
   const nl = nameLines(name, 22);
   const subY = 133 + nl.length * 9;
   return <svg viewBox="0 0 320 220" role="img" aria-label={`Atsiliepimo nuoroda el. laiško paraše: ${name}`}>
@@ -159,7 +159,7 @@ function EmailSignature({ qr, name }: SceneProps) {
       <Lines x={70} y={130} lines={nl} size={7.8} lh={9} weight={800} fill="#13112e"/>
       <text x="70" y={subY} fontSize="6.4" fill="#64748b">Klientų aptarnavimas</text>
       <rect x="40" y="164" width="156" height="26" rx="13" fill="url(#vm-brand)"/>
-      <text x="118" y="180.5" textAnchor="middle" fontSize="8.4" fontWeight="800" fill="#fff"><tspan fill="#fde047">★</tspan> Įvertinkite mus Google</text>
+      <text x="118" y="180.5" textAnchor="middle" fontSize="8.4" fontWeight="800" fill="#fff"><tspan fill="#fde047">★</tspan> Įvertinkite mus{platform ? ` ${platform}` : ''}</text>
       <path d="M186 184 l0 15 l4.5 -4 l3 7 l3.5 -1.5 l-3 -7 l6 0 z" fill="#13112e" stroke="#fff" strokeWidth="1"/>
       <rect x="212" y="122" width="70" height="70" rx="8" fill="#f5f3ff"/>
       <image href={qr} x="217" y="127" width="60" height="60"/>
@@ -241,8 +241,8 @@ export const USAGE_SCENES: { key: string; title: string; text: string; Scene: (p
 ];
 
 // Two-path illustrations for the "Kaip veikia" cards.
-export function GoodPathArt() {
-  return <svg viewBox="0 0 280 124" role="img" aria-label="4–5 žvaigždutės veda į Google atsiliepimą">
+export function GoodPathArt({ platform = 'Google' }: { platform?: string }) {
+  return <svg viewBox="0 0 280 124" role="img" aria-label={`4–5 žvaigždutės veda į ${platform} atsiliepimą`}>
     <defs>{BRAND}{SHADOW}</defs>
     <circle cx="52" cy="62" r="50" fill="#dcfce7" opacity=".7"/><circle cx="228" cy="62" r="50" fill="#dcfce7" opacity=".5"/>
     <g filter="url(#vm-shadow)">
@@ -251,14 +251,14 @@ export function GoodPathArt() {
       <text x="53" y="46" textAnchor="middle" fontSize="11.5" fill="#f59e0b">★★★★★</text>
       <rect x="33" y="56" width="40" height="5" rx="2.5" fill="#e2e8f0"/>
       <rect x="31" y="70" width="44" height="16" rx="8" fill="#16a34a"/>
-      <text x="53" y="81" textAnchor="middle" fontSize="6.6" fontWeight="800" fill="#fff"><tspan fill="#fde047">★</tspan> Google</text>
+      <text x="53" y="81" textAnchor="middle" fontSize="6.6" fontWeight="800" fill="#fff"><tspan fill="#fde047">★</tspan> {platform === 'Google' ? 'Google' : 'Rašyti'}</text>
     </g>
     <path d="M98 62 C 130 40, 150 40, 176 58" fill="none" stroke="#16a34a" strokeWidth="3" strokeLinecap="round" strokeDasharray="1 7"/>
     <path d="M168 50 L178 59 L165 63" fill="none" stroke="#16a34a" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
     <g filter="url(#vm-shadow)">
       <rect x="184" y="24" width="84" height="78" rx="12" fill="#fff"/>
       <circle cx="200" cy="42" r="8" fill="url(#vm-brand)"/>
-      <text x="214" y="40" fontSize="7" fontWeight="800" fill="#13112e">Google</text>
+      <text x="214" y="40" fontSize="7" fontWeight="800" fill="#13112e">{platform}</text>
       <text x="214" y="49" fontSize="6.6" fill="#f59e0b">★★★★★</text>
       <rect x="194" y="58" width="64" height="4.5" rx="2.2" fill="#e2e8f0"/><rect x="194" y="67" width="50" height="4.5" rx="2.2" fill="#e2e8f0"/>
       <rect x="194" y="80" width="46" height="13" rx="6.5" fill="#dcfce7"/><text x="217" y="89" textAnchor="middle" fontSize="6.2" fontWeight="800" fill="#15803d">Paskelbta ✓</text>
@@ -266,7 +266,7 @@ export function GoodPathArt() {
   </svg>;
 }
 export function CarePathArt() {
-  return <svg viewBox="0 0 280 124" role="img" aria-label="1–3 žvaigždutės: pastaba vadovui ir el. laiškas">
+  return <svg viewBox="0 0 280 124" role="img" aria-label="1–3 žvaigždutės: pastaba komandai ir el. laiškas">
     <defs>{BRAND}{SHADOW}</defs>
     <circle cx="52" cy="62" r="50" fill="#fef3c7" opacity=".8"/><circle cx="228" cy="62" r="50" fill="#fef3c7" opacity=".6"/>
     <g filter="url(#vm-shadow)">
@@ -284,6 +284,7 @@ export function CarePathArt() {
       <path d="M190 40 L226 66 L262 40" fill="none" stroke="#f59e0b" strokeWidth="2.4" strokeLinejoin="round"/>
       <circle cx="262" cy="34" r="11" fill="#ef4444"/><text x="262" y="38" textAnchor="middle" fontSize="11" fontWeight="800" fill="#fff">1</text>
     </g>
-    <text x="226" y="110" textAnchor="middle" fontSize="8.6" fontWeight="800" fill="#92400e">Vadovui iškart</text>
+    <text x="226" y="110" textAnchor="middle" fontSize="8.6" fontWeight="800" fill="#92400e">Komandai iškart</text>
   </svg>;
 }
+export { Stand as StandScene };

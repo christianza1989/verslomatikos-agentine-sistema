@@ -25,7 +25,7 @@ export default function NeutralLanding() {
           <a href="#principai">Kokybės standartas</a>
           <a href="#verslui">Verslui</a>
           <Link href="/admin" className="nav-login">
-            Vadovo prisijungimas <ArrowUpRight size={15} />
+            Prisijungti <ArrowUpRight size={15} />
           </Link>
         </nav>
       </header>
@@ -45,7 +45,7 @@ export default function NeutralLanding() {
             <p style={{ fontSize: '16px', lineHeight: '1.7', color: 'var(--muted)', marginTop: '20px' }}>
               Universali atsiliepimų valdymo sistema: automatinė nuoroda pirkėjui po internetinio užsakymo 
               (el. paštu arba SMS) arba estetiškas akrilinis QR stovelis prie kasos ir registratūroje. 
-              Patenkinti klientai (5★) keliauja į „Google Maps“, o pastabos – privačiai vadovui.
+              Patenkinti klientai (5★) keliauja į „Google Maps“, o pastabos pirmiausia ateina Jūsų komandai.
             </p>
 
             {/* Greita paieška / kodo suvedimas */}
@@ -78,7 +78,7 @@ export default function NeutralLanding() {
                   <MessageSquare size={18} />
                 </div>
                 <div>
-                  <strong style={{ display: 'block', fontSize: '13.5px', color: '#0F172A' }}>Tiesioginis ryšys su vadovu</strong>
+                  <strong style={{ display: 'block', fontSize: '13.5px', color: '#0F172A' }}>Pastabos pirmiausia Jūsų komandai</strong>
                   <p style={{ fontSize: '12px', color: '#64748B', marginTop: '3px', lineHeight: '1.5' }}>
                     Privačios pastabos išsaugomos demonstraciniame valdymo skydelyje. Automatiniai el. laiškai nesiunčiami.
                   </p>
@@ -187,7 +187,7 @@ export default function NeutralLanding() {
                 Visi verslo įrankiai
               </a>
               <Link href="/admin" className="btn btn-secondary">
-                Vadovo prisijungimas
+                Prisijungti
               </Link>
             </div>
           </div>

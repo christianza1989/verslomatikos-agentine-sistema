@@ -11,6 +11,10 @@ export type Client = {
   // Added 2026-11-05 (see ROADMAP_REPUTATIONPRO.md). Columns are created by ensureClientColumns().
   show_public_link_low: number; industry: string;
   google_place_id: string | null; google_rating: number | null; google_reviews_count: number | null;
+  /** ROADMAP K5: extra addresses (comma separated, max 3) that also receive customer notes. */
+  notify_emails: string;
+  /** Branches (filialai): parent = the account's main profile; label = city/address; archived = removed. */
+  parent_id: string | null; location_label: string; archived_at: string | null;
 };
 export type Feedback = {
   id: string; client_id: string; rating: number; feedback_text: string;
@@ -258,6 +262,7 @@ export function db() {
   `);
   migrateFeedbackRatings(sql);
   ensureClientColumns(sql);
+  ensureStandOrders(sql);
   seedPilotCampaignLeads(sql);
   // Only an explicitly enabled local demo receives a fictional sample clinic.
   if (process.env.DEMO_MODE === 'true') {
@@ -280,6 +285,10 @@ export const CLIENT_COLUMNS: [string, string][] = [
   ['google_place_id', 'TEXT'],
   ['google_rating', 'REAL'],
   ['google_reviews_count', 'INTEGER'],
+  ['notify_emails', "TEXT NOT NULL DEFAULT ''"],
+  ['parent_id', 'TEXT'],
+  ['location_label', "TEXT NOT NULL DEFAULT ''"],
+  ['archived_at', 'TEXT'],
 ];
 function ensureClientColumns(sql: DatabaseSync) {
   const have = new Set(sql.prepare('PRAGMA table_info(clients)').all().map((row) => String(row.name)));
@@ -288,6 +297,7 @@ function ensureClientColumns(sql: DatabaseSync) {
     try { sql.exec(`ALTER TABLE clients ADD COLUMN ${name} ${definition}`); }
     catch (error) { if (!/duplicate column/i.test(String(error))) throw error; }
   }
+  sql.exec('CREATE INDEX IF NOT EXISTS clients_parent ON clients(parent_id)');
   // ROADMAP D5.5: which sharing channel (QR on receipt, email signature, …) brought the rating.
   const ev = new Set(sql.prepare('PRAGMA table_info(review_events)').all().map((row) => String(row.name)));
   if (!ev.has('source')) {
@@ -302,6 +312,115 @@ export function getSourceStats(clientId: string, days = 90) {
   return db().prepare(`SELECT source, COUNT(*) AS total, SUM(CASE WHEN rating>=4 THEN 1 ELSE 0 END) AS positive
     FROM review_events WHERE client_id=? AND created_at>=? GROUP BY source ORDER BY total DESC`)
     .all(clientId, since).map((r) => ({ source: (r.source as string | null) ?? null, total: Number(r.total), positive: Number(r.positive || 0) }));
+}
+
+// ---------------------------------------------------------------------------
+// Free QR + NFC stands (owner decision 2026-11-11): an activated client enters a
+// delivery address in the dashboard, the owner ships the stand and marks it sent
+// in /admin/klientai. Older rows were created lazily by api/checkout with only
+// (id, client_id, plan, delivery_address, created_at); the extra columns are added here.
+// ---------------------------------------------------------------------------
+export const STAND_STATUSES = ['requested', 'sent', 'delivered', 'canceled'] as const;
+export type StandStatus = typeof STAND_STATUSES[number];
+export type StandOrder = {
+  id: string; client_id: string; plan: string; delivery_address: string; created_at: string;
+  recipient: string | null; company: string | null; phone: string | null; street: string | null;
+  city: string | null; postal_code: string | null; notes: string | null; quantity: number;
+  status: StandStatus; updated_at: string | null; sent_at: string | null;
+};
+export type StandOrderInput = {
+  recipient: string; company?: string; phone: string; street: string; city: string; postal_code: string;
+  notes?: string; quantity: number;
+};
+const STAND_COLUMNS: [string, string][] = [
+  ['recipient', 'TEXT'], ['company', 'TEXT'], ['phone', 'TEXT'], ['street', 'TEXT'], ['city', 'TEXT'],
+  ['postal_code', 'TEXT'], ['notes', 'TEXT'], ['quantity', 'INTEGER NOT NULL DEFAULT 1'],
+  ['status', "TEXT NOT NULL DEFAULT 'requested'"], ['updated_at', 'TEXT'], ['sent_at', 'TEXT'],
+];
+function ensureStandOrders(sql: DatabaseSync) {
+  sql.exec(`CREATE TABLE IF NOT EXISTS stand_orders (
+    id TEXT PRIMARY KEY, client_id TEXT NOT NULL, plan TEXT NOT NULL, delivery_address TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')))`);
+  const have = new Set(sql.prepare('PRAGMA table_info(stand_orders)').all().map((row) => String(row.name)));
+  for (const [name, definition] of STAND_COLUMNS) {
+    if (have.has(name)) continue;
+    try { sql.exec(`ALTER TABLE stand_orders ADD COLUMN ${name} ${definition}`); }
+    catch (error) { if (!/duplicate column/i.test(String(error))) throw error; }
+  }
+  sql.exec('CREATE INDEX IF NOT EXISTS stand_orders_client ON stand_orders(client_id, created_at)');
+}
+export function formatStandAddress(o: Pick<StandOrderInput, 'recipient' | 'company' | 'phone' | 'street' | 'city' | 'postal_code'>) {
+  return [o.company, o.recipient, o.street, `${o.postal_code} ${o.city}`.trim(), o.phone].filter(Boolean).join(', ');
+}
+/** Latest stand order of a client (the dashboard shows its status). Rows without an address
+ *  (old landing sign-ups stored delivery_address='') are not orders: the client still has to enter one. */
+export function getStandOrder(clientId: string): StandOrder | undefined {
+  const row = db().prepare("SELECT * FROM stand_orders WHERE client_id=? AND TRIM(delivery_address)<>'' ORDER BY created_at DESC LIMIT 1").get(clientId);
+  return row ? ({ ...row } as StandOrder) : undefined;
+}
+/** Creates the order, or updates the address while it is still waiting to be shipped. */
+export function saveStandOrder(clientId: string, input: StandOrderInput): { order?: StandOrder; created?: boolean; error?: 'already_sent' } {
+  const current = getStandOrder(clientId);
+  if (current && (current.status === 'sent' || current.status === 'delivered')) return { error: 'already_sent' };
+  const now = new Date().toISOString();
+  const fields = [input.recipient, input.company || null, input.phone, input.street, input.city, input.postal_code, input.notes || null, input.quantity, formatStandAddress(input)];
+  if (current && current.status === 'requested') {
+    db().prepare(`UPDATE stand_orders SET recipient=?, company=?, phone=?, street=?, city=?, postal_code=?, notes=?, quantity=?,
+      delivery_address=?, updated_at=? WHERE id=?`).run(...fields, now, current.id);
+    return { order: getStandOrder(clientId), created: false };
+  }
+  db().prepare(`INSERT INTO stand_orders (id, client_id, plan, recipient, company, phone, street, city, postal_code, notes, quantity,
+    delivery_address, status, created_at, updated_at) VALUES (?, ?, 'free', ?, ?, ?, ?, ?, ?, ?, ?, ?, 'requested', ?, ?)`)
+    .run(randomUUID(), clientId, ...fields, now, now);
+  return { order: getStandOrder(clientId), created: true };
+}
+/** Owner status change. updated_at is left alone: it means "the client changed the address". */
+export function setStandOrderStatus(orderId: string, status: StandStatus) {
+  const now = new Date().toISOString();
+  const res = db().prepare(`UPDATE stand_orders SET status=?,
+    sent_at=CASE WHEN ? IN ('sent','delivered') THEN COALESCE(sent_at, ?) WHEN ?='requested' THEN NULL ELSE sent_at END WHERE id=?`)
+    .run(status, status, now, status, orderId);
+  return Number(res.changes) > 0;
+}
+export type BranchRow = {
+  id: string; slug: string; business_name: string; location_label: string; email: string | null;
+  ratings: number; positive: number; unread: number; order: StandOrder | null;
+};
+export type ActivatedClientRow = {
+  id: string; slug: string; business_name: string; email: string; phone: string; subscription_status: string;
+  trial_ends_at: string | null; google_review_url: string; activated_at: string | null;
+  ratings: number; positive: number; last_rating_at: string | null; unread: number; order: StandOrder | null;
+  /** Active branches of this account (filialai), each with its own stats and stand order. */
+  branches: BranchRow[];
+};
+const STATS_SQL = `(SELECT COUNT(*) FROM review_events e WHERE e.client_id=c.id) AS ratings,
+      (SELECT COUNT(*) FROM review_events e WHERE e.client_id=c.id AND e.rating>=4) AS positive,
+      (SELECT MAX(created_at) FROM review_events e WHERE e.client_id=c.id) AS last_rating_at,
+      (SELECT COUNT(*) FROM internal_feedback f WHERE f.client_id=c.id AND f.status='new') AS unread`;
+/** Owner overview (/admin/klientai): every account a business has activated (main profiles), newest first. */
+export function getActivatedClients(): ActivatedClientRow[] {
+  const rows = db().prepare(`SELECT c.id, c.slug, c.business_name, c.email, c.phone, c.subscription_status, c.trial_ends_at,
+      c.google_review_url, c.created_at, v.verified_at, ${STATS_SQL}
+    FROM clients c LEFT JOIN clinic_email_verifications v ON v.client_id=c.id
+    WHERE c.is_demo=0 AND c.parent_id IS NULL AND c.archived_at IS NULL ORDER BY COALESCE(v.verified_at, 0) DESC, c.created_at DESC`).all();
+  const branchStmt = db().prepare(`SELECT c.id, c.slug, c.business_name, c.location_label, c.email, ${STATS_SQL}
+    FROM clients c WHERE c.parent_id=? AND c.archived_at IS NULL ORDER BY c.created_at`);
+  return rows.map((r) => {
+    const verified = r.verified_at == null ? null : new Date(Number(r.verified_at)).toISOString();
+    const branches = branchStmt.all(String(r.id)).map((b) => ({
+      id: String(b.id), slug: String(b.slug), business_name: String(b.business_name), location_label: String(b.location_label || ''),
+      email: isPlaceholderEmail(String(b.email)) ? null : String(b.email),
+      ratings: Number(b.ratings), positive: Number(b.positive || 0), unread: Number(b.unread || 0), order: getStandOrder(String(b.id)) ?? null,
+    }));
+    return {
+      id: String(r.id), slug: String(r.slug), business_name: String(r.business_name), email: String(r.email),
+      phone: String(r.phone || ''), subscription_status: String(r.subscription_status),
+      trial_ends_at: (r.trial_ends_at as string | null) ?? null, google_review_url: String(r.google_review_url),
+      activated_at: verified ?? String(r.created_at), ratings: Number(r.ratings), positive: Number(r.positive || 0),
+      last_rating_at: (r.last_rating_at as string | null) ?? null, unread: Number(r.unread || 0),
+      order: getStandOrder(String(r.id)) ?? null, branches,
+    };
+  });
 }
 // SQLite cannot alter a CHECK constraint in place. Migrate the known legacy
 // schema transactionally; preserve every row and reject unknown local changes.
@@ -370,6 +489,75 @@ export function createClient(
     id, input.slug, input.business_name, input.email, input.google_review_url, input.phone || '', status, isDemo ? 1 : 0, trialEnds
   );
   return getClientById(id)!;
+}
+
+// ---------------------------------------------------------------------------
+// Branches (filialai), 2026-11-11. A branch is a clients row with parent_id = the account's main
+// profile (one level only). It gets everything a profile has: its own /r/{slug} page, QR codes,
+// notes inbox, statistics, settings and stand order. Login stays on the main profile;
+// subscription/trial is read from the main profile (src/lib/entitlements.ts). Archived branches
+// (archived_at) are hidden and their page stops collecting.
+// clients.email is UNIQUE NOT NULL: a branch without its own email gets a placeholder
+// "filialas-…@filialai.invalid" that is never emailed (see notifyRecipients()).
+// ---------------------------------------------------------------------------
+export const MAX_BRANCHES = 25; // guard until branch pricing exists (ROADMAP G4)
+export const isPlaceholderEmail = (email: string | null | undefined) => !email || email.trim().toLowerCase().endsWith('.invalid');
+export const placeholderBranchEmail = () => `filialas-${randomUUID().slice(0, 8)}@filialai.invalid`;
+
+export function getBranches(rootId: string, includeArchived = false): Client[] {
+  return db().prepare(`SELECT * FROM clients WHERE parent_id=? ${includeArchived ? '' : 'AND archived_at IS NULL'} ORDER BY created_at`)
+    .all(rootId).map((row) => toClient(row));
+}
+/** The account's main profile (the profile itself when it is not a branch). */
+export function getAccountRoot(client: Client): Client {
+  return client.parent_id ? getClientById(client.parent_id) ?? client : client;
+}
+export function slugifyName(name: string) {
+  return name.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 60) || 'filialas';
+}
+export function uniqueSlug(base: string) {
+  const root = slugifyName(base);
+  let slug = root.length >= 3 ? root : `${root}-filialas`;
+  for (let i = 2; db().prepare('SELECT 1 FROM clients WHERE slug=?').get(slug); i++) slug = `${root}-${i}`;
+  return slug;
+}
+export type BranchInput = { business_name: string; location_label?: string; google_review_url: string; email?: string; phone?: string };
+export function createBranch(root: Client, input: BranchInput): Client {
+  if (root.parent_id) throw new Error('A branch cannot have branches');
+  const id = randomUUID();
+  const email = (input.email || '').trim().toLowerCase() || placeholderBranchEmail();
+  db().prepare(`INSERT INTO clients (id, slug, business_name, email, google_review_url, phone, subscription_status, is_demo, trial_ends_at,
+      industry, show_public_link_low, parent_id, location_label) VALUES (?,?,?,?,?,?,?,0,?,?,?,?,?)`).run(
+    id, uniqueSlug(input.business_name), input.business_name.trim(), email, input.google_review_url, (input.phone || '').trim(),
+    root.subscription_status, root.trial_ends_at, root.industry || 'general', root.show_public_link_low ? 1 : 0, root.id, (input.location_label || '').trim());
+  return getClientById(id)!;
+}
+export function updateBranch(branch: Client, input: BranchInput & { slug?: string }) {
+  const typed = (input.email || '').trim().toLowerCase();
+  const email = typed || (isPlaceholderEmail(branch.email) ? branch.email : placeholderBranchEmail());
+  db().prepare(`UPDATE clients SET business_name=?, location_label=?, google_review_url=?, email=?, phone=?, slug=? WHERE id=? AND parent_id IS NOT NULL`)
+    .run(input.business_name.trim(), (input.location_label || '').trim(), input.google_review_url, email, (input.phone || '').trim(), input.slug || branch.slug, branch.id);
+  return getClientById(branch.id)!;
+}
+export function archiveBranch(branchId: string) {
+  return Number(db().prepare(`UPDATE clients SET archived_at=? WHERE id=? AND parent_id IS NOT NULL AND archived_at IS NULL`).run(new Date().toISOString(), branchId).changes) > 0;
+}
+export type LocationStat = { id: string; slug: string; business_name: string; location_label: string; is_root: boolean; google_review_url: string;
+  ratings: number; positive: number; ratings30: number; unread: number };
+/** One row per location of the account (main profile first) for the dashboard "Filialai" list. */
+export function getLocationStats(rootId: string): LocationStat[] {
+  const since = new Date(Date.now() - 30 * 86400000).toISOString();
+  return db().prepare(`SELECT c.id, c.slug, c.business_name, c.location_label, c.parent_id, c.google_review_url,
+      (SELECT COUNT(*) FROM review_events e WHERE e.client_id=c.id) AS ratings,
+      (SELECT COUNT(*) FROM review_events e WHERE e.client_id=c.id AND e.rating>=4) AS positive,
+      (SELECT COUNT(*) FROM review_events e WHERE e.client_id=c.id AND e.created_at>=?) AS ratings30,
+      (SELECT COUNT(*) FROM internal_feedback f WHERE f.client_id=c.id AND f.status='new') AS unread
+    FROM clients c WHERE (c.id=? OR c.parent_id=?) AND c.archived_at IS NULL
+    ORDER BY CASE WHEN c.parent_id IS NULL THEN 0 ELSE 1 END, c.created_at`).all(since, rootId, rootId).map((r) => ({
+      id: String(r.id), slug: String(r.slug), business_name: String(r.business_name), location_label: String(r.location_label || ''),
+      is_root: r.parent_id == null, google_review_url: usableReviewUrl(String(r.google_review_url), String(r.business_name)),
+      ratings: Number(r.ratings), positive: Number(r.positive || 0), ratings30: Number(r.ratings30), unread: Number(r.unread || 0),
+    }));
 }
 
 function seedPilotCampaignLeads(sql: DatabaseSync) {
@@ -604,6 +792,17 @@ export function recordDemoView(slug: string) {
     status = CASE WHEN status IN ('ready', 'sent', 'opened') THEN 'clicked' ELSE status END,
     clicked_at = COALESCE(clicked_at, ?), updated_at = ? WHERE id=?`).run(now, now, lead.id);
   db().prepare(`INSERT INTO campaign_events (id, lead_id, event_type, details) VALUES (?, ?, 'click', 'demo_view')`).run(randomUUID(), lead.id);
+}
+
+// Owner demo engagement (ROADMAP H6): what the prospect did on the demo page. Stored as
+// campaign_events 'click' with details 'demo:{event}' (the table's CHECK allows no new types).
+export const DEMO_EVENTS = ['star_good', 'star_care', 'private_sent', 'public_open', 'tab', 'ghost_done', 'cta'] as const;
+export type DemoEventName = typeof DEMO_EVENTS[number];
+export function recordDemoEvent(slug: string, event: DemoEventName) {
+  const lead = getCampaignLeadBySlug(slug);
+  if (!lead) return false;
+  db().prepare(`INSERT INTO campaign_events (id, lead_id, event_type, details) VALUES (?, ?, 'click', ?)`).run(randomUUID(), lead.id, `demo:${event}`);
+  return true;
 }
 
 export function getClientByEmail(email: string) {

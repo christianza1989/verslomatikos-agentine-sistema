@@ -42,11 +42,11 @@ export function ClaimForm({ token, googleUrl, googleVerified, email: initialEmai
     </label>
     {emailChanged && <label>Pakartokite el. paštą<input name="email_confirm" type="email" required autoComplete="off" maxLength={254}/></label>}
     {editGoogle
-      ? <label>Google atsiliepimų nuoroda <span>(galite patikslinti ir vėliau)</span>
+      ? <label>Atsiliepimų nuoroda (Google arba Rekvizitai.lt) <span>(galite patikslinti ir vėliau)</span>
           <input name="google_review_url" type="url" maxLength={2000} defaultValue={googleUrl} placeholder="https://g.page/r/…/review"/>
-          <small>Google verslo profilyje spauskite „Prašyti atsiliepimų“ ir nukopijuokite nuorodą.</small>
+          <small>Google verslo profilyje spauskite „Prašyti atsiliepimų“ ir nukopijuokite nuorodą. Neturite Google profilio? Tinka ir Rekvizitai.lt įmonės nuoroda.</small>
         </label>
-      : <button type="button" className="claim-edit-link" onClick={() => setEditGoogle(true)}>Google nuoroda neteisinga? Pakeisti</button>}
+      : <button type="button" className="claim-edit-link" onClick={() => setEditGoogle(true)}>Atsiliepimų nuoroda neteisinga? Pakeisti</button>}
     <div className="form-row">
       <label>Sugalvokite slaptažodį<input required name="password" type="password" autoComplete="new-password" minLength={8} maxLength={128} autoFocus/><small>Mažiausiai 8 simboliai.</small></label>
       <label>Pakartokite slaptažodį<input required name="password_confirm" type="password" autoComplete="new-password" minLength={8} maxLength={128}/></label>

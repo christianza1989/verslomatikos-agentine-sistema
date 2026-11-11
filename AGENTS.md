@@ -150,6 +150,26 @@ Agentai/
    - Agent mailbox configs (`configs/reputation_agents/agent_*.json`, Git-ignored) must exist on the server PC. Without them `_resolve_agent_config()` falls back to the `.example.json` placeholders and that agent cannot send.
    - When asked only to add agents, change only agent profiles/configs; do not touch URLs or funnel logic.
 
+8. **Businesses without a Google profile → Rekvizitai.lt (owner decision 2026-11-11, ROADMAP Etapas R)**:
+   - The public review link is `clients.google_review_url` (historical name). The platform is derived from the link: `https://rekvizitai.vz.lt/imone/{company}/atsiliepimai/` = Rekvizitai, anything else = Google (`src/lib/review-platforms.ts`, Python mirror `core/claim_tokens.py::rekvizitai_review_url`). Keep both whitelists in sync; never accept other hosts.
+   - Customers of a Rekvizitai business must never see the word "Google" on the review page; owners do (guide `/google-profilis`, demo block). Pasting a Google link switches the whole funnel back automatically.
+   - A Rekvizitai page belongs to a lead only if it lists the same phone or website domain (`verify_rekvizitai`). Name alone is not proof.
+   - Guide page lives on `reputacija.verslomatika.lt/google-profilis`, not `verslomatika.lt` (invariant 6).
+
+9. **Free QR + NFC stands (owner decision 2026-11-11, ROADMAP Etapas S)**:
+   - Activated clients order in the dashboard (`#stovelis`); the owner sees all activated accounts and orders at `/admin/klientai` and marks them sent/delivered. Status shown to the client is real; never show a fake tracker.
+   - The NFC chip / stand QR must encode `https://reputacija.verslomatika.lt/r/{slug}?s=stovelis` (channel tracking).
+
+10. **Feedback goes to "the team", not "the manager" (owner decision 2026-11-11, ROADMAP Etapas K)**:
+   - Customer-facing and marketing copy says „Jūsų komandai“ / „atsakingas darbuotojas“, never „vadovui“: staff often read our emails first and must see the system as protection, not surveillance. Dashboard inbox = „Atsiliepimų dėžutė“, login = „Prisijungti“.
+   - Customer notes are emailed to the account email plus up to 3 addresses from `clients.notify_emails` (`notifyRecipients()`).
+   - Owner demo (`/r/{slug}` for `is_demo=1`): star taps are never sent to `/api/rating`; the API also ignores demo profiles.
+
+11. **Branches (filialai), 2026-11-11, ROADMAP Etapas M**:
+   - A branch is a `clients` row with `parent_id` = the account main profile (one level). Login stays on the main profile; `canAccessClient` allows the main profile and its own branches only. Never let a clinic login reach another account's rows.
+   - Branch entitlement = the main profile's (`canCollectFeedback`); archived branches (`archived_at`) never collect. Branch without its own email has a `…@filialai.invalid` placeholder that must never be emailed.
+   - Owner views (`/admin/klientai`, `getActivatedClients`) list main profiles; branches are nested under them.
+
 > **Open work and its status:** [`ROADMAP_REPUTATIONPRO.md`](ROADMAP_REPUTATIONPRO.md) (checkbox roadmap for any LLM continuing the work).
 
 ---
@@ -191,6 +211,11 @@ npm run start -- --port 3002
 # Follow-up agent (2nd/3rd email to leads that did not activate; runs inside the daemon too)
 python core/followup_runner.py status    # dry run: what would be sent now
 python core/followup_runner.py preview   # all templates -> data/reports/email_previews/followups/
+
+# Researched single lead (data/leads/research/{slug}.json). Without --send: preview only.
+python core/morning_campaign_runner.py research data/leads/research/ergonomic-lt.json
+# Test the whole path to your own inbox (separate {slug}-testas profile, placeholder record email):
+python core/morning_campaign_runner.py research data/leads/research/ergonomic-lt.json --send --to=you@example.com
 ```
 
 ```bash

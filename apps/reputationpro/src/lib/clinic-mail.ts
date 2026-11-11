@@ -94,7 +94,7 @@ export async function sendLoginEmailChangedNotice(previous: string, businessName
 }
 
 export async function sendFeedbackAlert(
-  to: string,
+  to: string | string[],
   businessName: string,
   data: {
     rating: number;
@@ -127,14 +127,14 @@ export async function sendFeedbackAlert(
       data.customer_phone?.trim() ? `(${data.customer_phone.trim()})` : null
     ].filter(Boolean).join(' ') || 'Nenurodytas';
 
-    const subject = `🚨 Dėmesio: Gautas naujas privatus atsiliepimas iš kliento (${data.rating}★)`;
-    const text = `🚨 Dėmesio: Gautas naujas privatus atsiliepimas iš kliento!\n\n` +
+    const subject = `Nauja kliento pastaba (${data.rating}★) – ${businessName}`;
+    const text = `Klientas paliko pastabą Jūsų komandai (viešai ji neskelbiama).\n\n` +
       `Įmonė: ${businessName}\n` +
       `Įvertinimas: ${data.rating}★\n` +
       `Klientas: ${clientInfo}\n` +
       `Žinutė: ${data.feedback_text}\n\n` +
-      `Prisijunkite prie pulto: ${appUrl}/admin\n\n` +
-      `Vadovo patarimas: perskambinkite klientui per 15 minučių, išspręskite problemą ir išsaugokite klientą.`;
+      `Atsiliepimų dėžutė: ${appUrl}/admin#inbox\n\n` +
+      `Patarimas: paskambinkite ar parašykite klientui tą pačią dieną. Greitai išspręsta problema dažnai virsta gera rekomendacija.`;
 
     await transporter.sendMail({
       from: { name: 'ReputationPro Skydas', address: cfg.email },
@@ -170,7 +170,7 @@ export async function sendWelcomeEmail(to: string, businessName: string, slug: s
       `Dėkojame, kad pasirinkote „ReputationPro“ savo verslo reputacijos stiprinimui ir 5★ Google atsiliepimų augimui.\n\n` +
       `Jūsų 14 dienų nemokamas bandymas sėkmingai aktyvuotas!\n\n` +
       `Jūsų klientų atsiliepimų nuoroda (naudokite su QR kodu):\n${reviewUrl}\n\n` +
-      `Jūsų valdymo pultas (vadovo dėžutė ir QR kodo atsisiuntimas):\n${adminUrl}\n\n` +
+      `Jūsų valdymo skydelis (atsiliepimų dėžutė, QR kodai ir nuorodos):\n${adminUrl}\n\n` +
       `Jei kils klausimų, tiesiog atsakykite į šį el. laišką.\n\n` +
       `Sėkmės,\n` +
       `ReputationPro komanda • Verslomatika`;
@@ -226,5 +226,33 @@ export async function sendNewOrderAlertToAdmin(data: {
     });
   } catch (err) {
     console.error('sendNewOrderAlertToAdmin error:', err);
+  }
+}
+
+/** New or changed free QR/NFC stand order → the owner's inbox (ships it, then marks it sent in /admin/klientai). */
+export async function sendStandOrderAlert(data: {
+  business_name: string; slug: string; email: string; address: string; quantity: number; notes?: string | null; updated: boolean;
+}) {
+  try {
+    const cfg = getSmtpConfig();
+    if (!cfg) return;
+    const transporter = nodemailer.createTransport({
+      host: cfg.smtp_host, port: cfg.smtp_port, secure: cfg.smtp_secure ?? (cfg.smtp_port === 465),
+      auth: { user: cfg.email, pass: cfg.password }, requireTLS: true,
+      connectionTimeout: 10000, greetingTimeout: 10000, socketTimeout: 15000,
+    });
+    const appUrl = process.env.APP_URL || 'https://reputacija.verslomatika.lt';
+    const subject = `${data.updated ? 'Pakeistas' : 'Naujas'} QR stovelio užsakymas: ${data.business_name}`;
+    const text = `${data.updated ? 'Klientas pakeitė pristatymo duomenis.' : 'Klientas užsisakė nemokamą QR + NFC stovelį.'}\n\n` +
+      `Įmonė: ${data.business_name}\n` +
+      `Kiekis: ${data.quantity}\n` +
+      `Pristatymas: ${data.address}\n` +
+      (data.notes ? `Pastabos: ${data.notes}\n` : '') +
+      `Paskyros el. paštas: ${data.email}\n` +
+      `NFC lustą įrašyti: ${appUrl}/r/${data.slug}?s=stovelis\n\n` +
+      `Visi užsakymai: ${appUrl}/admin/klientai`;
+    await transporter.sendMail({ from: { name: 'ReputationPro Sistema', address: cfg.email }, to: 'tomas@verslomatika.lt', subject, text });
+  } catch (err) {
+    console.error('sendStandOrderAlert error:', err);
   }
 }

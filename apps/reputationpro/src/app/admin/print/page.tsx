@@ -23,7 +23,7 @@ export default async function PrintPage({ searchParams }: { searchParams: Promis
   const principal = await currentPrincipal();
   if (!principal) redirect('/admin/login');
   const q = await searchParams;
-  const client = principal.role === 'clinic' ? getClientById(principal.clientId) : (q.slug ? getClient(q.slug) : getClients()[0]);
+  const client = q.slug ? getClient(q.slug) : principal.role === 'clinic' ? getClientById(principal.clientId) : getClients()[0];
   if (!client || !canAccessClient(principal, client.id)) redirect('/admin');
 
   const kind: Kind = q.type === 'poster' || q.type === 'labels' ? q.type : 'stand';

@@ -36,7 +36,7 @@ export default async function CampaignsAdmin() {
             </Link>
             <Link href="/admin#inbox" className="sidebar-nav-item">
               <MessageSquare size={18} /> 
-              <span>Vadovo dėžutė</span>
+              <span>Atsiliepimų dėžutė</span>
             </Link>
             <Link href="/admin#stand" className="sidebar-nav-item">
               <QrCode size={18} /> 

@@ -1,0 +1,43 @@
+{
+  "researched_at": "2026-11-11",
+  "researched_by": "Claude (Opus 5.5) per naršyklę",
+  "business_name": "Ergonomic.lt",
+  "slug": "ergonomic-lt",
+  "email": "",
+  "email_note": "Pirmas savininko nurodytas adresas buvo be @. Prieš tikrą siuntimą įrašyti patvirtintą adresą. Svetainėje nurodytas tik bendras adresas.",
+  "phone": "+37069199833",
+  "website": "https://ergonomic.lt",
+  "city": "Vilnius",
+  "industry": "ecommerce",
+  "review_platform": "rekvizitai",
+  "google_place_id": null,
+  "rekvizitai_url": "https://rekvizitai.vz.lt/imone/a_z_prekyba/atsiliepimai/",
+  "rekvizitai_rating": 8.3,
+  "rekvizitai_ratings_count": 19,
+  "rekvizitai_reviews_count": 9,
+  "facts": [
+    "Ergonominiai stalai, kėdės, balansinės kėdės ir priedai; gamyba ir prekyba nuo 2013 m., didžioji dalis gaminių eksportuojama.",
+    "Google Maps profilio nėra (tikrinta 2026-11-11: paieška pagal pavadinimą, telefoną ir adresą).",
+    "Konkurentai Google Maps: Trukmė 4,5★ (94), Ergolain 4,9★ (42), Ergostalas 5,0★ (36).",
+    "Rekvizitai.lt: 8,3/10 iš 19 įvertinimų, 9 atsiliepimai; atitikimas patvirtintas telefonu.",
+    "Savininko nurodymas: laiške ir demo naudoti tik „Ergonomic.lt“, juridinio pavadinimo neminėti."
+  ],
+  "angle": "Rekvizitai.lt vertina gerai, bet Google žemėlapiuose jų nėra, o konkurentai ten turi 36–94 atsiliepimus. Puslapis jau dabar renka gerus atsiliepimus į Rekvizitai.lt, o Google profilį susikurs pagal instrukciją.",
+  "sources": [
+    "https://ergonomic.lt/",
+    "https://ergonomic.lt/ergonominiu-baldu-gamyba-2/",
+    "https://rekvizitai.vz.lt/imone/a_z_prekyba/atsiliepimai/",
+    "https://www.google.com/maps/search/ergonomic.lt"
+  ],
+  "email_draft": {
+    "subject": "Ergonomic.lt Google žemėlapiuose",
+    "paragraphs": [
+      "pažiūrėjome, kaip Ergonomic.lt atrodo ieškant internete. Rekvizitai.lt turite 8,3/10 iš 19 įvertinimų, o klientai atsiliepimuose mini profesionalų aptarnavimą. Tačiau Google žemėlapiuose Ergonomic.lt profilio neradome, o ieškant ergonominių kėdžių ar stalų Vilniuje ten rodomi konkurentai su 36–94 atsiliepimais.",
+      "Todėl paruošėme Ergonomic.lt atsiliepimų puslapį su QR kodu: nuorodą galima įdėti į sąskaitą ar pristatymo laišką. Patenkintas klientas nukreipiamas palikti atsiliepimą Rekvizitai.lt, o turintis pastabų pirmiausia parašo Jūsų komandai: darbuotojai gali išspręsti situaciją, kol jis neparašė viešai.",
+      "Per 30 sekundžių pamatysite, kaip tai atrodo klientui:"
+    ],
+    "cta_label": "Peržiūrėti paruoštą puslapį",
+    "closing": "Jei tiks, aktyvuosite vienu paspaudimu: 14 dienų nemokamai, be banko kortelės. Aktyvavus atsiųsime ir nemokamą QR + NFC stovelį.",
+    "guide_text": "Google profilį galite susikurti nemokamai per ~15 min. Susikūrę įklijuosite nuorodą, ir tas pats QR kodas ims vesti į Google."
+  }
+}

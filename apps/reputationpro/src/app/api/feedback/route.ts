@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db, getClient } from '@/lib/db';
-import { feedbackSchema } from '@/lib/validation';
+import { db, getClient, getClientById } from '@/lib/db';
+import { feedbackSchema, notifyRecipients } from '@/lib/validation';
 import { sameOrigin, error, jsonBody, rateLimit } from '@/lib/security';
 import { canCollectFeedback } from '@/lib/entitlements';
 import { sendFeedbackAlert } from '@/lib/clinic-mail';
@@ -20,9 +20,9 @@ export async function POST(req: NextRequest) {
     db().prepare('INSERT INTO internal_feedback(id,client_id,rating,feedback_text,customer_name,customer_phone) VALUES (?,?,?,?,?,?)')
       .run(data.submission_id, client.id, data.rating, data.feedback_text, data.customer_name || '', data.customer_phone || '');
 
-    // Send instant manager email alert for 1-3★ reviews
+    // Instant email to the team: account email + addresses from "Kas gauna pastabas" (ROADMAP K5)
     if (client.email) {
-      sendFeedbackAlert(client.email, client.business_name, {
+      sendFeedbackAlert(notifyRecipients(client, client.parent_id ? getClientById(client.parent_id) : null), client.business_name, {
         rating: data.rating,
         customer_name: data.customer_name,
         customer_phone: data.customer_phone,

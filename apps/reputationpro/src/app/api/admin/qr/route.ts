@@ -15,7 +15,9 @@ export async function GET(req: NextRequest) {
   const principal = await currentPrincipal();
   if (!principal) return error('Prisijunkite.', 401);
   const q = req.nextUrl.searchParams;
-  const client = principal.role === 'clinic' ? getClientById(principal.clientId) : getClient(q.get('slug') || '');
+  // ?slug may be the main profile or one of its branches; access is checked below.
+  const slug = q.get('slug');
+  const client = slug ? getClient(slug) : principal.role === 'clinic' ? getClientById(principal.clientId) : undefined;
   if (!client || !canAccessClient(principal, client.id)) return error('Įmonė nerasta.', 404);
 
   const channel = cleanChannel(q.get('s'));
