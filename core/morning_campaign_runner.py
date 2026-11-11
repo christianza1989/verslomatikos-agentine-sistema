@@ -346,7 +346,7 @@ def build_tracked_email(lead: dict, lead_id: str, demo_url: str = None, google_s
     if cascade_city:
         paragraphs[0] = f"rašome ir Jūsų filialui ({cascade_city}), nes galbūt ankstesnis laiškas nepasiekė atsakingo žmogaus. " + paragraphs[0]
     how_title, how_steps = how_it_works(industry, platform)
-    cta_label = f"Pažiūrėti {name} puslapį (30 s)"
+    cta_label = "Peržiūrėti Jūsų puslapį (30 s)"  # always grammatical, any business name
 
     case = subject_case(google_stats, no_google, cities)
     variant = variant if variant in SUBJECT_VARIANTS else subject_variant(lead_id)

@@ -106,21 +106,28 @@ def google_paragraphs(name: str, industry: str, rating: float, count: int, resea
             break
     target = projected_rating(rating, count, pace, months)
     total = count + pace * months
+    growth = round((total - count) / count * 100) if count else 0
     if target - rating >= 0.05:
         p2 = (f"Paskaičiavome: jei kas mėnesį atsiliepimą paliktų {satisfied(pace, many)}, "
-              f"{_period(months)} turėtumėte apie {_r(target)}★ ir {reviews_acc(total)}.")
+              f"{_period(months)} turėtumėte apie {_r(target)}★ ir {reviews_acc(total)} (+{growth} %).")
+    elif total >= count * 1.8:
+        p2 = (f"Paskaičiavome: jei kas mėnesį atsiliepimą paliktų {satisfied(pace, many)}, "
+              f"{_period(months)} atsiliepimų būtų beveik dvigubai daugiau: {total} vietoj {count}, o {_r(rating)}★ išliktų.")
     else:
         p2 = (f"Paskaičiavome: jei kas mėnesį atsiliepimą paliktų {satisfied(pace, many)}, "
-              f"{_period(months)} turėtumėte {reviews_acc(total)} ir išlaikytumėte {_r(rating)}★ lygį.")
+              f"{_period(months)} atsiliepimų padaugėtų {growth} %: {total} vietoj {count}, o {_r(rating)}★ išliktų.")
     return [p1, p2]
 
 
 def no_google_paragraphs(name: str, industry: str, rk_rating=None, rk_count=None) -> list:
     """Paragraphs for a business WITHOUT a Google profile (reviews go to Rekvizitai.lt for now)."""
-    p1 = f"Ieškodami Google žemėlapiuose {name} neradome"
-    p1 += (f", nors Rekvizitai.lt turite {_r(rk_rating)}/10 iš {rk_count} įvertinimų. " if rk_rating and rk_count else ". ")
-    p1 += "Ieškantys Google žemėlapiuose mato tik tas įmones, kurios ten turi žvaigždučių ir atsiliepimų."
-    p2 = ("Gera žinia: pradėti galima jau šiandien. Kol susikursite Google profilį (nemokamai, apie 15 min., paruošėme instrukciją), "
+    if rk_rating and rk_count:
+        good = "puikų " if float(rk_rating) >= 8 else ""
+        p1 = f"Rekvizitai.lt {name} turi {good}{_r(rk_rating)}/10 iš {rk_count} įvertinimų, bet Google žemėlapiuose Jūsų profilio neradome."
+    else:
+        p1 = f"Google žemėlapiuose {name} profilio neradome."
+    p1 += " Ten ieškantys mato tik tas įmones, kurios turi žvaigždučių ir atsiliepimų."
+    p2 = ("Gera žinia: pradėti galima jau šiandien. Kol susikursite Google profilį (nemokamai, apie 15 min.), "
           "patenkinti klientai bus nukreipiami į Jūsų Rekvizitai.lt, o vėliau tas pats QR kodas ims vesti į Google.")
     return [p1, p2]
 
@@ -131,7 +138,7 @@ def how_it_works(industry: str, platform: str = "Google") -> tuple:
     return ("Kaip tai veikia (viskas jau paruošta, nieko diegti nereikia):", [
         f"{one.capitalize()} nuskenuoja QR kodą {where} arba gauna nuorodą SMS žinute.",
         f"Įvertina 4–5★ – vienu paspaudimu palieka atsiliepimą {platform}.",
-        f"Įvertina 1–3★ – pastaba pirmiausia ateina Jūsų komandai, o ne į {platform}, ir galite išspręsti situaciją, kol {one} neparašė viešai.",
+        f"Įvertina 1–3★ – pastaba pirmiausia ateina Jūsų komandai, kad galėtumėte išspręsti, kol {one} neparašė viešai.",
     ])
 
 
