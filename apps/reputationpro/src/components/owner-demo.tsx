@@ -44,15 +44,27 @@ export function OwnerDemo(p: Props) {
     : null;
 
   return <div className="od-shell">
-    <header className="od-bar">
-      <div className="od-bar-text">
-        <strong>{p.personal ? `Sveiki, ${p.name}!` : 'ReputationPro demonstracija'}</strong>
-        <span>{p.personal ? 'Tai Jūsų jau paruoštas atsiliepimų puslapis. Išbandykite jį kaip klientas.' : `Pavyzdinis „${p.name}“ atsiliepimų puslapis.`}</span>
-      </div>
-      <a className="btn btn-primary od-bar-cta" href={p.claimHref}>{p.personal ? 'Aktyvuoti nemokamai' : 'Išbandyti nemokamai'} <ArrowRight size={16}/></a>
+    {/* Verslomatika site header (same brand and menu as verslomatika.lt) */}
+    <header className="vm-header">
+      <a href="https://verslomatika.lt/" className="vm-brand" aria-label="Verslomatika pradžia">
+        <svg width="30" height="30" viewBox="0 0 34 34" aria-hidden="true">
+          <path d="M1.8 7.5h9.4l6.2 18.6-2.5 5H9.7z" fill="#6545ca"/>
+          <path d="M13 5h9.6l5.4 15.7h-9.5z" fill="#4d31b0"/>
+          <path d="M22.5 1.8h7.4l2.9 8.2h-7.3z" fill="#8c72ea"/>
+        </svg>
+        <strong>Verslomatika</strong><i/><b>ReputationPro</b>
+      </a>
+      <nav className="vm-nav" aria-label="Verslomatika">
+        <a href="https://verslomatika.lt/sprendimai/">Sprendimai</a>
+        <a href="https://verslomatika.lt/industrijos/">Veiklos sritys</a>
+        <a href="https://verslomatika.lt/verslo-augimo-irankiai/">Augimo įrankiai</a>
+        <a href="https://verslomatika.lt/kontaktai/">Kontaktai</a>
+      </nav>
+      <a className="btn btn-primary vm-header-cta" href={p.claimHref}>{p.personal ? 'Aktyvuoti nemokamai' : 'Išbandyti nemokamai'} <ArrowRight size={16}/></a>
     </header>
 
     <section className="od-hero">
+      <span className="od-greeting">{p.personal ? `Sveiki, ${p.name}! Tai Jūsų jau paruoštas atsiliepimų puslapis.` : `Pavyzdinis „${p.name}“ atsiliepimų puslapis`}</span>
       <h1>Taip atrodytų <span>{p.name}</span> atsiliepimų sistema</h1>
       <p>Taip Jūsų atsiliepimų puslapį matys {who.one} telefone. Paspauskite žvaigždutę ir išbandykite.</p>
     </section>
@@ -74,6 +86,49 @@ export function OwnerDemo(p: Props) {
       </div>
 
     </div>
+
+    {/* Why it matters: the problem in one glance */}
+    <section className="od-section od-why">
+      <span className="od-eyebrow">Kodėl tai svarbu</span>
+      <h2>Patenkinti {who.many} tyli. Nepatenkinti – rašo.</h2>
+      <div className="od-why-grid">
+        <div className="od-why-card"><b>Pirmas žvilgsnis</b><p>renkantis paslaugų teikėją dažniausiai krenta į Google reitingą ir atsiliepimų skaičių.</p></div>
+        <div className="od-why-card"><b>Tylūs</b><p>patenkinti {who.many} retai patys sugalvoja parašyti atsiliepimą – jų tiesiog niekas nepaprašo.</p></div>
+        <div className="od-why-card"><b>Garsūs</b><p>nusivylę rašo dažniau, todėl Jūsų Google reitingas atspindi ne tikrą darbo kokybę.</p></div>
+      </div>
+    </section>
+
+    {/* How it works: two paths */}
+    <section className="od-section od-how">
+      <span className="od-eyebrow">Kaip veikia</span>
+      <h2>Vienas puslapis – du keliai</h2>
+      <div className="od-how-grid">
+        <div className="od-how-card od-how-good">
+          <span className="od-how-badge">4–5 ★</span>
+          <h3>Daugiau 5★ atsiliepimų Google</h3>
+          <p>Patenkintam {who.dat} padėkojame ir vienu mygtuku nukreipiame į Jūsų Google atsiliepimų formą. Užtrunka mažiau nei minutę.</p>
+        </div>
+        <div className="od-how-card od-how-care">
+          <span className="od-how-badge">1–3 ★</span>
+          <h3>Pastabos pirmiausia ateina Jums</h3>
+          <p>{who.one.charAt(0).toUpperCase() + who.one.slice(1)} gali parašyti tiesiai vadovui. Žinutė ir el. laiškas Jus pasiekia iškart – galite paskambinti ir išspręsti situaciją.</p>
+        </div>
+      </div>
+    </section>
+
+    {/* What you get */}
+    <section className="od-section od-get">
+      <span className="od-eyebrow">Ką gaunate</span>
+      <h2>Viskas paruošta – tereikia pasidalinti nuoroda</h2>
+      <ul className="od-get-list">
+        <li><CheckCircle2 size={18}/><div><b>Asmeninis atsiliepimų puslapis</b><span>Su Jūsų pavadinimu, veikia telefone be programėlių.</span></div></li>
+        <li><CheckCircle2 size={18}/><div><b>QR kodas ir nuoroda</b><span>Registratūrai, kasai, sąskaitoms, SMS ar el. laiškams po vizito.</span></div></li>
+        <li><CheckCircle2 size={18}/><div><b>Momentinis pranešimas</b><span>Kai {who.one} palieka pastabą, iškart gaunate el. laišką su kontaktu.</span></div></li>
+        <li><CheckCircle2 size={18}/><div><b>Valdymo skydelis</b><span>Visos pastabos, įvertinimai ir paruošti tekstai klientams vienoje vietoje.</span></div></li>
+        <li><CheckCircle2 size={18}/><div><b>Lietuviškai ir paprastai</b><span>Nereikia jokių nustatymų – Google nuoroda jau susieta.</span></div></li>
+        <li><CheckCircle2 size={18}/><div><b>Jūsų sprendimas</b><span>Skydelyje pasirinksite, ar po žemo įvertinimo rodyti ir viešą Google nuorodą.</span></div></li>
+      </ul>
+    </section>
 
     {projection && <section className="od-section od-numbers">
       <div><span className="od-kicker"><TrendingUp size={15}/> Jūsų Google profilis šiandien</span><strong>{fmt(p.googleRating!)}★</strong><small>iš {p.googleReviews} atsiliepimų</small></div>
@@ -106,6 +161,16 @@ export function OwnerDemo(p: Props) {
       </div>
     </section>
 
+    <section className="od-section od-faq">
+      <span className="od-eyebrow">Dažni klausimai</span>
+      <h2>Prieš pradedant</h2>
+      <details><summary>Ar klientams reikia programėlės?</summary><p>Ne. Puslapis atsidaro telefone nuskenavus QR kodą arba paspaudus nuorodą SMS ar el. laiške.</p></details>
+      <details><summary>Kiek laiko užtrunka pradėti?</summary><p>Apie minutę: puslapis, QR kodas ir Google nuoroda jau paruošti. Liko sugalvoti slaptažodį.</p></details>
+      <details><summary>Kas mato privačias pastabas?</summary><p>Tik Jūs – savo valdymo skydelyje ir el. pašte. Niekur viešai jos neskelbiamos.</p></details>
+      <details><summary>Ar klientas vis tiek gali parašyti Google?</summary><p>Taip, visada. Sistema tik paprašo atsiliepimo tinkamu momentu ir duoda galimybę pirmiausia parašyti Jums.</p></details>
+      <details><summary>Kas bus po 14 dienų?</summary><p>Nieko automatiškai neapmokestiname. Jei sistema patiks, pasiūlysime planą nuo 29 €/mėn., be ilgalaikių sutarčių.</p></details>
+    </section>
+
     <section className="od-section od-final">
       <h2>Pradėkite šiandien – 14 dienų nemokamai</h2>
       <ul>
@@ -117,7 +182,38 @@ export function OwnerDemo(p: Props) {
       <p className="od-alt">Turite klausimų? <a href={`mailto:tomas@verslomatika.lt?subject=${encodeURIComponent(`ReputationPro – ${p.name}`)}`}><Send size={13}/> Parašykite Tomui</a> – atsakome tą pačią darbo dieną.</p>
     </section>
 
-    <footer className="od-footer">Šį demonstracinį puslapį paruošė Verslomatika (MB Pinet). Čia įvesti duomenys niekur nesaugomi ir niekam nesiunčiami.</footer>
+    {/* Verslomatika site footer */}
+    <footer className="vm-footer">
+      <div className="vm-footer-inner">
+        <div className="vm-footer-brand">
+          <a href="https://verslomatika.lt/" className="vm-brand vm-brand-light">
+            <svg width="28" height="28" viewBox="0 0 34 34" aria-hidden="true">
+              <path d="M1.8 7.5h9.4l6.2 18.6-2.5 5H9.7z" fill="#8c72ea"/>
+              <path d="M13 5h9.6l5.4 15.7h-9.5z" fill="#6545ca"/>
+              <path d="M22.5 1.8h7.4l2.9 8.2h-7.3z" fill="#b8a6ff"/>
+            </svg>
+            <strong>Verslomatika</strong>
+          </a>
+          <p>Verslo procesų automatizavimas ir augimo įrankiai Lietuvos įmonėms.</p>
+          <a href="mailto:info@pinet.lt">info@pinet.lt</a>
+        </div>
+        <div className="vm-footer-col"><b>Produktai</b>
+          <a href="https://verslomatika.lt/reputacija/">ReputationPro</a>
+          <a href="https://verslomatika.lt/verslo-augimo-irankiai/">Verslo augimo įrankiai</a>
+          <a href="https://verslomatika.lt/agentai/">Agentai</a>
+        </div>
+        <div className="vm-footer-col"><b>Įmonė</b>
+          <a href="https://verslomatika.lt/sprendimai/">Sprendimai</a>
+          <a href="https://verslomatika.lt/apie-mus/">Apie mus</a>
+          <a href="https://verslomatika.lt/kontaktai/">Kontaktai</a>
+        </div>
+        <div className="vm-footer-col"><b>Informacija</b>
+          <a href="https://verslomatika.lt/privatumas/">Privatumas</a>
+          <a href="https://verslomatika.lt/salygos/">Naudojimo sąlygos</a>
+        </div>
+      </div>
+      <div className="vm-footer-bottom">© {new Date().getFullYear()} Verslomatika · MB Pinet, įm. k. 306067365. Šiame demonstraciniame puslapyje įvesti duomenys niekur nesaugomi ir niekam nesiunčiami.</div>
+    </footer>
 
     <div className="od-mobile-cta"><a className="btn btn-primary btn-full" href={p.claimHref}>{p.personal ? 'Aktyvuoti nemokamai' : 'Išbandyti nemokamai'} <ArrowRight size={16}/></a></div>
   </div>;
