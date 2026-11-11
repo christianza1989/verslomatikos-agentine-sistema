@@ -279,6 +279,16 @@ Principai:
 - [ ] **F1. `verslomatika.lt/reputacija/` pažadai = realus produktas.** Integracijos (Shopify, Woo, PrestaShop, OpenCart, Omniva/DPD, Webhook API), SMS ir Trustpilot pažymėti „Netrukus“ arba pašalinti. Skaičiuoklės skaičiai tikroviški. ⚠️ Šaltinis edge worker'io repo.
 - [ ] **F2. Socialinis įrodymas:** 3–5 pilotiniai klientai (nemokamai 2 mėn. mainais į atsiliepimą ir skaičius).
 
+### Etapas L: naujų įmonių rinktuvas (2026-11-11, kodas paruoštas, LAUKIA `GOOGLE_PLACES_API_KEY`)
+
+Kodėl: senuose kataloguose (326 įrašai) **115 adresų yra neegzistuojančiuose domenuose** (sugalvoti), o **nė vienas įrašas neturi patikrinto Google place ID**. Senas `resolve_google_place_id()` Maps HTML dabar gauna consent puslapį, Rekvizitai.lt saugo Cloudflare patikra (apeidinėti negalima). Todėl be rinktuvo tikras siuntimas beveik visus įrašus praleidžia (`needs_review`).
+
+- [x] **L1. `core/lead_harvester.py`:** oficialus Google Places API (New) Text Search (nišos × 20 miestų, iki 60 rezultatų užklausai) → pavadinimas, reitingas, atsiliepimų skaičius, place ID, svetainė, telefonas; el. paštas iš įmonės svetainės (tik to paties domeno, kitaip laisvas paštas; sertifikatų tikrinimas neišjungiamas). Dublikatai šalinami pagal el. paštą, place ID, domeną. Rezultatas `data/leads/harvested.json` (Git-ignored). Komandos: `status`, `run --max-requests=40`, `run --target=1100` (mėnesio atsarga), `email <url>`, `lookup "Pavadinimas" Miestas <url>`.
+- [x] **L2. Prijungta:** `multi_niche_lead_pool` ima surinktus pirmiausia (klinikoms nišos odontologija/veterinarija/medicina); `provision_lead_in_db` įrašo reitingą ir skaičių (→ segmento laiškas C6); seniems įrašams be place ID `places_lookup()` (priimama tik sutapus svetainės domenui). Demonas kartą per parą (nuo 03:00) paleidžia `harvest()` (`HARVEST_MAX_REQUESTS`, numatyta 40).
+- [x] **L3. Apsauga nuo atšokusių laiškų:** `email_domain_exists()` prieš siuntimą; neegzistuojantis domenas → `campaign_suppressions.reason='bad_address'`.
+- [ ] **L4. Savininkas:** Google Cloud įjungti „Places API (New)“, sukurti atskirą raktą (apriboti tik Places API), `setx GOOGLE_PLACES_API_KEY "..."`. Tada `python core/lead_harvester.py run --target=1100`. Kaina: Text Search su reitingu/svetaine = Enterprise SKU, ~1 000 užklausų/mėn. nemokamai; mėnesio atsargai reikia ~200–400 užklausų.
+- [ ] **L5. Agentai kitoms nišoms** (grožis, auto, horeca): aktyvuoti Kamilę/Justą `AGENT_PROFILES`, kai bus jų pašto dėžučių configai.
+
 ### Etapas G: apmokėjimai (PASKUTINIS, savininko sprendimas Nr. 2)
 
 - [ ] **G1. Kainodaros supaprastinimas** (rekomendacija audite §P1-6: vienas planas 49 €/mėn. arba 490 €/m.).

@@ -12,6 +12,7 @@ from core.ecommerce_lead_pool import ECOMMERCE_LEADS_CATALOG
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DB_PATH = os.path.join(BASE_DIR, "apps", "reputationpro", "data", "reputation.db")
 MASTER_LEADS_PATH = os.path.join(BASE_DIR, "data", "b2b_leads_master.json")
+HARVESTED_PATH = os.path.join(BASE_DIR, "data", "leads", "harvested.json")  # core/lead_harvester.py (Etapas L)
 
 def load_master_leads() -> List[Dict[str, Any]]:
     if not os.path.exists(MASTER_LEADS_PATH):
@@ -23,6 +24,19 @@ def load_master_leads() -> List[Dict[str, Any]]:
         print(f"[Lead Pool Load Error] {e}")
         return []
 
+def load_harvested_leads() -> List[Dict[str, Any]]:
+    """Businesses found by core/lead_harvester.py (Google Places + own website email). Verified place ID,
+    rating and review count travel with the lead, so the first email uses the segment copy (C6)."""
+    if not os.path.exists(HARVESTED_PATH):
+        return []
+    try:
+        with open(HARVESTED_PATH, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception as e:
+        print(f"[Harvested Load Error] {e}")
+        return []
+
+
 def get_uncontacted_leads_for_agent(target_industry: str, limit: int = 25, agent_id: str = "") -> List[Dict[str, Any]]:
     """
     Grąžina paruoštus, dar nekontaktuotus kontaktus pagal agento industriją.
@@ -32,11 +46,13 @@ def get_uncontacted_leads_for_agent(target_industry: str, limit: int = 25, agent
     already_contacted = get_already_contacted_emails()
     raw_pool = []
     ind = target_industry.lower()
-    master = load_master_leads()
+    # Harvested first: verified review link + real rating; old catalogs after them.
+    master = load_harvested_leads() + load_master_leads()
 
     if ind in ("clinic", "dental"):
+        raw_pool.extend([l for l in master if l.get("source") == "google_places" and l.get("niche") in ("odontologija", "veterinarija", "medicina")])
         raw_pool.extend(DENTAL_CLINICS_CATALOG)
-        raw_pool.extend([l for l in master if l.get("niche") in ("odontologija", "veterinarija")])
+        raw_pool.extend([l for l in master if l.get("source") != "google_places" and l.get("niche") in ("odontologija", "veterinarija", "medicina")])
     elif ind in ("ecommerce", "ecom"):
         raw_pool.extend(ECOMMERCE_LEADS_CATALOG)
         raw_pool.extend([l for l in master if l.get("niche") in ("baldai", "dovanos")])
@@ -84,6 +100,9 @@ def get_uncontacted_leads_for_agent(target_industry: str, limit: int = 25, agent
             "qr_url": f"https://reputacija.verslomatika.lt/api/qr?slug={slug}",
             "claim_url": f"https://reputacija.verslomatika.lt/checkout?slug={slug}"
         }
+        for k in ("phone", "google_place_id", "google_review_url", "google_rating", "google_reviews_count", "source"):
+            if item.get(k) not in (None, ""):
+                lead_obj[k] = item[k]
         fresh.append(lead_obj)
         seen_in_batch.add(batch_key)
 
@@ -102,7 +121,7 @@ def all_catalog_leads() -> List[Dict[str, Any]]:
     """Every lead from every catalog (Etapas N): a company's branches may sit in different
     niche lists (e.g. Melga Kaunas in the e-commerce catalog, Vilnius in auto services)."""
     out, seen = [], set()
-    for item in list(DENTAL_CLINICS_CATALOG) + list(ECOMMERCE_LEADS_CATALOG) + load_master_leads():
+    for item in list(DENTAL_CLINICS_CATALOG) + list(ECOMMERCE_LEADS_CATALOG) + load_master_leads() + load_harvested_leads():
         email = (item.get("email") or "").strip().lower()
         if "@" not in email:
             continue

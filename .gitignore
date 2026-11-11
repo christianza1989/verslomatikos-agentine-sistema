@@ -119,3 +119,8 @@ verify_token.py
 # Sugeneruotos gyvo Cloudflare worker'io kopijos (~18 MB, tik šiame PC)
 verslomatika_v2_live.js
 verslomatika_v2_updated.js
+
+# Lead harvester output (business contacts) – core/lead_harvester.py
+data/leads/harvested.json
+data/leads/harvest_state.json
+data/leads/*.tmp

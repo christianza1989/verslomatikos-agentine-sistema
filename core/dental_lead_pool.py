@@ -956,6 +956,14 @@ def provision_lead_in_db(lead: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         review_url = lead.get("google_review_url") or (existing["google_review_url"] if existing else None)
         from core.claim_tokens import is_direct_review_url
         if not review_url or not is_direct_review_url(review_url):
+            # Etapas L: official Places API (name + city, proven by website domain) – the Maps HTML lookup is dead.
+            from core.lead_harvester import places_lookup
+            found = places_lookup(b_name, city, lead.get("website", ""))
+            if found:
+                review_url = found["google_review_url"]
+                for k, v in found.items():
+                    lead.setdefault(k, v)
+        if not review_url or not is_direct_review_url(review_url):
             # Google first; without a Google profile a Rekvizitai.lt page proven by phone/website (Etapas R).
             review_url, _platform, rk_info = get_review_destination(b_name, city, lead.get("phone"), lead.get("website"))
             if rk_info:  # laiškui: „Rekvizitai.lt turite 8,3/10 iš 19 įvertinimų“
@@ -970,6 +978,12 @@ def provision_lead_in_db(lead: Dict[str, Any]) -> Optional[Dict[str, Any]]:
             cur.execute("""
                 UPDATE clients SET business_name=?, google_review_url=?, industry=? WHERE id=? AND is_demo=1
             """, (b_name, review_url, industry, existing["id"]))
+        if lead.get("google_place_id") or lead.get("google_rating"):
+            # Etapas L: harvested from Google Places – real rating/count for the segment email (C6)
+            cur.execute("""UPDATE clients SET google_place_id=COALESCE(?, google_place_id), google_rating=COALESCE(?, google_rating),
+                           google_reviews_count=COALESCE(?, google_reviews_count), phone=CASE WHEN phone='' OR phone IS NULL THEN ? ELSE phone END
+                           WHERE slug=? AND is_demo=1""",
+                        (lead.get("google_place_id"), lead.get("google_rating"), lead.get("google_reviews_count"), lead.get("phone") or "", slug))
         conn.commit()
         cur.execute("SELECT * FROM clients WHERE slug=? OR email=?", (slug, email))
         row = cur.fetchone()

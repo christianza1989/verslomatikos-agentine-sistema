@@ -502,11 +502,30 @@ def _run_cascades(conn: sqlite3.Connection, agent: dict, sender, budget: int, dr
     return sent
 
 
+def email_domain_exists(email: str) -> bool:
+    """DNS check of the address's domain (A/AAAA; mail falls back to A without MX). Network errors count as OK."""
+    import socket
+    domain = email.rsplit("@", 1)[-1]
+    if domain.endswith(".invalid"):
+        return True  # owner test profiles never deliver to the record address
+    try:
+        socket.getaddrinfo(domain, None)
+        return True
+    except socket.gaierror as e:
+        return e.errno not in (socket.EAI_NONAME, getattr(socket, "EAI_NODATA", -5), 11001, 11004)
+    except OSError:
+        return True
+
+
 def prepare_lead(conn: sqlite3.Connection, lead: dict):
     """Paruošia lead'ą siuntimui. Grąžina (client_row, priežastis_praleisti)."""
     email = lead["email"].strip().lower()
     if is_suppressed(conn, email):
         return None, "suppressed"
+    if not email_domain_exists(email):
+        # 2026-11-11: 115 of 326 old catalog addresses were on domains that do not exist; bounces hurt delivery.
+        suppress(conn, email, "bad_address", "El. pašto domenas neegzistuoja (DNS)")
+        return None, "bad_address"
     client = provision_lead_in_db(lead)
     if not client:
         return None, "provision_failed"
@@ -566,7 +585,11 @@ def dispatch_daily_quota(target_agent_id: str = "agent-tomas", force_count: int 
         city = lead.get("city", "Vilnius")
 
         if dry_run:
-            client = {"id": "preview", "is_demo": 1, "industry": lead.get("industry"), "google_rating": None, "google_reviews_count": None}
+            if not email_domain_exists(to_email):
+                print(f"    ↷ Praleista {b_name} ({to_email}): bad_address")
+                continue
+            client = {"id": "preview", "is_demo": 1, "industry": lead.get("industry"),
+                      "google_rating": lead.get("google_rating"), "google_reviews_count": lead.get("google_reviews_count")}
         else:
             client, skip = prepare_lead(conn, lead)
             if skip:
@@ -650,9 +673,21 @@ def run_daily_morning_daemon(target_hour: int = 8, target_minute: int = 30):
     """Kiekvieną rytą (08:30) užpildo aktyvių agentų dienos kvotą. Tikrina kas 10 min."""
     print(f"[{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] 🕒 Rytinio B2B siuntimo demonas paleistas.")
     print(f"Siuntimo laikas: kasdien {target_hour:02d}:{target_minute:02d}. Agentai: {[a['email'] for a in AGENT_PROFILES if a.get('is_active')]}")
+    harvested_on = None
     while True:
         try:
             now = datetime.datetime.now()
+            # Etapas L: once a day before sending, top up the pool with new businesses (core/lead_harvester.py).
+            if harvested_on != now.date() and now.hour >= 3:
+                harvested_on = now.date()
+                try:
+                    from core.lead_harvester import harvest, HarvestError
+                    res = harvest(max_requests=int(os.environ.get("HARVEST_MAX_REQUESTS", "40")), verbose=False)
+                    print(f"[{now.strftime('%H:%M:%S')}] 🔎 Naujų įmonių surinkta: {res.get('added')} (iš viso {res.get('total')})")
+                except HarvestError as e:
+                    print(f"[{now.strftime('%H:%M:%S')}] 🔎 Rinktuvas praleistas: {e}")
+                except Exception as e:
+                    print(f"[{now.strftime('%H:%M:%S')}] 🔎 Rinktuvo klaida: {e}")
             for agent in AGENT_PROFILES:
                 if not agent.get("is_active"):
                     continue
@@ -729,25 +764,34 @@ def guide_url(slug: str) -> str:
 
 
 def build_custom_email(draft: dict, lead_id: str, demo_url: str, sender_name: str = None, sender_email: str = None,
-                       guide: str = None) -> tuple:
+                       guide: str = None, industry: str = "services", platform: str = "Google") -> tuple:
     """Individualus laiškas pagal agento tyrimą (data/leads/research/*.json → email_draft). Tas pats stilius ir vienas CTA.
 
-    guide: Google profilio instrukcijos URL (Etapas R6) – antraeilė teksto nuoroda po CTA, ne antras mygtukas.
-    Teksto eilutė imama iš draft["guide_text"].
+    Same C6 frame as automatic emails: researched paragraphs, then the 3-step „Kaip tai veikia“ box,
+    one CTA, OFFER (closing may override). guide: Google profile guide URL (Etapas R6), text link only.
     """
+    from core.email_copy import how_it_works, OFFER
     e = html_lib.escape
     s_name = sender_name or SENDER_NAME
     s_email = sender_email or SENDER_EMAIL
     paragraphs = draft["paragraphs"]
-    closing = draft.get("closing", "Jei tiks, paskyrą aktyvuosite vienu paspaudimu: 14 dienų nemokamai, be banko kortelės.")
+    closing = draft.get("closing") or OFFER
+    cta_label = draft.get("cta_label") or "Peržiūrėti Jūsų puslapį (30 s)"
+    how_title, how_steps = how_it_works(industry, platform)
     ps = "P.S. Jei neaktualu, tiesiog atsakykite „ne“ ir daugiau nerašysime."
     cta_url = f"{APP_BASE}/api/track/click?id={urllib.parse.quote(lead_id)}&to={urllib.parse.quote(demo_url, safe='')}"
     track_open_url = f"{APP_BASE}/api/track/open?id={urllib.parse.quote(lead_id)}"
     guide_text = draft.get("guide_text") if guide else None
-    text = ("Laba diena,\n\n" + "\n\n".join(paragraphs) + f"\n{cta_url}\n\n{closing}\n\n"
+    text = ("Laba diena,\n\n" + "\n\n".join(paragraphs) + "\n\n"
+            + how_title + "\n" + "\n".join(f"{i}. {st}" for i, st in enumerate(how_steps, 1)) + "\n\n"
+            + f"{cta_label}:\n{cta_url}\n\n{closing}\n\n"
             + (f"{guide_text}\n{guide}\n\n" if guide_text else "")
             + f"{s_name}\nVerslomatika · {s_email}\n\n{ps}\n")
-    body = "".join(f'<p style="margin:0 0 14px;">{e(p)}</p>' for p in paragraphs)
+    steps_html = "".join(f'<li style="margin:0 0 6px;">{e(st)}</li>' for st in how_steps)
+    body = "".join(f'<p style="margin:0 0 14px;">{e(p)}</p>' for p in paragraphs) + (
+        f'<div style="margin:4px 0 18px;padding:14px 16px;background:#f5f3ff;border-radius:10px;">'
+        f'<p style="margin:0 0 8px;font-weight:600;color:#312e81;">{e(how_title)}</p>'
+        f'<ol style="margin:0;padding-left:20px;">{steps_html}</ol></div>')
     guide_html = (f'<p style="margin:0 0 18px;">{e(guide_text)} <a href="{e(guide)}" style="color:#5636E8;">Instrukcija čia</a>.</p>'
                   if guide_text else "")
     html = f"""<!DOCTYPE html>
@@ -756,7 +800,7 @@ def build_custom_email(draft: dict, lead_id: str, demo_url: str, sender_name: st
 <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.6;color:#1e293b;max-width:560px;padding:8px 4px;">
 <p style="margin:0 0 14px;">Laba diena,</p>
 {body}
-<p style="margin:4px 0 20px;"><a href="{e(cta_url)}" style="display:inline-block;background:#5636E8;color:#ffffff;text-decoration:none;font-weight:600;padding:12px 20px;border-radius:8px;">{e(draft.get('cta_label', 'Peržiūrėti paruoštą puslapį'))} →</a></p>
+<p style="margin:4px 0 20px;"><a href="{e(cta_url)}" style="display:inline-block;background:#5636E8;color:#ffffff;text-decoration:none;font-weight:600;padding:12px 20px;border-radius:8px;">{e(cta_label)} →</a></p>
 <p style="margin:0 0 18px;">{e(closing)}</p>
 {guide_html}
 <p style="margin:0 0 18px;">{e(s_name)}<br><span style="color:#64748b;">Verslomatika · <a href="mailto:{e(s_email)}" style="color:#64748b;">{e(s_email)}</a></span></p>
@@ -841,7 +885,8 @@ def send_researched(brief_path: str, send: bool = False, test_to: str = None) ->
     guide = guide_url(slug) if platform == "rekvizitai" else None
 
     if not send:
-        subj, text, html = build_custom_email(brief["email_draft"], lead_id, f"{APP_BASE}/r/{slug}?k=PERZIURA", guide=guide)
+        subj, text, html = build_custom_email(brief["email_draft"], lead_id, f"{APP_BASE}/r/{slug}?k=PERZIURA", guide=guide,
+                                             industry=lead["industry"], platform="Rekvizitai.lt" if platform == "rekvizitai" else "Google")
         out = os.path.join(BASE_DIR, "data", "reports", "email_previews", f"{slug}.html")
         os.makedirs(os.path.dirname(out), exist_ok=True)
         with open(out, "w", encoding="utf-8") as f:
@@ -853,7 +898,8 @@ def send_researched(brief_path: str, send: bool = False, test_to: str = None) ->
     token = issue_claim_token(conn, client["id"])
     agent = AGENT_PROFILES[0]
     subj, text, html = build_custom_email(brief["email_draft"], lead_id, f"{APP_BASE}/r/{urllib.parse.quote(slug)}?k={token}",
-                                          agent["name"], agent["email"], guide=guide)
+                                          agent["name"], agent["email"], guide=guide,
+                                          industry=lead["industry"], platform="Rekvizitai.lt" if platform == "rekvizitai" else "Google")
     sender = SMTPEmailSender(config_path=agent["config_path"])
     ok = sender.send_email(to_email=deliver_to, subject=subj, body_text=text, body_html=html,
                            headers={"List-Unsubscribe": f"<mailto:{agent['email']}?subject=Atsisakau>"})
