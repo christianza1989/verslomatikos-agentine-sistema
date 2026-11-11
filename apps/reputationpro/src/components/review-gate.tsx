@@ -13,6 +13,8 @@ type Props = {
   googleUrl: string;
   /** Owner's choice (dashboard setting `show_public_link_low`): show the public Google link after 1–3★. */
   showPublicLow: boolean;
+  /** Sharing channel from the link (?s=kvitas …), stored with the rating to show which channel works. */
+  source?: string | null;
   /** 'demo' = prospect exploring their prepared page: nothing leaves the page and no emails are sent. */
   mode?: 'live' | 'demo';
   /** Render only the card (used inside the owner demo's phone frame). */
@@ -20,7 +22,7 @@ type Props = {
   onDemoEvent?: (event: DemoEvent) => void;
 };
 
-export function ReviewGate({ slug, name, googleUrl, showPublicLow, mode = 'live', embedded = false, onDemoEvent }: Props) {
+export function ReviewGate({ slug, name, googleUrl, showPublicLow, source = null, mode = 'live', embedded = false, onDemoEvent }: Props) {
   const demo = mode === 'demo';
   const [rating, setRating] = useState<number | null>(null), [hover, setHover] = useState(0), [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState(''), [sent, setSent] = useState(false), [showForm, setShowForm] = useState(false);
@@ -44,7 +46,7 @@ export function ReviewGate({ slug, name, googleUrl, showPublicLow, mode = 'live'
     if (busy) return;
     setProblem(''); setBusy(true);
     try {
-      const res = await fetch('/api/rating', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ slug, rating: n }) });
+      const res = await fetch('/api/rating', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ slug, rating: n, source: source || undefined }) });
       if (!res.ok && !demo) { const data = await res.json().catch(() => ({})); throw new Error(data.error); }
       setRating(n);
       onDemoEvent?.({ kind: 'rating', rating: n });

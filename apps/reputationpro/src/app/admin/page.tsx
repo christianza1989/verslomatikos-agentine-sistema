@@ -25,11 +25,11 @@ import { Brand } from '@/components/brand';
 import { BillingPortal, ClinicForm, ClinicPicker, CopyLink, Logout } from '@/components/admin-controls';
 import { FeedbackInbox } from '@/components/feedback-inbox';
 import { DashboardKPIs } from '@/components/dashboard-kpis';
-import { StandStudio } from '@/components/stand-studio';
+import { QrKit } from '@/components/qr-kit';
 import { OnboardingChecklist } from '@/components/onboarding-checklist';
 import { PublicLinkToggle } from '@/components/public-link-toggle';
 import { isDirectReviewUrl } from '@/lib/validation';
-import { db, getClientById, getClients, getFeedback, getStats } from '@/lib/db';
+import { db, getClientById, getClients, getFeedback, getStats, getSourceStats } from '@/lib/db';
 import { appUrl, currentPrincipal, demoEnabled } from '@/lib/security';
 
 export const dynamic = 'force-dynamic';
@@ -101,19 +101,19 @@ export default async function Admin({
               {stats?.unread ? <b className="sidebar-badge">{stats.unread}</b> : null}
             </a>
 
-            <a href="#stand" className="sidebar-nav-item">
-              <QrCode size={18} /> 
-              <span>Stovelis & QR Studija</span>
+            <a href="#qr" className="sidebar-nav-item">
+              <QrCode size={18} />
+              <span>QR kodai ir nuorodos</span>
             </a>
 
             {clinic && (
               <Link 
-                href={`/admin/stand-print?slug=${clinic.slug}`} 
+                href={`/admin/print?type=stand&slug=${clinic.slug}`} 
                 target="_blank" 
                 className="sidebar-nav-item"
               >
                 <Printer size={18} /> 
-                <span>Spausdinti kortelę</span>
+                <span>Spausdinti QR</span>
               </Link>
             )}
 
@@ -229,15 +229,8 @@ export default async function Admin({
                 googleReviewUrl={clinic.google_review_url} 
               />
 
-              {/* 2. Stand & QR Reception Studio */}
-              <StandStudio 
-                clinicName={clinic.business_name}
-                slug={clinic.slug}
-                qrCodeUrl={qr}
-                patientUrl={url}
-                planStatus={statuses[clinic.subscription_status] || clinic.subscription_status}
-                trialEndsAt={clinic.trial_ends_at}
-              />
+              {/* 2. QR codes and links for every way of sharing (ROADMAP D5) */}
+              <QrKit slug={clinic.slug} name={clinic.business_name} baseUrl={appUrl()} stats={getSourceStats(clinic.id)} />
 
               {/* 3. Main Dashboard Grid: Smart Inbox & Side Analytics */}
               <div className="dashboard-grid">

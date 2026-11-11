@@ -6,6 +6,7 @@ import { OwnerDemo } from '@/components/owner-demo';
 import { canCollectFeedback } from '@/lib/entitlements';
 import { claimTokenClient } from '@/lib/claim';
 import { appUrl } from '@/lib/security';
+import { cleanChannel } from '@/lib/qr-channels';
 
 export const dynamic = 'force-dynamic';
 
@@ -25,15 +26,16 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 // is_demo=0 → the customer-facing review page.
 // is_demo=1 → "owner mode" demo for the prospect (k = one-time claim token from the outbound email).
-export default async function ReviewPage({ params, searchParams }: { params: Promise<{ slug: string }>; searchParams: Promise<{ k?: string; view?: string }> }) {
+export default async function ReviewPage({ params, searchParams }: { params: Promise<{ slug: string }>; searchParams: Promise<{ k?: string; view?: string; s?: string }> }) {
   const { slug } = await params;
-  const { k, view } = await searchParams;
+  const { k, view, s } = await searchParams;
+  const source = cleanChannel(s);
   const client = getClient(slug);
   if (!client && SHOWCASE_ALIASES[slug]) redirect(`/r/${SHOWCASE_ALIASES[slug]}`);
   if (!client || !canCollectFeedback(client)) notFound();
 
   if (!client.is_demo) {
-    return <ReviewGate slug={client.slug} name={client.business_name} googleUrl={client.google_review_url} showPublicLow={!!client.show_public_link_low}/>;
+    return <ReviewGate slug={client.slug} name={client.business_name} googleUrl={client.google_review_url} showPublicLow={!!client.show_public_link_low} source={source}/>;
   }
 
   // Customer preview for a not-yet-activated profile (linked from /aktyvuoti): the real customer page,

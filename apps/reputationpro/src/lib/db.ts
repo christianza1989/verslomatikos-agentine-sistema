@@ -288,6 +288,20 @@ function ensureClientColumns(sql: DatabaseSync) {
     try { sql.exec(`ALTER TABLE clients ADD COLUMN ${name} ${definition}`); }
     catch (error) { if (!/duplicate column/i.test(String(error))) throw error; }
   }
+  // ROADMAP D5.5: which sharing channel (QR on receipt, email signature, …) brought the rating.
+  const ev = new Set(sql.prepare('PRAGMA table_info(review_events)').all().map((row) => String(row.name)));
+  if (!ev.has('source')) {
+    try { sql.exec('ALTER TABLE review_events ADD COLUMN source TEXT'); }
+    catch (error) { if (!/duplicate column/i.test(String(error))) throw error; }
+  }
+}
+
+/** Ratings per sharing channel for the last `days` days (null source = link without a channel tag). */
+export function getSourceStats(clientId: string, days = 90) {
+  const since = new Date(Date.now() - days * 86400000).toISOString();
+  return db().prepare(`SELECT source, COUNT(*) AS total, SUM(CASE WHEN rating>=4 THEN 1 ELSE 0 END) AS positive
+    FROM review_events WHERE client_id=? AND created_at>=? GROUP BY source ORDER BY total DESC`)
+    .all(clientId, since).map((r) => ({ source: (r.source as string | null) ?? null, total: Number(r.total), positive: Number(r.positive || 0) }));
 }
 // SQLite cannot alter a CHECK constraint in place. Migrate the known legacy
 // schema transactionally; preserve every row and reject unknown local changes.

@@ -54,7 +54,7 @@ export function OnboardingChecklist({ slug, businessName, pageUrl, qr, googleOk,
         <p>Pastatykite jį prie kasos ar registratūros, įdėkite į sąskaitas ar vizitines.</p>
         <div className="onb-actions">
           <a className="btn btn-secondary btn-small" href={qr} download={`${slug}-qr.png`} onClick={() => mark({ qr: true })}><Download size={14}/> Atsisiųsti QR</a>
-          <a className="btn btn-secondary btn-small" href={`/admin/stand-print?slug=${encodeURIComponent(slug)}`} onClick={() => mark({ qr: true })}><Printer size={14}/> Spausdinti stovelį</a>
+          <a className="btn btn-secondary btn-small" href={`/admin/print?type=stand&slug=${encodeURIComponent(slug)}`} onClick={() => mark({ qr: true })}><Printer size={14}/> Spausdinti stovelį</a>
         </div>
       </div></li>
       <li className={local.shared ? 'is-done' : ''}><Icon ok={!!local.shared}/><div>

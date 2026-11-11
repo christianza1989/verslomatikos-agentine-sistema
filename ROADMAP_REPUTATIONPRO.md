@@ -125,6 +125,14 @@
 - [ ] **D3. Bandymo laiškų seka** (1 / 3 / 7 / 11 / 13 d.), 11 d. su rezultatų suvestine.
   Failas: naujas `core/trial_nurture_runner.py`.
 
+- [x] **D5. „QR kodai ir nuorodos“ rinkinys skydelyje (2026-11-11).** Klientas vienoje vietoje paruošia QR/nuorodą kiekvienam būdui.
+  - [x] D5.1 Kanalai `src/lib/qr-channels.ts`: `stovelis`, `kvitas`, `vizitine`, `lipdukai`, `parasas`, `sms`, `svetaine`, `nuoroda`. Kiekvieno nuoroda `/r/{slug}?s={kanalas}`.
+  - [x] D5.2 `GET /api/admin/qr?slug&s&format=png|svg&size&style=brand|black`: atsisiuntimas su aiškiu failo vardu (`{slug}-{kanalas}-qr.png`). Juodai baltas skirtas terminiams kvitų spausdintuvams.
+  - [x] D5.3 Spausdinimo lapai `/admin/print?type=stand|poster|labels`: A6 stovelio įdėklas, A4 plakatas, A4 lapas su 12 lipdukų.
+  - [x] D5.4 Kopijuojami dalykai: el. pašto parašas (rich HTML į Gmail/Outlook), SMS tekstas, svetainės mygtuko HTML, nuoroda.
+  - [x] D5.5 Kanalų matavimas: `review_events.source`, `/api/rating` priima `source`, skydelyje rodoma „Iš kur ateina įvertinimai“.
+  - [x] D5.6 `src/components/qr-kit.tsx` pakeičia `StandStudio` skydelyje, šoninis meniu „QR kodai ir nuorodos“ (`#qr`).
+
 ### Etapas E: serveris = šis PC (patikimumas)
 
 - [~] **E1. Automatinis paleidimas po perkrovimo:** Next.js (3000), Cloudflare Tunnel, `morning_campaign_runner.py daemon`, `email_reply_listener.py` (Windows Task Scheduler „At startup“ arba NSSM servisai).
