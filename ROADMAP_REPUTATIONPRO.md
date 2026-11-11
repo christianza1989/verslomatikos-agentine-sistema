@@ -45,9 +45,24 @@
 
 ## 2. Etapai ir užduotys
 
-### ⚡ PIRMAS ŽINGSNIS: įdiegti (kodas paruoštas, bet gyvas serveris dar veikia su sena versija)
+### 🧭 Perėmėjui: nuo ko pradėti (atnaujinta 2026-11-11)
 
-- [ ] **Z1. Įdiegti naują versiją į gyvą serverį.** Visi A–E pakeitimai ir `.env.local` pataisa (A0) įsigalioja tik po build'o ir perkrovimo. Automatinis agento bandymas sustabdyti gyvą procesą buvo užblokuotas saugumo taisyklės, todėl tai daro savininkas:
+Būsena: visas kodas yra GitHub `main` (paskutiniai commit'ai `0c9d207`, `bc006ac`, `4b16873`). Gyva versija paskutinį kartą įdiegta su demo hero (Etapas H). Etapai R, S, K, M, N kode padaryti, bet **gyvai atsiras tik po diegimo** (Z1i). Testai: `npm test` 38/38, `python test_company_groups.py` 17/17.
+
+Prioritetai:
+1. **Z1i:** savininkas paleidžia `deploy-live.ps1` ir greitai patikrina: skydelio „Filialai“, `/google-profilis`, demo hero, `/admin/klientai`.
+2. **R8:** Ergonomic.lt laiškas, kai savininkas duos tikslų gavėjo adresą (`data/leads/research/ergonomic-lt.json`, laukas `email`).
+3. **S5:** savininkas patvirtina, ar VIC ir „Vilniaus Šypsena Pro“ yra tikri klientai.
+4. **Z1e, Z2, Z3, E4:** Marius konfigas, kampanijos įjungimas, automatinis paleidimas, Windows nustatymai (daro savininkas šiame PC).
+5. **D3, D4, B3:** bandymo laiškų seka, el. pašto keitimas skydelyje, Google duomenys.
+6. **A6 + K7 + F:** `verslomatika.lt` edge worker'is (kitas repo, reikia savininko leidimo diegti).
+7. **G + M8:** apmokėjimai ir filialų kainodara (paskutinis etapas, savininko sprendimas Nr. 2).
+
+Darbo taisyklės: AGENTS.md invariantai 1–11. Nekeisti gyvos DB testams; tikrinti su DB kopija (žr. 4 skyrių). Gyvo serverio agentas sustabdyti negali: diegia savininkas.
+
+### ⚡ Diegimas
+
+- [x] **Z1. Įdiegti naują versiją į gyvą serverį.** _(Savininkas diegė kelis kartus 11-05–11-11.)_ Visi A–E pakeitimai ir `.env.local` pataisa (A0) įsigalioja tik po build'o ir perkrovimo. Automatinis agento bandymas sustabdyti gyvą procesą buvo užblokuotas saugumo taisyklės, todėl tai daro savininkas:
   ```powershell
   powershell -ExecutionPolicy Bypass -File E:\Verslomatika\apps\reputationpro\scripts\deploy-live.ps1
   ```
@@ -58,9 +73,10 @@
 - [ ] **D4. El. pašto keitimas skydelyje** (jau aktyvuotiems klientams). Dabar `api/admin/clients` klientui to neleidžia („susisiekite su paslaugos teikėju“). Reikia srauto: naujas adresas → patvirtinimo nuoroda (`clinic_email_tokens` purpose 'verify') → pakeitimas + pranešimas senam adresui.
 - [x] **Z1d. Incidentas 2026-11-10 (Gemini, „tik sukurti agentus“).** Commit 944e410 pakeitė visas laiškų nuorodas į `https://verslomatika.lt/...`, kur atsako SENAS edge worker'is (senas demo, netikra forma), todėl savininkas matė seną versiją (`verslomatika.lt/r/buivydiskiu-veterinarijos-klinika?k=DEMO`). 9f43a55 nuorodas grąžino. Be to, Gemini dirbo KITAME kompiuteryje su atskira DB, todėl jo lead'ų demo/tokenų gyvame serveryje nėra. Pridėtos AGENTS.md taisyklės Nr. 6 ir 7. Memory Casting skaičiai grąžinti (Z1b), nes prognozės pataisa jau gyva.
 - [ ] **Z1e. Marius agento pašto konfigas šiame PC.** Nukopijuoti `configs/reputation_agents/agent_marius.json` (Git ignoruoja) iš kompiuterio, kuriame dirbo Gemini, į `E:\Verslomatika\configs\reputation_agents\`. Be jo Marius naudoja `.example.json` ir negali siųsti. Patikra: `python test_multi_agent_smtp.py`.
-- [ ] **Z1f. Įdiegti 11-06 pataisas** (kliento peržiūra `?view=klientas`, keičiamas el. paštas aktyvuojant): `deploy-live.ps1`. Gyva versija sukurta 11-05 23:16.
+- [x] **Z1f. Įdiegti 11-06 pataisas** (kliento peržiūra `?view=klientas`, keičiamas el. paštas aktyvuojant): `deploy-live.ps1`. Gyva versija sukurta 11-05 23:16.
 - [x] **Z1g. Demo telefonas 1:1 kaip mato klientas (2026-11-10, laukia diegimo).** Standartinės iPhone proporcijos (9:19,5), vidinis slinkimas, Dynamic Island, naršyklės adreso juosta. Po 4–5★ (gyvai, peržiūroje ir demo telefone vienodai) rodoma padėka su prašymu ir vienu mygtuku „Rašyti atsiliepimą Google“, kuris atveria TIKRĄ įmonės Google atsiliepimų formą naujame skirtuke. Automatinio nukreipimo nebėra (savininko sprendimas 2026-11-10). Google formos kitos svetainės viduje rodyti neįmanoma, todėl maketo nenaudojame. Paaiškinimai tik dešinėje, vadovo dėžutėje. `?view=klientas` po 5★ nukreipia į tikrą Google formą.
 - [x] **Z1h. Neveikiančios Google nuorodos `writereview?q=…` (Google: „400. That's an error.“).** Resolveris (`core/google_place_resolver.py`) be Place ID dabar grąžina Maps paiešką. Programėlė kiekvieną kliento įrašą normalizuoja (`usableReviewUrl` per `toClient()` `src/lib/db.ts`), todėl seni įrašai niekada nerodo 400. Įrašytas patikrintas Buivydiškių veterinarijos klinikos ID.
+- [ ] **Z1i. Įdiegti 2026-11-11 vakaro pakeitimus** (Etapai R, S, K, M, N, platesnis hero): `deploy-live.ps1`. Po diegimo Python ir Next.js pusės pačios prideda naujus stulpelius/lenteles (`parent_id`, `location_label`, `archived_at`, `notify_emails`, `stand_orders` stulpeliai, `campaign_companies`, `branch_invites`).
 - [ ] **Z2. Peržiūrėti laiškus ir įjungti kampaniją.** `python core/morning_campaign_runner.py preview 5` → peržiūrėti `data/reports/email_previews/*.html` → tada `python core/morning_campaign_runner.py daemon` ir `python core/email_reply_listener.py` (arba atkomentuoti `start_all_services.ps1` 6 skyrelyje).
 - [ ] **Z3. Automatinis paleidimas po perkrovimo:** kaip administratorius paleisti `scripts/register-windows-tasks.ps1` (E1).
 
@@ -288,6 +304,16 @@ python -m py_compile core/morning_campaign_runner.py core/dental_lead_pool.py co
 
 Laiško peržiūra be siuntimo: `python test_email_preview.py`.
 
+Įmonių su filialais logika (Etapas N): `python test_company_groups.py` (17/17).
+
+Naršyklės patikra su DB kopija (taip tikrinta visa 11-05–11-11 sesija):
+```bash
+# 1) gyvos DB kopija (sqlite backup), 2) build į atskirą katalogą, 3) serveris 3005 su kopija ir be laiškų
+REPUTATION_BUILD_DIR=.next-verify npx next build
+# serveris: DATABASE_PATH=<kopija> APP_URL=http://127.0.0.1:3005 REPUTATION_MAIL_DISABLED=true next start -p 3005
+# po patikros: ištrinti .next-verify ir git checkout -- tsconfig.json next-env.d.ts (build'as juos pakeičia)
+```
+
 ---
 
 ## 4. Pastabos perėmėjui (gotchas)
@@ -298,6 +324,11 @@ Laiško peržiūra be siuntimo: `python test_email_preview.py`.
 - **Git Bash** keičia kelius, prasidedančius `/` (pvz. `/r/x` → `C:/Program Files/Git/r/x`). Naudok `MSYS_NO_PATHCONV=1` arba PowerShell.
 - **Šio PC DNS** kartais neišsprendžia `reputacija.verslomatika.lt`. Testuok su `curl --resolve reputacija.verslomatika.lt:443:104.21.35.136 ...`.
 - **Lietuviškos raidės:** Python skriptuose `sys.stdout.reconfigure(encoding='utf-8')`. Su `python -I` `PYTHONIOENCODING` neveikia.
+- **Filialai** (Etapas M/N): filialas = `clients` eilutė su `parent_id`. Prenumerata, prisijungimo galiojimas ir „gali rinkti įvertinimus“ visada tikrinami per pagrindinį profilį. `clients.email` UNIQUE, todėl filialas be el. pašto turi `…@filialai.invalid`, kuriam niekas nesiunčiama.
+- **Įmonė kampanijose** = `campaign_companies` (`core/company_groups.py`). Naujas pirmas laiškas niekada nesiunčiamas įmonei, kuri jau yra šioje lentelėje; kitam filialui rašo tik kaskada.
+- **Testiniai laiškai** savininkui: tiksliai jo adresu, be `+alias` (`research ... --send --to=`). Jo adresas užimtas aktyvuoto testinio profilio, todėl `--to` sukuria atskirą `{slug}-testas` profilį.
+- **Ne savi failai darbo kataloge:** `core/*topical*`, `data/articles*`, `data/keywords` yra kito agento SEO darbas, į ReputationPro commit'us jų nedėti be savininko sutikimo.
+- **Asmeniniai duomenys** į GitHub nekeliami (savininko el. paštas, trečių asmenų vardai): prieš commit'ą `git diff --cached | grep` paieška.
 
 ---
 
