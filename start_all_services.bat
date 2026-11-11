@@ -29,3 +29,7 @@ timeout /t 5
 
 echo [5] Paleidziamas 24/7 budetojas (health check + DB kopijos)...
 start "Verslomatika Watchdog" /min pythonw "%ROOT_DIR%core\health_watchdog.py"
+
+echo [6] Paleidziami B2B kampaniju siuntejas ir pasto klausytojas...
+start "Morning Campaign Daemon" cmd /k "cd /d "%ROOT_DIR%" && python core\morning_campaign_runner.py daemon"
+start "Email Reply Listener" cmd /k "cd /d "%ROOT_DIR%" && python core\email_reply_listener.py"

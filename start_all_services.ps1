@@ -1,4 +1,4 @@
-﻿# Paleidimo skriptas po kompiuterio perkrovimo
+# Paleidimo skriptas po kompiuterio perkrovimo
 $ROOT_DIR = $PSScriptRoot
 
 Write-Host "===================================================" -ForegroundColor Cyan
@@ -25,8 +25,8 @@ if (Test-Path $tunnelPath) {
 # 5. 24/7 budetojas: health check, automatinis perkrovimas, kasdiene DB kopija (ROADMAP E2-E3)
 Start-Process pythonw -ArgumentList "`"$ROOT_DIR\core\health_watchdog.py`"" -WorkingDirectory $ROOT_DIR
 
-# 6. Kampanijos demonai (ROADMAP C). Ijunkite, kai perziuresite laiskus: python core\morning_campaign_runner.py preview 5
-# Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$ROOT_DIR'; python core\morning_campaign_runner.py daemon"
-# Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$ROOT_DIR'; python core\email_reply_listener.py"
+# 6. Kampanijos demonai ir pašto klausytojas (24/7 B2B agentai)
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$ROOT_DIR'; python core\morning_campaign_runner.py daemon"
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$ROOT_DIR'; python core\email_reply_listener.py"
 
 Write-Host "Visi servisai paleisti!" -ForegroundColor Green
