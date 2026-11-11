@@ -223,7 +223,7 @@ Verslas su keliais padaliniais (pvz. kituose miestuose) skydelyje susikuria fili
 - [x] **M7. Testai.** `tests/branches.test.ts` (6): planas ir unikalus adresas, prieiga tik prie savų filialų, prenumerata iš pagrindinio, archyvas, pranešimų gavėjai, savininko apžvalga, formos validacija. Iš viso 36/36. Patikrinta naršyklėje DB kopijoje.
 - [ ] **M8. Kainodara (su Etapu G).** Variantai: (a) pagrindinis planas + X €/mėn. už kiekvieną filialą, (b) planas su neribotais filialais. Įgyvendinti: plano laukas (pvz. `clients.plan`), filialų limitas pagal planą vietoj `MAX_BRANCHES`, Stripe kiekis (`quantity` = filialų skaičius), sąskaitoje filialų sąrašas.
 
-### Etapas N: įmonės su filialais kampanijose (2026-11-11, padaryta, nepatikrinta naršyklėje, laukia diegimo; `core/company_groups.py`, testai `test_company_groups.py` 17/17, TS 38/38. Liko: Melga Kauno filialas su tuo pačiu info@ dar nepatenka į grupę – patikrinti pool'ą)
+### Etapas N: įmonės su filialais kampanijose (2026-11-11, padaryta, laukia diegimo; `core/company_groups.py`, testai `test_company_groups.py` 17/17, TS 38/38. Įmonės nariai renkami iš visų katalogų (`all_catalog_leads`). Patikrinta naršyklėje DB kopijoje: demo perjungiklis, aktyvavimas, pakvietimas, filialo vadovo prieiga, savininko skiltis)
 
 Dabar (patikrinta 2026-11-11): agentai dubliuojasi tik pagal tikslų el. paštą. Kiekvienas filialas laikomas atskira įmone: tą pačią dieną gali gauti laiškus keli tos pačios įmonės filialai, kiekvienam kuriamas atskiras demo ir atskiri follow-up'ai. Kai vienas aktyvuoja, kiti toliau gauna laiškus, o aktyvavimai sukuria atskiras paskyras, ne filialus. Kataloguose jau yra 6 tokios įmonės (Denticija Vilnius/Kaunas, Melga, Estetus, Sugihara, Amberton, Ratų meistrai).
 

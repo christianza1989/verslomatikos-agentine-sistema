@@ -96,3 +96,23 @@ def get_uncontacted_leads_for_agent(target_industry: str, limit: int = 25, agent
         selected = fresh
 
     return selected[:limit]
+
+
+def all_catalog_leads() -> List[Dict[str, Any]]:
+    """Every lead from every catalog (Etapas N): a company's branches may sit in different
+    niche lists (e.g. Melga Kaunas in the e-commerce catalog, Vilnius in auto services)."""
+    out, seen = [], set()
+    for item in list(DENTAL_CLINICS_CATALOG) + list(ECOMMERCE_LEADS_CATALOG) + load_master_leads():
+        email = (item.get("email") or "").strip().lower()
+        if "@" not in email:
+            continue
+        b_name = item.get("business_name") or "Įmonė"
+        city = item.get("city") or "Vilnius"
+        key = (email, city.strip().lower(), b_name.strip().lower())
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append({"business_name": b_name, "city": city, "email": email, "website": item.get("website", ""),
+                    "phone": item.get("phone", ""), "slug": item.get("slug") or slugify(b_name),
+                    "industry": item.get("niche") or "", "niche": item.get("niche") or ""})
+    return out

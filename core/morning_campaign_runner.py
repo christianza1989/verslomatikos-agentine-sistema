@@ -335,8 +335,14 @@ def _company_candidates(conn: sqlite3.Connection, agent: dict, needed: int) -> l
     pool = _fetch_candidates(agent.get("target_industry", "clinic"), needed * 4, agent_id="")
     same_niche = [a["agent_id"] for a in AGENT_PROFILES if a.get("is_active") and a.get("target_industry") == agent.get("target_industry")]
     contacted = {r[0] for r in conn.execute("SELECT LOWER(email) FROM campaign_leads WHERE sent_at IS NOT NULL")}
+    from core.multi_niche_lead_pool import all_catalog_leads
+    everyone = group_leads(all_catalog_leads())  # branches may sit in other niche catalogs
     out = []
     for key, members in group_leads(pool).items():
+        if key.startswith("d:"):
+            known = {((m.get("email") or "").lower(), (m.get("city") or "").lower()) for m in members}
+            members = members + [dict(m, industry=members[0].get("industry"), niche=members[0].get("niche"))
+                                 for m in everyone.get(key, []) if ((m["email"], m["city"].lower()) not in known)]
         if same_niche and agent_for_company(key, same_niche) != agent["agent_id"]:
             continue
         if get_company(conn, key) or any((m.get("email") or "").lower() in contacted for m in members):
