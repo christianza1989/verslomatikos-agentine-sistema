@@ -215,3 +215,6 @@
 /* /r/{slug}?view=klientas – customer preview of a not-yet-activated profile */
 .customer-preview-bar { position: sticky; top: 0; z-index: 20; background: #13112e; color: #e9e7ff; font-size: 13px; line-height: 1.5; text-align: center; padding: 10px 16px; }
 .customer-preview-bar strong { color: #fff; }
+
+/* Owner demo: phone only, centered (owner decision 2026-11-11). */
+.od-split-single { grid-template-columns: 1fr; justify-items: center; }

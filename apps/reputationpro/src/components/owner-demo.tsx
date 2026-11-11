@@ -4,8 +4,8 @@
 // sees on the phone (left) and what lands in their own inbox the same second (right) –
 // and can activate with one click. Nothing typed here is stored or emailed.
 import { useState } from 'react';
-import { ArrowRight, BatteryFull, Bell, CheckCircle2, Inbox, Lock, Mail, MessageSquare, QrCode, Send, Signal, Star, TrendingUp, Wifi } from 'lucide-react';
-import { ReviewGate, type DemoEvent } from './review-gate';
+import { ArrowRight, BatteryFull, CheckCircle2, Lock, QrCode, Send, Signal, Star, TrendingUp, Wifi } from 'lucide-react';
+import { ReviewGate } from './review-gate';
 
 type Props = {
   slug: string;
@@ -27,19 +27,13 @@ function audience(industry: string) {
   return { one: 'klientas', many: 'klientai', gen: 'kliento', dat: 'klientui', genPl: 'klientų' };
 }
 
-const stars = (n: number) => '★'.repeat(n) + '☆'.repeat(5 - n);
 const fmt = (n: number) => n.toLocaleString('lt-LT', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 
 export function OwnerDemo(p: Props) {
   const who = audience(p.industry);
-  const [events, setEvents] = useState<(DemoEvent & { at: number })[]>([]);
   const [resetKey, setResetKey] = useState(0);
   const appHost = p.pageUrl.replace(/^https?:\/\//, '').split('/')[0];
   const restart = () => setResetKey((k) => k + 1);
-  // Only the latest star click is shown (repeated clicks would clutter the inbox); private messages stack.
-  // Owner decision 2026-11-11: the inbox shows only private messages (star clicks are not listed).
-  const add = (e: DemoEvent) => { if (e.kind === 'rating') return; setEvents((list) => [{ ...e, at: Date.now() }, ...list].slice(0, 5)); };
-  const privateCount = events.filter((e) => e.kind === 'private').length;
 
   // Honest projection for 3 months. The monthly pace scales with the business's current
   // Google volume, so a small shop is not promised the pace of a busy clinic.
@@ -60,10 +54,10 @@ export function OwnerDemo(p: Props) {
 
     <section className="od-hero">
       <h1>Taip atrodytų <span>{p.name}</span> atsiliepimų sistema</h1>
-      <p>Kairėje matote, ką mato Jūsų {who.one} telefone. Dešinėje matote, ką <b>tą pačią sekundę</b> gaunate Jūs. Paspauskite žvaigždutę ir išbandykite.</p>
+      <p>Taip Jūsų atsiliepimų puslapį matys {who.one} telefone. Paspauskite žvaigždutę ir išbandykite.</p>
     </section>
 
-    <div className="od-split">
+    <div className="od-split od-split-single">
       <div className="od-phone-col">
         <div className="od-phone" role="img" aria-label={`${p.name} atsiliepimų puslapis kliento telefone`}>
           <div className="od-phone-screen">
@@ -71,35 +65,14 @@ export function OwnerDemo(p: Props) {
             <div className="od-phone-status" aria-hidden="true"><span>9:41</span><span className="od-phone-icons"><Signal size={13}/><Wifi size={13}/><BatteryFull size={17}/></span></div>
             <div className="od-phone-url" aria-hidden="true"><Lock size={11}/> {appHost}</div>
             <div className="od-phone-scroll">
-              <ReviewGate key={resetKey} slug={p.slug} name={p.name} googleUrl={p.googleUrl} showPublicLow={p.showPublicLow} mode="demo" embedded onDemoEvent={add}/>
+              <ReviewGate key={resetKey} slug={p.slug} name={p.name} googleUrl={p.googleUrl} showPublicLow={p.showPublicLow} mode="demo" embedded/>
             </div>
             <div className="od-phone-home" aria-hidden="true"/>
           </div>
         </div>
-        <p className="od-caption"><Star size={14}/> Pabandykite: paspauskite <b>2★</b> ir parašykite pastabą. Tada <b>5★</b>: mygtukas atvers Jūsų tikrą Google atsiliepimų formą. {events.length > 0 && <button type="button" onClick={restart}>Iš naujo</button>}</p>
+        <p className="od-caption"><Star size={14}/> Pabandykite <b>1–3★</b> ir <b>4–5★</b>: 5★ mygtukas atvers Jūsų tikrą Google atsiliepimų formą. <button type="button" onClick={restart}>Iš naujo</button></p>
       </div>
 
-      <aside className="od-owner" aria-live="polite">
-        <div className="od-owner-head"><span><Inbox size={17}/> Jūsų vadovo dėžutė</span><span className="od-live"><i/> gyvai</span></div>
-        {events.length === 0 && <div className="od-empty">
-          <Bell size={26}/>
-          <p><b>Kol kas tuščia.</b> Įvertinkite kairėje 1–3★ ir parašykite pastabą: ji atsiras čia ir Jūsų el. pašte tą pačią sekundę.</p>
-        </div>}
-        <ul className="od-events">
-          {events.map((e) => <li key={e.at} className={`od-event od-event-${e.kind}`}>
-            {e.kind === 'rating' && (e.rating >= 4
-              ? <p><CheckCircle2 size={16} className="ok"/><span><b>{e.rating}★</b> – {who.dat} rodoma padėka ir mygtukas į Jūsų <b>Google atsiliepimų formą</b>. Taip renkasi nauji vieši atsiliepimai.</span></p>
-              : <p><MessageSquare size={16} className="warn"/><span><b>{e.rating}★</b> – {who.dat} rodoma privati forma vadovui{p.showPublicLow ? ' (su galimybe rašyti ir viešai)' : ''}.</span></p>)}
-            {e.kind === 'private' && <div className="od-msg">
-              <div className="od-msg-top"><span className="od-stars">{stars(e.rating)}</span><span className="od-new">Nauja</span></div>
-              <p className="od-msg-text">„{e.text}“</p>
-              <p className="od-msg-meta">{e.name || 'Vardas nenurodytas'}{e.phone ? ` · ${e.phone}` : ''}</p>
-              <div className="od-mail"><Mail size={15}/><div><b>El. laiškas Jums:</b> „Naujas privatus atsiliepimas ({e.rating}★) – {p.name}“<span>Patarimas: paskambinkite per 15 min. ir išspręskite situaciją, kol {who.one} dar neparašė viešai.</span></div></div>
-            </div>}
-          </li>)}
-        </ul>
-        {privateCount > 0 && <a className="btn btn-primary btn-full od-owner-cta" href={p.claimHref}>Noriu taip gauti pastabas <ArrowRight size={16}/></a>}
-      </aside>
     </div>
 
     {projection && <section className="od-section od-numbers">
