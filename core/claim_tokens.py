@@ -57,6 +57,13 @@ def ensure_schema(conn: sqlite3.Connection) -> None:
         CREATE INDEX IF NOT EXISTS campaign_messages_lead ON campaign_messages(lead_id, step);
         """
     )
+    # ROADMAP C5: subject variant of the message ("case:A|B|C"). Mirror: ensureCampaignMessages() in src/lib/db.ts.
+    if "variant" not in {row[1] for row in conn.execute("PRAGMA table_info(campaign_messages)")}:
+        try:
+            conn.execute("ALTER TABLE campaign_messages ADD COLUMN variant TEXT")
+        except sqlite3.OperationalError as e:
+            if "duplicate column" not in str(e).lower():
+                raise
     have = {row[1] for row in conn.execute("PRAGMA table_info(clients)")}
     if not have:
         return  # clients table is created by the Next.js app on first start
@@ -100,13 +107,14 @@ def suppress(conn: sqlite3.Connection, email: str, reason: str, details: str = "
     conn.commit()
 
 
-def record_message(conn: sqlite3.Connection, lead_id: str, step: str, message_id: str, subject: str) -> None:
+def record_message(conn: sqlite3.Connection, lead_id: str, step: str, message_id: str, subject: str,
+                   variant: str = None) -> None:
     import datetime
     import uuid
 
     conn.execute(
-        "INSERT INTO campaign_messages(id, lead_id, step, message_id, subject, sent_at) VALUES (?,?,?,?,?,?)",
-        (str(uuid.uuid4()), lead_id, step, message_id, subject, datetime.datetime.now().isoformat()),
+        "INSERT INTO campaign_messages(id, lead_id, step, message_id, subject, sent_at, variant) VALUES (?,?,?,?,?,?,?)",
+        (str(uuid.uuid4()), lead_id, step, message_id, subject, datetime.datetime.now().isoformat(), variant),
     )
     conn.commit()
 

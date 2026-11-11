@@ -298,12 +298,61 @@ function ensureClientColumns(sql: DatabaseSync) {
     catch (error) { if (!/duplicate column/i.test(String(error))) throw error; }
   }
   sql.exec('CREATE INDEX IF NOT EXISTS clients_parent ON clients(parent_id)');
+  ensureCampaignMessages(sql);
   // ROADMAP D5.5: which sharing channel (QR on receipt, email signature, …) brought the rating.
-  const ev = new Set(sql.prepare('PRAGMA table_info(review_events)').all().map((row) => String(row.name)));
+  const ev =new Set(sql.prepare('PRAGMA table_info(review_events)').all().map((row) => String(row.name)));
   if (!ev.has('source')) {
     try { sql.exec('ALTER TABLE review_events ADD COLUMN source TEXT'); }
     catch (error) { if (!/duplicate column/i.test(String(error))) throw error; }
   }
+}
+
+// Outbound campaign messages (written by Python core/claim_tokens.py::record_message). Same schema as
+// core/claim_tokens.py::ensure_schema; ROADMAP C5 added `variant` = "case:A|B|C" (subject A/B test).
+function ensureCampaignMessages(sql: DatabaseSync) {
+  sql.exec(`CREATE TABLE IF NOT EXISTS campaign_messages (
+      id TEXT PRIMARY KEY, lead_id TEXT NOT NULL, step TEXT NOT NULL,
+      message_id TEXT, subject TEXT, sent_at TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS campaign_messages_lead ON campaign_messages(lead_id, step);`);
+  const have = new Set(sql.prepare('PRAGMA table_info(campaign_messages)').all().map((row) => String(row.name)));
+  if (!have.has('variant')) {
+    try { sql.exec('ALTER TABLE campaign_messages ADD COLUMN variant TEXT'); }
+    catch (error) { if (!/duplicate column/i.test(String(error))) throw error; }
+  }
+}
+
+export const SUBJECT_CASES: Record<string, string> = {
+  google_stats: 'Google su reitingu', google_generic: 'Google be reitingo',
+  no_google: 'Be Google (Rekvizitai.lt)', branches: 'Įmonė su filialais',
+};
+/** Below this many first emails per variant the owner panel shows „per mažai duomenų“. */
+export const SUBJECT_MIN_SAMPLE = 30;
+export type SubjectVariantStat = {
+  case_key: string; variant: string; sent: number; opened: number; clicked: number; activated: number;
+  open_rate: number; click_rate: number; enough: boolean; example: string | null;
+};
+
+/** First emails (step E0) per subject case × variant: sent, opened, clicked, activated (ROADMAP C5). */
+export function getSubjectVariantStats(): SubjectVariantStat[] {
+  const rows = db().prepare(`SELECT m.variant AS variant, COUNT(DISTINCT m.lead_id) AS sent,
+      COUNT(DISTINCT CASE WHEN l.opened_at IS NOT NULL OR l.open_count > 0 THEN m.lead_id END) AS opened,
+      COUNT(DISTINCT CASE WHEN l.clicked_at IS NOT NULL OR l.click_count > 0 THEN m.lead_id END) AS clicked,
+      COUNT(DISTINCT CASE WHEN l.status = 'converted' OR l.converted_at IS NOT NULL
+        OR EXISTS (SELECT 1 FROM clients c WHERE c.slug = l.slug AND c.is_demo = 0) THEN m.lead_id END) AS activated,
+      MAX(m.subject) AS example
+    FROM campaign_messages m LEFT JOIN campaign_leads l ON l.id = m.lead_id
+    WHERE m.step = 'E0' AND m.variant LIKE '%:%'
+    GROUP BY m.variant ORDER BY m.variant`).all();
+  return rows.map((r) => {
+    const [case_key, variant] = String(r.variant).split(':');
+    const sent = Number(r.sent), opened = Number(r.opened), clicked = Number(r.clicked);
+    return {
+      case_key, variant, sent, opened, clicked, activated: Number(r.activated),
+      open_rate: sent ? opened / sent : 0, click_rate: sent ? clicked / sent : 0,
+      enough: sent >= SUBJECT_MIN_SAMPLE, example: (r.example as string | null) ?? null,
+    };
+  });
 }
 
 /** Ratings per sharing channel for the last `days` days (null source = link without a channel tag). */

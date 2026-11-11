@@ -21,6 +21,7 @@ import datetime
 import html as html_lib
 import urllib.parse
 import sqlite3
+import zlib
 
 # UTF-8 terminale
 if hasattr(sys.stdout, 'reconfigure'):
@@ -223,35 +224,116 @@ NO_GOOGLE = {
 }
 
 
+# ---------------------------------------------------------------------------
+# Temų A/B/C variantai (ROADMAP C5). Atvejis ir variantas įrašomi į campaign_messages.variant
+# (pvz. "google_stats:B"), rezultatai rodomi /admin/klientai („Laiškų temų rezultatai“).
+# Taisyklės: lietuviškai, su įmonės pavadinimu, be „100%“ ir „niekada“, be šauktukų ir didžiųjų raidžių.
+# ---------------------------------------------------------------------------
+
+SUBJECT_VARIANTS = ("A", "B", "C")
+SUBJECT_CASES = {
+    "google_stats": "Google su reitingu",
+    "google_generic": "Google be reitingo",
+    "no_google": "Be Google (Rekvizitai.lt)",
+    "branches": "Įmonė su filialais",
+}
+# Kieno atsiliepimai (kilmininkas, dgs.) pagal nišą.
+AUDIENCE = {"clinic": "pacientų", "beauty": "klienčių", "auto": "vairuotojų", "horeca": "svečių",
+            "ecommerce": "pirkėjų", "services": "klientų"}
+
+
+def subject_variant(lead_id: str) -> str:
+    """Stabilus variantas: tas pats lead_id visada duoda tą pačią raidę (follow-up'ai lieka toje pačioje gijoje)."""
+    return SUBJECT_VARIANTS[zlib.crc32((lead_id or "").encode("utf-8")) % len(SUBJECT_VARIANTS)]
+
+
+def _reviews_word(n, after_is: bool = False) -> str:
+    """Taisyklinga „atsiliepimas“ forma po skaičiaus. after_is=True: po „iš“ (kilmininkas)."""
+    n = abs(int(n))
+    if n % 10 == 1 and n % 100 != 11:
+        return "atsiliepimo" if after_is else "atsiliepimas"
+    if after_is or n % 10 == 0 or 11 <= n % 100 <= 19:
+        return "atsiliepimų"
+    return "atsiliepimai"
+
+
+def _quoted(name: str) -> str:
+    """„Pavadinimas“ kabutėse (nelinksniuojamas), jei kabučių jame dar nėra."""
+    return name if any(q in name for q in ("„", "“", '"')) else f"„{name}“"
+
+
+def subject_case(google_stats: dict = None, no_google: bool = False, company_cities: list = None) -> str:
+    """Atvejis temai. Pirmenybė kaip anksčiau: be Google > filialai > su reitingu > be reitingo."""
+    if no_google:
+        return "no_google"
+    if len([c for c in (company_cities or []) if c]) > 1:
+        return "branches"
+    if (google_stats or {}).get("rating") and (google_stats or {}).get("count"):
+        return "google_stats"
+    return "google_generic"
+
+
+def build_subject(case: str, variant: str, name: str, industry: str, google_stats: dict = None,
+                  rk_stats: dict = None, branch_count: int = 0) -> str:
+    who = AUDIENCE.get(industry, "klientų")
+    if case == "no_google":
+        rk_rating, rk_count = (rk_stats or {}).get("rating"), (rk_stats or {}).get("count")
+        if variant == "B":
+            return f"{name}: kodėl nėra Google žemėlapiuose?"
+        if variant == "C":
+            return (f"{name}: {_fmt_rating(rk_rating)}/10 Rekvizitai.lt, Google – nėra" if rk_rating and rk_count
+                    else f"{name}: Rekvizitai.lt yra, Google – nėra")
+        return NO_GOOGLE["subject"].format(name=name)
+    if case == "branches":
+        if variant == "B":
+            return f"{name}: vienas skydelis visiems filialų atsiliepimams"
+        if variant == "C":
+            return f"{name}: kuris filialas surenka daugiau atsiliepimų?"
+        return f"{name}: atsiliepimų puslapiai visiems {branch_count} filialams"
+    if case == "google_stats":
+        rating, count = google_stats["rating"], int(google_stats["count"])
+        if variant == "B":
+            return f"{name}: {count} {_reviews_word(count)} Google – kiek galėtų būti?"
+        if variant == "C":
+            return f"{who.capitalize()} atsiliepimai apie {_quoted(name)}"
+        return f"{name}: {_fmt_rating(rating)}★ iš {count} {_reviews_word(count, after_is=True)} Google"
+    if variant == "B":
+        return f"{name}: kiek {who} palieka atsiliepimą Google?"
+    if variant == "C":
+        return f"{name}: atsiliepimų puslapis jau paruoštas"
+    return (TEMPLATES.get(industry) or TEMPLATES["services"])["subject_generic"].format(name=name)
+
+
 def build_tracked_email(lead: dict, lead_id: str, demo_url: str = None, google_stats: dict = None,
                         sender_name: str = None, sender_email: str = None, no_google: bool = False,
-                        rk_stats: dict = None, company_cities: list = None, cascade_city: str = None) -> tuple:
+                        rk_stats: dict = None, company_cities: list = None, cascade_city: str = None,
+                        variant: str = None, return_variant: bool = False) -> tuple:
     """Grąžina (subject, text, html). Vienas CTA: asmeninis demo puslapis.
 
     demo_url: {APP_BASE}/r/{slug}?k={token} (be tokeno, tik peržiūrai).
     google_stats: {"rating": 4.6, "count": 87}, jei žinoma (ROADMAP B3).
     no_google: įmonė be Google profilio (atsiliepimai -> Rekvizitai.lt). rk_stats: {"rating": 8.3, "count": 19}.
     Instrukcijos nuoroda – antraeilė teksto nuoroda, ne antras mygtukas (Etapas R6).
+    variant: "A"/"B"/"C" (numatyta subject_variant(lead_id)). return_variant=True grąžina ir ketvirtą
+    reikšmę "atvejis:raidė" įrašymui į campaign_messages.variant (ROADMAP C5).
     """
     name = lead["business_name"].strip()
     slug = lead.get("slug") or "demo"
-    tpl = TEMPLATES[detect_industry(lead)]
+    industry = detect_industry(lead)
+    tpl = TEMPLATES[industry]
     demo_url = demo_url or f"{APP_BASE}/r/{slug}"
 
     rating = (google_stats or {}).get("rating")
     count = (google_stats or {}).get("count")
     if rating and count:
         intro = tpl["stats"].format(name=name, rating=_fmt_rating(rating), count=count)
-        subject = tpl["subject_stats"].format(name=name, rating=_fmt_rating(rating), count=count)
     else:
         intro = tpl["generic"]
-        subject = tpl["subject_generic"].format(name=name)
     offer = tpl["offer"].format(name=name)
     team = tpl.get("team")
     # Etapas N: a company with branches gets ONE offer for all of them; a cascade email names the branch.
     cities = [c for c in (company_cities or []) if c]
     if len(cities) > 1:
-        subject = f"{name}: atsiliepimų puslapiai visiems {len(cities)} filialams"
         team = (f"Puslapiai paruošti visiems Jūsų filialams: {', '.join(cities)}. Kiekvienas turi savo QR kodą ir atsiliepimų nuorodą, "
                 f"o aktyvuoti užtenka vieną kartą." + (f" {team}" if team else ""))
     if cascade_city:
@@ -262,9 +344,11 @@ def build_tracked_email(lead: dict, lead_id: str, demo_url: str = None, google_s
         intro = (NO_GOOGLE["intro_rk"].format(name=name, rating=_fmt_rating(rk_rating), count=rk_count)
                  if rk_rating and rk_count else NO_GOOGLE["intro"].format(name=name))
         offer = NO_GOOGLE["offer"].format(name=name)
-        subject = NO_GOOGLE["subject"].format(name=name)
         guide_line, guide = NO_GOOGLE["guide"], guide_url(slug)
-    closing = "Jei tiks, paskyrą aktyvuosite vienu paspaudimu: 14 dienų nemokamai, be banko kortelės."
+    case = subject_case(google_stats, no_google, cities)
+    variant = variant if variant in SUBJECT_VARIANTS else subject_variant(lead_id)
+    subject = build_subject(case, variant, name, industry, google_stats, rk_stats, len(cities))
+    closing ="Jei tiks, paskyrą aktyvuosite vienu paspaudimu: 14 dienų nemokamai, be banko kortelės."
     ps = "P.S. Jei neaktualu, tiesiog atsakykite „ne“ ir daugiau nerašysime."
 
     s_name = sender_name or SENDER_NAME
@@ -306,6 +390,8 @@ Verslomatika · {s_email}
 <img src="{e(track_open_url)}" width="1" height="1" alt="" style="display:block;width:1px;height:1px;border:0;" />
 </body></html>
 """
+    if return_variant:
+        return subject, text, html, f"{case}:{variant}"
     return subject, text, html
 
 
@@ -392,12 +478,13 @@ def _run_cascades(conn: sqlite3.Connection, agent: dict, sender, budget: int, dr
         token = "PERZIURA" if dry_run else issue_claim_token(conn, company["root_client_id"])
         demo_url = f"{APP_BASE}/r/{urllib.parse.quote(branch_slug)}?k={token}"
         cities = [x.get("city") for x in company["members"] if x.get("city")]
-        subj, text, html = build_tracked_email({"business_name": company["name"], "slug": branch_slug, "industry": root["industry"]}, lead_id, demo_url,
+        subj, text, html, variant = build_tracked_email({"business_name": company["name"], "slug": branch_slug, "industry": root["industry"]}, lead_id, demo_url,
                                                {"rating": root["google_rating"], "count": root["google_reviews_count"]},
                                                sender_name=agent["name"], sender_email=agent["email"],
-                                               company_cities=sorted(set(cities), key=cities.index), cascade_city=m.get("city") or None)
+                                               company_cities=sorted(set(cities), key=cities.index), cascade_city=m.get("city") or None,
+                                               return_variant=True)
         if dry_run:
-            print(f"    👁 Kaskada {company['name']} → {to_email}: „{subj}“")
+            print(f"    👁 Kaskada {company['name']} → {to_email} [{variant}]: „{subj}“")
             sent += 1
             continue
         if not sender.send_email(to_email=to_email, subject=subj, body_text=text, body_html=html,
@@ -410,7 +497,7 @@ def _run_cascades(conn: sqlite3.Connection, agent: dict, sender, budget: int, dr
                      (lead_id, m.get("business_name") or company["name"], to_email, branch_slug, m.get("city") or "", now_iso, now_iso, now_iso, company["company_key"]))
         conn.execute("INSERT INTO campaign_events (id, lead_id, event_type, details, created_at) VALUES (?, ?, 'sent', 'company-cascade', ?)", (str(uuid.uuid4()), lead_id, now_iso))
         conn.commit()
-        record_message(conn, lead_id, "E0", sender.last_message_id, subj)
+        record_message(conn, lead_id, "E0", sender.last_message_id, subj, variant=variant)
         save_company(conn, company["company_key"], company["name"], company["agent_id"], company["root_client_id"], company["members"], company["contacted"] + [to_email])
         print(f"    ✓ Kaskada: {company['name']} → {to_email} ({m.get('city') or ''})")
         sent += 1
@@ -504,16 +591,17 @@ def dispatch_daily_quota(target_agent_id: str = "agent-tomas", force_count: int 
         no_google = bool(rekvizitai_review_url(client.get("google_review_url") or lead.get("google_review_url") or ""))
         members = lead.get("_members") or []
         cities = [m.get("city") for m in members if m.get("city")]
-        subj, text, html = build_tracked_email({**lead, "industry": client.get("industry") or lead.get("industry")}, lead_id, demo_url, stats,
+        subj, text, html, variant = build_tracked_email({**lead, "industry": client.get("industry") or lead.get("industry")}, lead_id, demo_url, stats,
                                                sender_name=agent["name"], sender_email=agent["email"], no_google=no_google,
                                                rk_stats=lead.get("rekvizitai_stats"),
-                                               company_cities=sorted(set(cities), key=cities.index) if len(members) > 1 else None)
+                                               company_cities=sorted(set(cities), key=cities.index) if len(members) > 1 else None,
+                                               return_variant=True)
 
         if dry_run:
             os.makedirs(preview_dir, exist_ok=True)
             with open(os.path.join(preview_dir, f"{slug}.html"), "w", encoding="utf-8") as f:
-                f.write(f"<!-- Tema: {html_lib.escape(subj)} -->\n" + html)
-            print(f"    👁 {b_name}: „{subj}“ → data/reports/email_previews/{slug}.html")
+                f.write(f"<!-- Tema [{variant}]: {html_lib.escape(subj)} -->\n" + html)
+            print(f"    👁 {b_name} [{variant}]: „{subj}“ → data/reports/email_previews/{slug}.html")
             done += 1
             continue
 
@@ -533,7 +621,7 @@ def dispatch_daily_quota(target_agent_id: str = "agent-tomas", force_count: int 
             conn.execute("INSERT INTO campaign_events (id, lead_id, event_type, created_at) VALUES (?, ?, 'sent', ?)",
                          (str(uuid.uuid4()), lead_id, now_iso))
             conn.commit()
-            record_message(conn, lead_id, "E0", sender.last_message_id, subj)  # follow-up'ų gijai
+            record_message(conn, lead_id, "E0", sender.last_message_id, subj, variant=variant)  # follow-up'ų gijai
             if lead.get("_company_key"):  # Etapas N: the company is now one conversation
                 from core.company_groups import save_company, ensure_company_schema
                 ensure_company_schema(conn)
@@ -613,7 +701,8 @@ def send_manual_test(business_name: str, to_email: str, city: str = "Vilnius", i
     lead_id = row["id"] if row else str(uuid.uuid4())
     token = issue_claim_token(conn, client["id"])
     demo_url = f"{APP_BASE}/r/{urllib.parse.quote(lead['slug'])}?k={token}"
-    subj, text, html = build_tracked_email(lead, lead_id, demo_url, {"rating": google_rating, "count": google_reviews})
+    subj, text, html, variant = build_tracked_email(lead, lead_id, demo_url, {"rating": google_rating, "count": google_reviews},
+                                                    return_variant=True)
     agent = AGENT_PROFILES[0]
     sender = SMTPEmailSender(config_path=agent["config_path"])
     ok = sender.send_email(to_email=lead["email"], subject=subj, body_text=text, body_html=html,
@@ -630,9 +719,9 @@ def send_manual_test(business_name: str, to_email: str, city: str = "Vilnius", i
     """, (lead_id, business_name, lead["email"], lead["slug"], city, now_iso, now_iso, now_iso))
     conn.execute("INSERT INTO campaign_events (id, lead_id, event_type, created_at) VALUES (?, ?, 'sent', ?)", (str(uuid.uuid4()), lead_id, now_iso))
     conn.commit()
-    record_message(conn, lead_id, "E0", sender.last_message_id, subj)
+    record_message(conn, lead_id, "E0", sender.last_message_id, subj, variant=variant)
     conn.close()
-    print(f"✓ Išsiųsta: „{subj}“ → {lead['email']}\n  Demo: {APP_BASE}/r/{lead['slug']} (asmeninė nuoroda su tokenu – laiške)")
+    print(f"✓ Išsiųsta [{variant}]: „{subj}“ → {lead['email']}\n  Demo: {APP_BASE}/r/{lead['slug']} (asmeninė nuoroda su tokenu – laiške)")
     return True
 
 

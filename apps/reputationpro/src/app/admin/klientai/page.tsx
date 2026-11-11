@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { ArrowLeft, Building2, Gift, MapPin, PackageCheck, Star, Truck, Users } from 'lucide-react';
-import { getActivatedClients, getCompanyCampaigns, type StandOrder } from '@/lib/db';
+import { ArrowLeft, Building2, FlaskConical, Gift, MapPin, PackageCheck, Star, Truck, Users } from 'lucide-react';
+import { getActivatedClients, getCompanyCampaigns, getSubjectVariantStats, SUBJECT_CASES, SUBJECT_MIN_SAMPLE, type StandOrder } from '@/lib/db';
 import { appUrl, currentPrincipal } from '@/lib/security';
 import { CompanyActions, CopyText, OrderActions } from '@/components/owner-orders';
 
@@ -15,6 +15,7 @@ const COMPANY_STATUS: Record<string, string> = { active: 'Vyksta', paused: 'Atsa
 const SUB: Record<string, string> = { trialing: '14 d. bandymas', active: 'Aktyvi prenumerata', past_due: 'Vėluoja mokėjimas', canceled: 'Atšaukta', pending: 'Laukia' };
 const day = (iso: string | null) => iso ? new Date(iso).toLocaleDateString('lt-LT') : '–';
 const dayTime = (iso: string | null) => iso ? new Date(iso).toLocaleString('lt-LT', { dateStyle: 'short', timeStyle: 'short' }) : '–';
+const pct = (v: number) => `${Math.round(v * 100)} %`;
 
 export default async function OwnerClients() {
   const principal = await currentPrincipal();
@@ -23,6 +24,7 @@ export default async function OwnerClients() {
 
   const rows = getActivatedClients();
   const companies = getCompanyCampaigns();
+  const subjects = getSubjectVariantStats();
   const base = appUrl();
   // Stand orders of main profiles and of their branches (filialai), one list.
   type OrderItem = { key: string; slug: string; title: string; sub: string | null; order: NonNullable<typeof rows[number]['order']> };
@@ -83,6 +85,25 @@ export default async function OwnerClients() {
           <td>{c.contacted.length}<small>{c.contacted.join(', ')}</small></td>
           <td><span className={`ok-pill is-${c.status === 'converted' ? 'delivered' : c.status === 'active' ? 'sent' : c.status === 'paused' ? 'requested' : 'canceled'}`}>{COMPANY_STATUS[c.status] || c.status}</span>{c.reason && <small>{c.reason}</small>}</td>
           <td>{c.status !== 'converted' && <CompanyActions companyKey={c.company_key} status={c.status}/>}</td>
+        </tr>)}</tbody>
+      </table></div>}
+    </section>
+
+    <section className="ok-panel">
+      <h2><FlaskConical size={18}/> Laiškų temų rezultatai</h2>
+      <p className="ok-empty">Pirmo laiško tema parenkama pagal lead'ą (A, B arba C) ir lieka ta pati follow-up'uose. Kol variantas turi mažiau nei {SUBJECT_MIN_SAMPLE} išsiuntimų, išvadų nedarykite. Atidarymus kai kurios pašto programos blokuoja, todėl paspaudimai patikimesni.</p>
+      {subjects.length === 0 ? <p className="ok-empty">Laiškų su temos variantu dar neišsiųsta.</p> :
+      <div className="ok-table-wrap"><table className="ok-table">
+        <thead><tr><th>Atvejis</th><th>Variantas</th><th>Išsiųsta</th><th>Atidaryta</th><th>Paspausta</th><th>Aktyvavo</th></tr></thead>
+        <tbody>{subjects.map((s) => <tr key={`${s.case_key}:${s.variant}`}>
+          <td><b>{SUBJECT_CASES[s.case_key] || s.case_key}</b></td>
+          <td><b>{s.variant}</b>{s.example && <small>pvz. „{s.example}“</small>}</td>
+          <td>{s.sent}</td>
+          {s.enough ? <>
+            <td>{pct(s.open_rate)}<small>{s.opened}</small></td>
+            <td>{pct(s.click_rate)}<small>{s.clicked}</small></td>
+          </> : <td colSpan={2}><small>per mažai duomenų ({s.opened} atid. · {s.clicked} pasp.)</small></td>}
+          <td>{s.activated}</td>
         </tr>)}</tbody>
       </table></div>}
     </section>
