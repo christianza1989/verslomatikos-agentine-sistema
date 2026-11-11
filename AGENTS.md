@@ -170,6 +170,10 @@ Agentai/
    - Branch entitlement = the main profile's (`canCollectFeedback`); archived branches (`archived_at`) never collect. Branch without its own email has a `…@filialai.invalid` placeholder that must never be emailed.
    - Owner views (`/admin/klientai`, `getActivatedClients`) list main profiles; branches are nested under them.
 
+12. **First outbound email copy (owner decision 2026-11-12, ROADMAP C6, `core/email_copy.py`)**:
+   - Segment by Google rating/count (top / mid / low / few / no Google). Open with a concrete fact about the business; give a calculated, honest projection (same pace as the owner demo); always the 3-step „Kaip tai veikia“ block (4–5★ → public review, 1–3★ → first to the team); one CTA with the business name; „14 dienų nemokamai, be banko kortelės ir be jokių įsipareigojimų, planą pasirinksite patys“ + free stand.
+   - Never: guarantees, invented numbers (skip the sentence when data is missing), competitor bashing, quotes of negative reviews, „vadovui“. Subjects rotate A/B/C (`build_subject`), results in `/admin/klientai`.
+
 > **Open work and its status:** [`ROADMAP_REPUTATIONPRO.md`](ROADMAP_REPUTATIONPRO.md) (checkbox roadmap for any LLM continuing the work).
 
 ---

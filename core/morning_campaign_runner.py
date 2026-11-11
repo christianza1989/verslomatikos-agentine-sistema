@@ -325,30 +325,32 @@ def build_tracked_email(lead: dict, lead_id: str, demo_url: str = None, google_s
 
     rating = (google_stats or {}).get("rating")
     count = (google_stats or {}).get("count")
-    if rating and count:
-        intro = tpl["stats"].format(name=name, rating=_fmt_rating(rating), count=count)
-    else:
-        intro = tpl["generic"]
-    offer = tpl["offer"].format(name=name)
-    team = tpl.get("team")
-    # Etapas N: a company with branches gets ONE offer for all of them; a cascade email names the branch.
     cities = [c for c in (company_cities or []) if c]
-    if len(cities) > 1:
-        team = (f"Puslapiai paruošti visiems Jūsų filialams: {', '.join(cities)}. Kiekvienas turi savo QR kodą ir atsiliepimų nuorodą, "
-                f"o aktyvuoti užtenka vieną kartą." + (f" {team}" if team else ""))
-    if cascade_city:
-        intro = f"rašome ir Jūsų filialui ({cascade_city}), nes galbūt ankstesnis laiškas nepasiekė atsakingo žmogaus. " + intro
+    # ROADMAP C6: segment copy (core/email_copy.py) – fact about them, calculated projection,
+    # plain "how it works", one CTA with their name, 14 days free + stand.
+    from core.email_copy import google_paragraphs, no_google_paragraphs, how_it_works, OFFER
     guide_line, guide = None, None
     if no_google:
-        rk_rating, rk_count = (rk_stats or {}).get("rating"), (rk_stats or {}).get("count")
-        intro = (NO_GOOGLE["intro_rk"].format(name=name, rating=_fmt_rating(rk_rating), count=rk_count)
-                 if rk_rating and rk_count else NO_GOOGLE["intro"].format(name=name))
-        offer = NO_GOOGLE["offer"].format(name=name)
-        guide_line, guide = NO_GOOGLE["guide"], guide_url(slug)
+        paragraphs = no_google_paragraphs(name, industry, (rk_stats or {}).get("rating"), (rk_stats or {}).get("count"))
+        platform = "Rekvizitai.lt"
+        guide_line, guide = "Instrukcija, kaip nemokamai susikurti Google profilį:", guide_url(slug)
+    elif rating and count:
+        paragraphs = google_paragraphs(name, industry, float(rating), int(count), lead.get("research") or {})
+        platform = "Google"
+    else:
+        paragraphs = [f"{name} klientai dažnai būna patenkinti, bet atsiliepimą Google palieka retai: niekas jų nepaprašo tinkamu momentu. "
+                      f"Paruošėme sprendimą, kuris tai pakeičia."]
+        platform = "Google"
+    if len(cities) > 1:  # Etapas N: one offer for all branches
+        paragraphs.insert(1, f"Puslapiai paruošti visiems Jūsų filialams: {', '.join(cities)}. Kiekvienas turi savo QR kodą, o aktyvuoti užtenka vieną kartą.")
+    if cascade_city:
+        paragraphs[0] = f"rašome ir Jūsų filialui ({cascade_city}), nes galbūt ankstesnis laiškas nepasiekė atsakingo žmogaus. " + paragraphs[0]
+    how_title, how_steps = how_it_works(industry, platform)
+    cta_label = f"Pažiūrėti {name} puslapį (30 s)"
+
     case = subject_case(google_stats, no_google, cities)
     variant = variant if variant in SUBJECT_VARIANTS else subject_variant(lead_id)
     subject = build_subject(case, variant, name, industry, google_stats, rk_stats, len(cities))
-    closing ="Jei tiks, paskyrą aktyvuosite vienu paspaudimu: 14 dienų nemokamai, be banko kortelės."
     ps = "P.S. Jei neaktualu, tiesiog atsakykite „ne“ ir daugiau nerašysime."
 
     s_name = sender_name or SENDER_NAME
@@ -356,33 +358,29 @@ def build_tracked_email(lead: dict, lead_id: str, demo_url: str = None, google_s
     track_open_url = f"{APP_BASE}/api/track/open?id={urllib.parse.quote(lead_id)}"
     cta_url = f"{APP_BASE}/api/track/click?id={urllib.parse.quote(lead_id)}&to={urllib.parse.quote(demo_url, safe='')}"
 
-    text = f"""Laba diena,
-
-{intro}
-
-{team + chr(10) + chr(10) if team else ""}{offer}
-{cta_url}
-
-{closing}
-{f"{chr(10)}{guide_line}{chr(10)}{guide}{chr(10)}" if guide else ""}
-{s_name}
-Verslomatika · {s_email}
-
-{ps}
-"""
+    nl = chr(10)
+    text = ("Laba diena," + nl + nl + (nl + nl).join(paragraphs) + nl + nl
+            + how_title + nl + nl.join(f"{i}. {st}" for i, st in enumerate(how_steps, 1)) + nl + nl
+            + f"{cta_label}:{nl}{cta_url}{nl}{nl}{OFFER}{nl}"
+            + (f"{nl}{guide_line}{nl}{guide}{nl}" if guide else "")
+            + f"{nl}{s_name}{nl}Verslomatika · {s_email}{nl}{nl}{ps}{nl}")
 
     e = html_lib.escape
+    paras_html = "".join(f'<p style="margin:0 0 14px;">{e(p)}</p>' for p in paragraphs)
+    steps_html = "".join(f'<li style="margin:0 0 6px;">{e(st)}</li>' for st in how_steps)
     html = f"""<!DOCTYPE html>
 <html lang="lt"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
 <body style="margin:0;padding:0;background:#ffffff;">
 <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.6;color:#1e293b;max-width:560px;padding:8px 4px;">
 <p style="margin:0 0 14px;">Laba diena,</p>
-<p style="margin:0 0 14px;">{e(intro)}</p>
-{f'<p style="margin:0 0 14px;">{e(team)}</p>' if team else ''}
-<p style="margin:0 0 18px;">{e(offer)}</p>
-<p style="margin:0 0 20px;"><a href="{e(cta_url)}" style="display:inline-block;background:#5636E8;color:#ffffff;text-decoration:none;font-weight:600;padding:12px 20px;border-radius:8px;">Peržiūrėti paruoštą puslapį →</a></p>
-<p style="margin:0 0 18px;">{e(closing)}</p>
-{f'<p style="margin:0 0 18px;">{e(guide_line)} <a href="{e(guide)}" style="color:#5636E8;">Instrukcija čia</a>.</p>' if guide else ''}
+{paras_html}
+<div style="margin:4px 0 18px;padding:14px 16px;background:#f5f3ff;border-radius:10px;">
+<p style="margin:0 0 8px;font-weight:600;color:#312e81;">{e(how_title)}</p>
+<ol style="margin:0;padding-left:20px;">{steps_html}</ol>
+</div>
+<p style="margin:0 0 18px;"><a href="{e(cta_url)}" style="display:inline-block;background:#5636E8;color:#ffffff;text-decoration:none;font-weight:600;padding:12px 20px;border-radius:8px;">{e(cta_label)} →</a></p>
+<p style="margin:0 0 18px;">{e(OFFER)}</p>
+{f'<p style="margin:0 0 18px;">{e(guide_line)} <a href="{e(guide)}" style="color:#5636E8;">atidaryti</a>.</p>' if guide else ''}
 <p style="margin:0 0 18px;">{e(s_name)}<br><span style="color:#64748b;">Verslomatika · <a href="mailto:{e(s_email)}" style="color:#64748b;">{e(s_email)}</a></span></p>
 <p style="margin:0;color:#64748b;font-size:13px;">{e(ps)}</p>
 <p style="margin:18px 0 0;color:#94a3b8;font-size:11px;">MB Pinet · įm. k. 306067365 · Vilnius</p>
