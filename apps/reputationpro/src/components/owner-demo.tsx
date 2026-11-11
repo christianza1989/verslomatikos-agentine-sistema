@@ -37,7 +37,8 @@ export function OwnerDemo(p: Props) {
   const appHost = p.pageUrl.replace(/^https?:\/\//, '').split('/')[0];
   const restart = () => setResetKey((k) => k + 1);
   // Only the latest star click is shown (repeated clicks would clutter the inbox); private messages stack.
-  const add = (e: DemoEvent) => setEvents((list) => [{ ...e, at: Date.now() }, ...(e.kind === 'rating' ? list.filter((x) => x.kind !== 'rating') : list)].slice(0, 5));
+  // Owner decision 2026-11-11: the inbox shows only private messages (star clicks are not listed).
+  const add = (e: DemoEvent) => { if (e.kind === 'rating') return; setEvents((list) => [{ ...e, at: Date.now() }, ...list].slice(0, 5)); };
   const privateCount = events.filter((e) => e.kind === 'private').length;
 
   // Honest projection for 3 months. The monthly pace scales with the business's current
