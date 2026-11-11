@@ -284,3 +284,22 @@
 }
 
 .od-steps h2 { text-align: center; }
+
+/* QR usage scenes (2026-11-11) */
+.od-uses { text-align: center; }
+.od-uses h2 { font-size: clamp(24px, 3vw, 32px); }
+.od-uses-lead { margin: 10px auto 0; max-width: 620px; color: var(--muted); font-size: 15px; line-height: 1.6; }
+.od-uses-grid { margin-top: 28px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; text-align: left; }
+.od-use { margin: 0; background: #fff; border: 1px solid #e4e1f5; border-radius: 20px; overflow: hidden; transition: transform .2s, box-shadow .2s; }
+.od-use:hover { transform: translateY(-4px); box-shadow: 0 22px 40px -28px rgba(67, 37, 212, .45); }
+.od-use-art svg { display: block; width: 100%; height: auto; }
+.od-use figcaption { padding: 16px 18px 18px; }
+.od-use figcaption b { display: block; font-size: 15.5px; }
+.od-use figcaption span { display: block; margin-top: 5px; color: var(--muted); font-size: 13.5px; line-height: 1.55; }
+.od-uses-fit { margin: 24px auto 0; max-width: 700px; font-size: 14px; color: #475569; }
+.od-uses-url { display: inline-block; margin-top: 12px; font-size: 12px; background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; overflow-wrap: anywhere; }
+@media (max-width: 960px) { .od-uses-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 600px) { .od-uses-grid { grid-template-columns: 1fr; } }
+
+.od-how-art { margin: -6px -6px 14px; background: #fff; border-radius: 14px; padding: 6px; }
+.od-how-art svg { display: block; width: 100%; height: auto; }

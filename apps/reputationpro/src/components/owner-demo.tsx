@@ -6,6 +6,7 @@
 import { useState } from 'react';
 import { ArrowRight, BatteryFull, CheckCircle2, Lock, QrCode, Send, Signal, Star, TrendingUp, Wifi } from 'lucide-react';
 import { ReviewGate } from './review-gate';
+import { USAGE_SCENES, GoodPathArt, CarePathArt } from './usage-scenes';
 
 type Props = {
   slug: string;
@@ -21,9 +22,8 @@ type Props = {
   googleReviews: number | null;
 };
 
-function audience(industry: string) {
-  if (industry === 'clinic') return { one: 'pacientas', many: 'pacientai', gen: 'paciento', dat: 'pacientui', genPl: 'pacientų' };
-  if (industry === 'ecommerce') return { one: 'pirkėjas', many: 'pirkėjai', gen: 'pirkėjo', dat: 'pirkėjui', genPl: 'pirkėjų' };
+// Owner decision 2026-11-11: always "klientai" – the same page is sent to every kind of business.
+function audience(_industry: string) {
   return { one: 'klientas', many: 'klientai', gen: 'kliento', dat: 'klientui', genPl: 'klientų' };
 }
 
@@ -104,11 +104,13 @@ export function OwnerDemo(p: Props) {
       <h2>Vienas puslapis – du keliai</h2>
       <div className="od-how-grid">
         <div className="od-how-card od-how-good">
+          <div className="od-how-art"><GoodPathArt/></div>
           <span className="od-how-badge">4–5 ★</span>
           <h3>Daugiau 5★ atsiliepimų Google</h3>
           <p>Patenkintam {who.dat} padėkojame ir vienu mygtuku nukreipiame į Jūsų Google atsiliepimų formą. Užtrunka mažiau nei minutę.</p>
         </div>
         <div className="od-how-card od-how-care">
+          <div className="od-how-art"><CarePathArt/></div>
           <span className="od-how-badge">1–3 ★</span>
           <h3>Pastabos pirmiausia ateina Jums</h3>
           <p>{who.one.charAt(0).toUpperCase() + who.one.slice(1)} gali parašyti tiesiai vadovui. Žinutė ir el. laiškas Jus pasiekia iškart – galite paskambinti ir išspręsti situaciją.</p>
@@ -146,19 +148,19 @@ export function OwnerDemo(p: Props) {
       </ol>
     </section>
 
-    <section className="od-section od-stand">
-      <div className="od-stand-card">
-        <small>{p.name}</small>
-        <b>Įvertinkite mus</b>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={p.qr} alt={`${p.name} QR kodas`} width={150} height={150}/>
-        <span><QrCode size={13}/> Nuskenuokite telefonu</span>
+    {/* Where the QR / link works: personalized vector scenes with the business's real QR */}
+    <section className="od-section od-uses">
+      <span className="od-eyebrow">Naudokite visur</span>
+      <h2>Jūsų QR kodas ir nuoroda jau paruošti</h2>
+      <p className="od-uses-lead">Tas pats kodas tinka bet kur, kur bendraujate su klientais. Žemiau – tikras <b>{p.name}</b> QR kodas.</p>
+      <div className="od-uses-grid">
+        {USAGE_SCENES.map(({ key, title, text, Scene }) => <figure key={key} className="od-use">
+          <div className="od-use-art"><Scene qr={p.qr} name={p.name}/></div>
+          <figcaption><b>{title}</b><span>{text}</span></figcaption>
+        </figure>)}
       </div>
-      <div className="od-stand-text">
-        <h2>Jūsų QR kodas jau sugeneruotas</h2>
-        <p>Atsispausdinkite jį patys iš valdymo skydelio arba užsisakykite akrilinį stovelį. Tas pats kodas tinka sąskaitoms, vizitinėms ir lipdukams.</p>
-        <code>{p.pageUrl.replace(/^https?:\/\//, '')}</code>
-      </div>
+      <p className="od-uses-fit">Tinka klinikoms, salonams, autoservisams, el. parduotuvėms, restoranams, viešbučiams ir visiems, kam svarbūs Google atsiliepimai.</p>
+      <code className="od-uses-url">{p.pageUrl.replace(/^https?:\/\//, '')}</code>
     </section>
 
     <section className="od-section od-faq">
