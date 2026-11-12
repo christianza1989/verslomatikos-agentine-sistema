@@ -176,9 +176,10 @@ def build_followup(step: str, lead: dict, links: dict, expiry: datetime.datetime
     raise ValueError(step)
 
 
-def render(paragraphs: list, cta_label: str, cta_url: str) -> tuple:
-    """(text, html) tame pačiame stiliuje kaip pirmas laiškas."""
+def render(paragraphs: list, cta_label: str, cta_url: str, sender_name: str = None, sender_email: str = None) -> tuple:
+    """(text, html) tame pačiame stiliuje kaip pirmas laiškas. Pasirašo tas pats agentas, kuris rašė pirmą laišką."""
     e = html_lib.escape
+    sender_name, sender_email = sender_name or SENDER_NAME, sender_email or SENDER_EMAIL
     text_parts, html_parts = ["Laba diena,"], ['<p style="margin:0 0 14px;">Laba diena,</p>']
     for p in paragraphs:
         if isinstance(p, list):
@@ -190,7 +191,7 @@ def render(paragraphs: list, cta_label: str, cta_url: str) -> tuple:
     text_parts.append(f"{cta_label}: {cta_url}")
     text_parts.append(f"{SENDER_NAME}\nVerslomatika · {SENDER_EMAIL}")
     html_parts.append(f'<p style="margin:4px 0 20px;"><a href="{e(cta_url)}" style="display:inline-block;background:#5636E8;color:#ffffff;text-decoration:none;font-weight:600;padding:11px 18px;border-radius:8px;">{e(cta_label)} →</a></p>')
-    html_parts.append(f'<p style="margin:0;">{SENDER_NAME}<br><span style="color:#64748b;">Verslomatika · {SENDER_EMAIL}</span></p>')
+    html_parts.append(f'<p style="margin:0;">{e(sender_name)}<br><span style="color:#64748b;">Verslomatika · {e(sender_email)}</span></p>')
     text = "\n\n".join(text_parts) + "\n"
     html = ('<!DOCTYPE html><html lang="lt"><head><meta charset="utf-8"></head><body style="margin:0;background:#fff;">'
             '<div style="font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.6;color:#1e293b;max-width:560px;padding:8px 4px;">'
@@ -219,7 +220,7 @@ def lead_state(conn: sqlite3.Connection, lead: sqlite3.Row) -> dict:
                 engaged = t
                 break
     steps, e0 = {}, None
-    for m in conn.execute("SELECT step, message_id, subject, sent_at FROM campaign_messages WHERE lead_id=? ORDER BY sent_at", (lead["id"],)):
+    for m in conn.execute("SELECT step, message_id, subject, sent_at, sender FROM campaign_messages WHERE lead_id=? ORDER BY sent_at", (lead["id"],)):
         if m["step"] == "E0":
             e0 = m
         else:
@@ -256,7 +257,14 @@ def due_followups(conn: sqlite3.Connection, now: datetime.datetime) -> list:
     return out
 
 
-def compose(conn: sqlite3.Connection, lead, st: dict, step: str, dry_run: bool) -> dict:
+def agent_for(st: dict) -> dict:
+    """The agent whose mailbox sent the first email (same person continues the thread); else the first active one."""
+    active = [a for a in AGENT_PROFILES if a.get("is_active")]
+    sender = (st.get("e0")["sender"] if st.get("e0") is not None else None) or ""
+    return next((a for a in active if a["email"].lower() == sender.lower()), active[0])
+
+
+def compose(conn: sqlite3.Connection, lead, st: dict, step: str, dry_run: bool, agent: dict = None) -> dict:
     client = st["client"]
     token = "PERZIURA" if dry_run else issue_claim_token(conn, client["id"])
     expiry = datetime.datetime.now() + datetime.timedelta(milliseconds=CLAIM_TTL_MS)
@@ -268,10 +276,11 @@ def compose(conn: sqlite3.Connection, lead, st: dict, step: str, dry_run: bool) 
     from core.claim_tokens import rekvizitai_review_url
     platform = "rekvizitai" if rekvizitai_review_url(client["google_review_url"] or "") else "google"
     paragraphs, label, url = build_followup(step, lead_dict, links, expiry, platform)
-    text, html = render(paragraphs, label, url)
+    agent = agent or agent_for(st)
+    text, html = render(paragraphs, label, url, agent["name"], agent["email"])
     e0 = st["e0"]
     base_subject = (e0["subject"] if e0 else None) or f"{lead['business_name']}: klientų atsiliepimai{'' if platform == 'rekvizitai' else ' Google'}"
-    headers = {"List-Unsubscribe": f"<mailto:{SENDER_EMAIL}?subject=Atsisakau>"}
+    headers = {"List-Unsubscribe": f"<mailto:{agent['email']}?subject=Atsisakau>"}
     if e0 and e0["message_id"]:
         headers["In-Reply-To"] = e0["message_id"]
         headers["References"] = e0["message_id"]
@@ -283,36 +292,45 @@ def compose(conn: sqlite3.Connection, lead, st: dict, step: str, dry_run: bool) 
 # ---------------------------------------------------------------------------
 
 def dispatch_followups(limit: int = None, dry_run: bool = False, now: datetime.datetime = None, delay=(40, 65)) -> int:
+    from core.claim_tokens import vilnius_now
+    window_now = now or vilnius_now()  # 08:30–16:30 Lithuanian time, whatever the PC clock zone is
     now = now or datetime.datetime.now()
-    if not dry_run and not in_send_window(now):
+    if not dry_run and not in_send_window(window_now):
         return 0
     conn = sqlite3.connect(DB_PATH, timeout=10)
     conn.row_factory = sqlite3.Row
     ensure_schema(conn)
-    agent = next(a for a in AGENT_PROFILES if a.get("is_active"))
-    if limit is None:
-        limit = max(0, agent["daily_limit"] - count_sent_today(conn))
-    due = due_followups(conn, now)[:limit]
+    # Each mailbox has its own daily cap (first emails + follow-ups); a follow-up leaves from the agent of E0.
+    left = {}
+    due = []
+    for item in due_followups(conn, now):
+        agent = agent_for(item[2])
+        if agent["email"] not in left:
+            left[agent["email"]] = max(0, agent["daily_limit"] - count_sent_today(conn, agent["email"]))
+        if (limit is None or len(due) < limit) and left[agent["email"]] > 0:
+            left[agent["email"]] -= 1
+            due.append(item + (agent,))
     if not due:
         conn.close()
         return 0
-    sender = None
-    if not dry_run:
-        from core.smtp_sender import SMTPEmailSender
-        sender = SMTPEmailSender(config_path=agent["config_path"])
+    senders = {}
     done = 0
-    for _, lead, st, step in due:
-        msg = compose(conn, lead, st, step, dry_run)
-        label = f"{step} → {lead['business_name']} ({lead['email']})"
+    for _, lead, st, step, agent in due:
+        msg = compose(conn, lead, st, step, dry_run, agent)
+        label = f"{step} → {lead['business_name']} ({lead['email']}) nuo {agent['name']}"
         if dry_run:
             print(f"    👁 {label}: „{msg['subject']}“")
             done += 1
             continue
+        if agent["email"] not in senders:
+            from core.smtp_sender import SMTPEmailSender
+            senders[agent["email"]] = SMTPEmailSender(config_path=agent["config_path"])
+        sender = senders[agent["email"]]
         ok = sender.send_email(to_email=lead["email"], subject=msg["subject"], body_text=msg["text"], body_html=msg["html"], headers=msg["headers"])
         if not ok:
             print(f"    ✗ Nepavyko: {label}")
             continue
-        record_message(conn, lead["id"], step, sender.last_message_id, msg["subject"])
+        record_message(conn, lead["id"], step, sender.last_message_id, msg["subject"], sender=agent["email"])
         conn.execute("INSERT INTO campaign_events (id, lead_id, event_type, details, created_at) VALUES (?, ?, 'sent', ?, ?)",
                      (os.urandom(16).hex(), lead["id"], f"followup:{step}", datetime.datetime.now().isoformat()))
         conn.commit()

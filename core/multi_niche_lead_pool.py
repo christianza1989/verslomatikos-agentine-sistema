@@ -50,9 +50,9 @@ def get_uncontacted_leads_for_agent(target_industry: str, limit: int = 25, agent
     master = load_harvested_leads() + load_master_leads()
 
     if ind in ("clinic", "dental"):
-        raw_pool.extend([l for l in master if l.get("source") == "google_places" and l.get("niche") in ("odontologija", "veterinarija", "medicina")])
+        raw_pool.extend([l for l in master if l.get("google_place_id") and l.get("niche") in ("odontologija", "veterinarija", "medicina")])
         raw_pool.extend(DENTAL_CLINICS_CATALOG)
-        raw_pool.extend([l for l in master if l.get("source") != "google_places" and l.get("niche") in ("odontologija", "veterinarija", "medicina")])
+        raw_pool.extend([l for l in master if not l.get("google_place_id") and l.get("niche") in ("odontologija", "veterinarija", "medicina")])
     elif ind in ("ecommerce", "ecom"):
         raw_pool.extend(ECOMMERCE_LEADS_CATALOG)
         raw_pool.extend([l for l in master if l.get("niche") in ("baldai", "dovanos")])
@@ -131,7 +131,11 @@ def all_catalog_leads() -> List[Dict[str, Any]]:
         if key in seen:
             continue
         seen.add(key)
-        out.append({"business_name": b_name, "city": city, "email": email, "website": item.get("website", ""),
-                    "phone": item.get("phone", ""), "slug": item.get("slug") or slugify(b_name),
-                    "industry": item.get("niche") or "", "niche": item.get("niche") or ""})
+        row = {"business_name": b_name, "city": city, "email": email, "website": item.get("website", ""),
+               "phone": item.get("phone", ""), "slug": item.get("slug") or slugify(b_name),
+               "industry": item.get("niche") or "", "niche": item.get("niche") or ""}
+        for k in ("google_place_id", "google_review_url", "google_rating", "google_reviews_count", "source"):
+            if item.get(k) not in (None, ""):
+                row[k] = item[k]  # branches keep their own verified review link and rating
+        out.append(row)
     return out

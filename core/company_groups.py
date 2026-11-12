@@ -164,6 +164,9 @@ def provision_company(conn: sqlite3.Connection, root_lead: Dict, branch_leads: L
                  trial_ends_at, industry, parent_id, location_label) VALUES (?,?,?,?,?,?, 'demo_trial', 1, ?, ?, ?, ?)""",
             (f"pre-{b['slug']}", b["slug"], b.get("business_name") or root["business_name"], email, url, b.get("phone") or "",
              root.get("trial_ends_at"), root.get("industry") or "general", root["id"], b.get("city") or ""))
+        if b.get("google_place_id") or b.get("google_rating"):  # harvested branch: its own Google numbers
+            conn.execute("UPDATE clients SET google_place_id=?, google_rating=?, google_reviews_count=? WHERE slug=? AND is_demo=1",
+                         (b.get("google_place_id"), b.get("google_rating"), b.get("google_reviews_count"), b["slug"]))
     conn.commit()
     return root
 

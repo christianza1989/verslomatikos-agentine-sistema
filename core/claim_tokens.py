@@ -64,6 +64,13 @@ def ensure_schema(conn: sqlite3.Connection) -> None:
         except sqlite3.OperationalError as e:
             if "duplicate column" not in str(e).lower():
                 raise
+    # 2026-11-11: which agent mailbox sent it – daily cap is per mailbox, follow-ups go from the same agent.
+    if "sender" not in {row[1] for row in conn.execute("PRAGMA table_info(campaign_messages)")}:
+        try:
+            conn.execute("ALTER TABLE campaign_messages ADD COLUMN sender TEXT")
+        except sqlite3.OperationalError as e:
+            if "duplicate column" not in str(e).lower():
+                raise
     have = {row[1] for row in conn.execute("PRAGMA table_info(clients)")}
     if not have:
         return  # clients table is created by the Next.js app on first start
@@ -108,25 +115,48 @@ def suppress(conn: sqlite3.Connection, email: str, reason: str, details: str = "
 
 
 def record_message(conn: sqlite3.Connection, lead_id: str, step: str, message_id: str, subject: str,
-                   variant: str = None) -> None:
+                   variant: str = None, sender: str = None) -> None:
     import datetime
     import uuid
 
     conn.execute(
-        "INSERT INTO campaign_messages(id, lead_id, step, message_id, subject, sent_at, variant) VALUES (?,?,?,?,?,?,?)",
-        (str(uuid.uuid4()), lead_id, step, message_id, subject, datetime.datetime.now().isoformat(), variant),
+        "INSERT INTO campaign_messages(id, lead_id, step, message_id, subject, sent_at, variant, sender) VALUES (?,?,?,?,?,?,?,?)",
+        (str(uuid.uuid4()), lead_id, step, message_id, subject, datetime.datetime.now().isoformat(), variant,
+         (sender or "").strip().lower() or None),
     )
     conn.commit()
 
 
-def count_sent_today(conn: sqlite3.Connection) -> int:
-    """First emails (campaign_leads.sent_at) + follow-ups today. One shared daily cap protects the mailbox."""
+def vilnius_now():
+    """Lithuanian wall-clock time (naive). The server PC clock may be in another zone (it is Pacific time):
+    every send window / "today" for campaigns is Europe/Vilnius."""
     import datetime
+    from zoneinfo import ZoneInfo
+    return datetime.datetime.now(ZoneInfo("Europe/Vilnius")).replace(tzinfo=None)
 
-    today = datetime.datetime.now().strftime("%Y-%m-%d")
-    first = conn.execute("SELECT COUNT(*) FROM campaign_leads WHERE sent_at LIKE ?", (f"{today}%",)).fetchone()[0]
+
+def _vilnius_day_bounds_local() -> tuple:
+    """Today's Lithuanian day [00:00, 24:00) as PC-local ISO strings (sent_at is stored in PC-local time)."""
+    import datetime
+    from zoneinfo import ZoneInfo
+    tz = ZoneInfo("Europe/Vilnius")
+    start = datetime.datetime.now(tz).replace(hour=0, minute=0, second=0, microsecond=0)
+    end = start + datetime.timedelta(days=1)
+    to_local = lambda d: d.astimezone().replace(tzinfo=None).isoformat()
+    return to_local(start), to_local(end)
+
+
+def count_sent_today(conn: sqlite3.Connection, sender: str = None) -> int:
+    """Emails sent today (Lithuanian day). With `sender`: only that agent's mailbox (each mailbox has its own
+    daily cap; first emails + follow-ups share it). Without: all mailboxes (legacy total)."""
+    lo, hi = _vilnius_day_bounds_local()
+    if sender:
+        return conn.execute("SELECT COUNT(*) FROM campaign_messages WHERE sender=? AND sent_at >= ? AND sent_at < ?",
+                            (sender.strip().lower(), lo, hi)).fetchone()[0]
+    first = conn.execute("SELECT COUNT(*) FROM campaign_leads WHERE sent_at >= ? AND sent_at < ?", (lo, hi)).fetchone()[0]
     try:
-        follow = conn.execute("SELECT COUNT(*) FROM campaign_messages WHERE step != 'E0' AND sent_at LIKE ?", (f"{today}%",)).fetchone()[0]
+        follow = conn.execute("SELECT COUNT(*) FROM campaign_messages WHERE step != 'E0' AND sent_at >= ? AND sent_at < ?",
+                              (lo, hi)).fetchone()[0]
     except sqlite3.OperationalError:
         follow = 0
     return first + follow

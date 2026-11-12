@@ -89,6 +89,9 @@ def google_paragraphs(name: str, industry: str, rating: float, count: int, resea
     elif seg == "low":
         p1 = (f"{name} turi {_r(rating)}★ iš {count} atsiliepimų Google. Dažniausiai taip nutinka ne dėl prasto darbo: "
               f"patenkinti {many} tyli, o nepatenkinti parašo pirmi.")
+    elif rating >= 4.8:  # few, but excellent
+        p1 = (f"{name} turi puikų {_r(rating)}★ iš {count} atsiliepimų Google. Įvertinimas puikus, bet atsiliepimų dar nedaug, "
+              f"o žmonės labiau pasitiki vietomis, kurios jų turi dešimtis ar šimtus.")
     else:  # few
         p1 = (f"{name} turi {_r(rating)}★ iš {count} atsiliepimų Google. Kai atsiliepimų nedaug, "
               f"kiekvienas naujas stipriai keičia vaizdą, todėl rezultatą galima pakeisti greitai.")
@@ -111,8 +114,11 @@ def google_paragraphs(name: str, industry: str, rating: float, count: int, resea
         p2 = (f"Paskaičiavome: jei kas mėnesį atsiliepimą paliktų {satisfied(pace, many)}, "
               f"{_period(months)} turėtumėte apie {_r(target)}★ ir {reviews_acc(total)} (+{growth} %).")
     elif total >= count * 1.8:
+        ratio = total / count
+        times = ("beveik dvigubai daugiau" if ratio < 2 else "dvigubai daugiau" if ratio < 2.3
+                 else "daugiau nei dvigubai" if ratio < 2.8 else f"apie {round(ratio)} kartus daugiau")
         p2 = (f"Paskaičiavome: jei kas mėnesį atsiliepimą paliktų {satisfied(pace, many)}, "
-              f"{_period(months)} atsiliepimų būtų beveik dvigubai daugiau: {total} vietoj {count}, o {_r(rating)}★ išliktų.")
+              f"{_period(months)} atsiliepimų būtų {times}: {total} vietoj {count}, o {_r(rating)}★ išliktų.")
     else:
         p2 = (f"Paskaičiavome: jei kas mėnesį atsiliepimą paliktų {satisfied(pace, many)}, "
               f"{_period(months)} atsiliepimų padaugėtų {growth} %: {total} vietoj {count}, o {_r(rating)}★ išliktų.")

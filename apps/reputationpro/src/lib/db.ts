@@ -320,6 +320,11 @@ function ensureCampaignMessages(sql: DatabaseSync) {
     try { sql.exec('ALTER TABLE campaign_messages ADD COLUMN variant TEXT'); }
     catch (error) { if (!/duplicate column/i.test(String(error))) throw error; }
   }
+  // 2026-11-11: agent mailbox that sent the message (per-mailbox daily cap, follow-ups from the same agent).
+  if (!have.has('sender')) {
+    try { sql.exec('ALTER TABLE campaign_messages ADD COLUMN sender TEXT'); }
+    catch (error) { if (!/duplicate column/i.test(String(error))) throw error; }
+  }
 }
 
 export const SUBJECT_CASES: Record<string, string> = {

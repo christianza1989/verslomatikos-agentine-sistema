@@ -190,19 +190,49 @@ def load_harvested() -> list:
     return _load(OUT_PATH, [])
 
 
-def _known() -> tuple:
-    """Emails, place IDs and domains already in any catalog or the campaign DB (never harvest twice)."""
+def _known() -> dict:
+    """What is already in any catalog or the campaign DB (never harvest twice). A known website domain in a
+    NEW city is a branch of that company (Etapas N): it keeps the company's address and joins its conversation."""
     from core.multi_niche_lead_pool import all_catalog_leads
     from core.dental_lead_pool import get_already_contacted_emails
-    emails, places, domains = set(get_already_contacted_emails()), set(), set()
+    contacted = set(get_already_contacted_emails())
+    k = {"contacted": contacted, "emails": set(contacted), "places": set(), "domain_email": {}, "domain_city": set()}
+    # Old hand-made catalogs hold invented rows; only rows with a verified place ID count as "already have it".
     for l in all_catalog_leads() + load_harvested():
-        if l.get("email"):
-            emails.add(l["email"].lower())
+        email = (l.get("email") or "").lower()
+        if email:
+            k["emails"].add(email)
         if l.get("google_place_id"):
-            places.add(l["google_place_id"])
-        if l.get("website"):
-            domains.add(_domain(l["website"]))
-    return emails, places, domains
+            k["places"].add(l["google_place_id"])
+        dom = _domain(l["website"]) if l.get("website") else (email.split("@")[1] if "@" in email and email.split("@")[1] not in FREE_MAIL else "")
+        if dom and l.get("google_place_id"):
+            k["domain_email"].setdefault(dom, email)
+            k["domain_city"].add((dom, (l.get("city") or "").strip().lower()))
+    return k
+
+
+def _resolve(k: dict, pid: str, site: str, city: str) -> tuple:
+    """(email, kind, outcome) for one place. outcome: new | branch | dupe | no_site | no_email."""
+    if not pid or pid in k["places"]:
+        return None, None, "dupe"
+    k["places"].add(pid)
+    if not site:
+        return None, None, "no_site"
+    dom, c = _domain(site), city.strip().lower()
+    if dom in k["domain_email"]:
+        if (dom, c) in k["domain_city"]:
+            return None, None, "dupe"  # same company, same city (second branch in one city: not supported yet)
+        k["domain_city"].add((dom, c))
+        return k["domain_email"][dom], "branch", "branch"
+    email, kind = find_email(site)
+    if not email:
+        return None, None, "no_email"
+    if email in k["emails"] and email in k["contacted"]:
+        return None, None, "dupe"  # already written to
+    k["emails"].add(email)
+    k["domain_email"][dom] = email
+    k["domain_city"].add((dom, c))
+    return email, kind, "new"
 
 
 def _queries() -> list:
@@ -216,7 +246,7 @@ def harvest(max_requests: int = 40, target: int = None, verbose: bool = True) ->
     state = _load(STATE_PATH, {"done": [], "cursor": {}})
     done = set(state.get("done", []))
     leads = load_harvested()
-    emails, places, domains = _known()
+    known = _known()
     used = {l["slug"] for l in leads}
     stats = {"requests": 0, "places": 0, "added": 0, "no_site": 0, "no_email": 0, "dupes": 0, "closed": 0}
     start_total = len(leads)
@@ -240,22 +270,11 @@ def harvest(max_requests: int = 40, target: int = None, verbose: bool = True) ->
                 if p.get("businessStatus") not in (None, "OPERATIONAL"):
                     stats["closed"] += 1
                     continue
-                if pid in places or (site and _domain(site) in domains):
-                    stats["dupes"] += 1
-                    continue
-                places.add(pid)
-                if not site:
-                    stats["no_site"] += 1
-                    continue
-                domains.add(_domain(site))
-                email, kind = find_email(site)
+                email, kind, outcome = _resolve(known, pid, site, city)
                 if not email:
-                    stats["no_email"] += 1
+                    stats[{"dupe": "dupes"}.get(outcome, outcome)] += 1
                     continue
-                if email in emails:
-                    stats["dupes"] += 1
-                    continue
-                emails.add(email)
+                stats["branches"] = stats.get("branches", 0) + (outcome == "branch")
                 name = (p.get("displayName") or {}).get("text") or _domain(site)
                 slug = slugify(name)
                 if slug in used:
@@ -313,6 +332,47 @@ def places_lookup(business_name: str, city: str = "", website: str = "") -> dict
     return {}
 
 
+def import_maps_list(path: str, city: str, niche: str) -> dict:
+    """Without a Places key: a list copied from Google Maps in a real browser (one line per place:
+    name|place_id|rating|count|website|phone). Emails come from the business's own website, as in harvest()."""
+    from core.dental_lead_pool import slugify
+    ind = NICHES.get(niche, ("clinic", []))[0]
+    leads = load_harvested()
+    known = _known()
+    used = {l["slug"] for l in leads}
+    stats = {"rows": 0, "added": 0, "branches": 0, "no_email": 0, "no_site": 0, "dupes": 0}
+    with open(path, encoding="utf-8") as f:
+        rows = [ln.rstrip("\r\n").split("|") for ln in f if ln.count("|") >= 5]
+    for row in rows:
+        name, pid, rating, count, site, phone = row[0], row[1], row[2], row[3], row[4], row[5]
+        stats["rows"] += 1
+        if not pid.startswith("ChIJ"):
+            stats["dupes"] += 1
+            continue
+        email, kind, outcome = _resolve(known, pid, site, city)
+        if not email:
+            stats[{"dupe": "dupes"}.get(outcome, outcome)] += 1
+            continue
+        stats["branches"] += outcome == "branch"
+        clean = re.split(r"\s+[-|–]\s+", name)[0].strip().strip('"')
+        slug = slugify(clean)
+        if slug in used:
+            slug = f"{slug}-{slugify(city)}"
+        used.add(slug)
+        leads.append({
+            "business_name": clean, "city": city, "email": email, "email_kind": kind, "website": site, "phone": phone,
+            "niche": niche, "industry": ind, "slug": slug, "google_place_id": pid,
+            "google_review_url": f"https://search.google.com/local/writereview?placeid={pid}",
+            "google_rating": float(rating) if rating else None, "google_reviews_count": int(count) if count else None,
+            "source": "google_maps_browser", "harvested_at": datetime.date.today().isoformat(),
+        })
+        stats["added"] += 1
+        print(f"  + {clean} ({city}) {rating}★/{count} → {email}")
+    _save(OUT_PATH, leads)
+    stats["total"] = len(leads)
+    return stats
+
+
 def status() -> None:
     leads = load_harvested()
     state = _load(STATE_PATH, {"done": []})
@@ -331,6 +391,11 @@ if __name__ == "__main__":
     opt = lambda name, default: int(next((a.split("=", 1)[1] for a in args if a.startswith(f"--{name}=")), default))
     if cmd == "email":
         print(find_email(args[1]))
+    elif cmd == "import":  # import list.txt --city=Kaunas --niche=odontologija
+        city = next((a.split("=", 1)[1] for a in args if a.startswith("--city=")), "Vilnius")
+        niche = next((a.split("=", 1)[1] for a in args if a.startswith("--niche=")), "odontologija")
+        print(import_maps_list(args[1], city, niche))
+        status()
     elif cmd == "lookup":  # lookup "Pavadinimas" Miestas https://svetaine.lt
         print(places_lookup(args[1], args[2] if len(args) > 2 else "", args[3] if len(args) > 3 else ""))
     elif cmd == "run":

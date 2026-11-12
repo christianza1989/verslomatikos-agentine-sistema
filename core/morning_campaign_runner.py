@@ -55,6 +55,13 @@ def _resolve_agent_config(cfg_name: str) -> str:
         return example_path
     return FALLBACK_CONFIG
 
+
+def _has_real_config(cfg_name: str) -> bool:
+    """An agent sends only with its real (Git-ignored) mailbox config. The .example.json placeholder must never
+    make it "active": 2026-11-11 Marius had only the example file, its password was rejected (535), and half
+    of the companies (assigned to him) would never have been written to."""
+    return os.path.exists(os.path.join(CONFIGS_REPUTATION_DIR, cfg_name))
+
 # 2 Aktyvūs ReputationPro agentai klinikinėms įstaigoms (odontologija, klinikos, veterinarija)
 # Tomas (@verslomatika.lt) ir Marius (@verslomatika.eu). Kiti profiliai saugomi ateities plėtrai.
 AGENT_PROFILES = [
@@ -76,7 +83,7 @@ AGENT_PROFILES = [
         "config_path": _resolve_agent_config("agent_marius.json"),
         "daily_limit": 25,
         "target_industry": "clinic",
-        "is_active": True
+        "is_active": _has_real_config("agent_marius.json")  # needs configs/reputation_agents/agent_marius.json
     },
     {
         "agent_id": "agent-laura",
@@ -116,7 +123,7 @@ def get_today_sent_count(agent_email: str) -> int:
     try:
         conn = sqlite3.connect(DB_PATH)
         ensure_schema(conn)
-        cnt = count_sent_today(conn)
+        cnt = count_sent_today(conn, agent_email)
         conn.close()
         return cnt
     except Exception as e:
@@ -427,6 +434,14 @@ def _company_candidates(conn: sqlite3.Connection, agent: dict, needed: int) -> l
             known = {((m.get("email") or "").lower(), (m.get("city") or "").lower()) for m in members}
             members = members + [dict(m, industry=members[0].get("industry"), niche=members[0].get("niche"))
                                  for m in everyone.get(key, []) if ((m["email"], m["city"].lower()) not in known)]
+        if any(m.get("google_place_id") for m in members):
+            # Verified (Google Maps) rows win: old hand-made catalog rows of the same company may be invented
+            # (wrong city, dead address), so they never appear in the email's branch list.
+            members = [m for m in members if m.get("google_place_id")]
+        elif os.environ.get("ALLOW_UNVERIFIED_CATALOG") != "1":
+            # 2026-11-11: 35 % of the old catalog addresses were invented; without a verified Google place
+            # the company is not emailed (it waits for core/lead_harvester.py to verify it).
+            continue
         if same_niche and agent_for_company(key, same_niche) != agent["agent_id"]:
             continue
         if get_company(conn, key) or any((m.get("email") or "").lower() in contacted for m in members):
@@ -495,11 +510,26 @@ def _run_cascades(conn: sqlite3.Connection, agent: dict, sender, budget: int, dr
                      (lead_id, m.get("business_name") or company["name"], to_email, branch_slug, m.get("city") or "", now_iso, now_iso, now_iso, company["company_key"]))
         conn.execute("INSERT INTO campaign_events (id, lead_id, event_type, details, created_at) VALUES (?, ?, 'sent', 'company-cascade', ?)", (str(uuid.uuid4()), lead_id, now_iso))
         conn.commit()
-        record_message(conn, lead_id, "E0", sender.last_message_id, subj, variant=variant)
+        record_message(conn, lead_id, "E0", sender.last_message_id, subj, variant=variant, sender=agent["email"])
         save_company(conn, company["company_key"], company["name"], company["agent_id"], company["root_client_id"], company["members"], company["contacted"] + [to_email])
         print(f"    ✓ Kaskada: {company['name']} → {to_email} ({m.get('city') or ''})")
         sent += 1
     return sent
+
+
+def _branch_review_url(b: dict) -> tuple:
+    """(url, platform) for a branch: its own verified link (harvested place ID) first, else a Places lookup,
+    else the old resolver (Rekvizitai)."""
+    from core.claim_tokens import is_direct_review_url
+    if b.get("google_review_url") and is_direct_review_url(b["google_review_url"]):
+        return b["google_review_url"], "google"
+    from core.lead_harvester import places_lookup
+    found = places_lookup(b.get("business_name") or "", b.get("city") or "", b.get("website") or "")
+    if found:
+        b.update({k: v for k, v in found.items() if not b.get(k)})
+        return found["google_review_url"], "google"
+    from core.google_place_resolver import get_review_destination
+    return get_review_destination(b.get("business_name") or "", b.get("city") or "Vilnius", b.get("phone"), b.get("website"))[:2]
 
 
 def email_domain_exists(email: str) -> bool:
@@ -598,8 +628,7 @@ def dispatch_daily_quota(target_agent_id: str = "agent-tomas", force_count: int 
             if lead.get("_branches"):
                 from core.company_groups import provision_company
                 from core.google_place_resolver import get_review_destination
-                provision_company(conn, lead, lead["_branches"],
-                                  lambda b: get_review_destination(b.get("business_name") or b_name, b.get("city") or "Vilnius", b.get("phone"), b.get("website"))[:2])
+                provision_company(conn, lead, lead["_branches"], _branch_review_url)
 
         # Naudojame esamą campaign_leads id, kitaip sekimo įvykiai nesusietų su lead'u.
         row = conn.execute("SELECT id FROM campaign_leads WHERE email=?", (to_email,)).fetchone()
@@ -642,7 +671,7 @@ def dispatch_daily_quota(target_agent_id: str = "agent-tomas", force_count: int 
             conn.execute("INSERT INTO campaign_events (id, lead_id, event_type, created_at) VALUES (?, ?, 'sent', ?)",
                          (str(uuid.uuid4()), lead_id, now_iso))
             conn.commit()
-            record_message(conn, lead_id, "E0", sender.last_message_id, subj, variant=variant)  # follow-up'ų gijai
+            record_message(conn, lead_id, "E0", sender.last_message_id, subj, variant=variant, sender=agent["email"])  # follow-up'ų gijai
             if lead.get("_company_key"):  # Etapas N: the company is now one conversation
                 from core.company_groups import save_company, ensure_company_schema
                 ensure_company_schema(conn)
@@ -670,13 +699,16 @@ def dispatch_daily_quota(target_agent_id: str = "agent-tomas", force_count: int 
 
 
 def run_daily_morning_daemon(target_hour: int = 8, target_minute: int = 30):
-    """Kiekvieną rytą (08:30) užpildo aktyvių agentų dienos kvotą. Tikrina kas 10 min."""
-    print(f"[{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] 🕒 Rytinio B2B siuntimo demonas paleistas.")
-    print(f"Siuntimo laikas: kasdien {target_hour:02d}:{target_minute:02d}. Agentai: {[a['email'] for a in AGENT_PROFILES if a.get('is_active')]}")
+    """Kiekvieną darbo dieną 08:30–16:30 Lietuvos laiku užpildo aktyvių agentų dienos kvotą. Tikrina kas 10 min.
+    Laikas visada Europe/Vilnius (serverio PC laikrodis gali būti kitoje zonoje)."""
+    from core.claim_tokens import vilnius_now
+    from core.followup_runner import SEND_WINDOW
+    print(f"[{vilnius_now().strftime('%Y-%m-%d %H:%M:%S')} LT] 🕒 Rytinio B2B siuntimo demonas paleistas.")
+    print(f"Siuntimo laikas: darbo dienomis {target_hour:02d}:{target_minute:02d}–{SEND_WINDOW[1].strftime('%H:%M')} Lietuvos laiku. Agentai: {[a['email'] for a in AGENT_PROFILES if a.get('is_active')]}")
     harvested_on = None
     while True:
         try:
-            now = datetime.datetime.now()
+            now = vilnius_now()
             # Etapas L: once a day before sending, top up the pool with new businesses (core/lead_harvester.py).
             if harvested_on != now.date() and now.hour >= 3:
                 harvested_on = now.date()
@@ -691,7 +723,8 @@ def run_daily_morning_daemon(target_hour: int = 8, target_minute: int = 30):
             for agent in AGENT_PROFILES:
                 if not agent.get("is_active"):
                     continue
-                after_start = now.hour > target_hour or (now.hour == target_hour and now.minute >= target_minute)
+                after_start = ((now.hour > target_hour or (now.hour == target_hour and now.minute >= target_minute))
+                               and now.time() <= SEND_WINDOW[1])  # never in the Lithuanian evening/night
                 if after_start:
                     # 1) Follow-up'ai (karšti pirmiau) – core/followup_runner.py, tik darbo dienomis 08:30–16:30.
                     from core.followup_runner import dispatch_followups
@@ -752,7 +785,7 @@ def send_manual_test(business_name: str, to_email: str, city: str = "Vilnius", i
     """, (lead_id, business_name, lead["email"], lead["slug"], city, now_iso, now_iso, now_iso))
     conn.execute("INSERT INTO campaign_events (id, lead_id, event_type, created_at) VALUES (?, ?, 'sent', ?)", (str(uuid.uuid4()), lead_id, now_iso))
     conn.commit()
-    record_message(conn, lead_id, "E0", sender.last_message_id, subj, variant=variant)
+    record_message(conn, lead_id, "E0", sender.last_message_id, subj, variant=variant, sender=agent["email"])
     conn.close()
     print(f"✓ Išsiųsta [{variant}]: „{subj}“ → {lead['email']}\n  Demo: {APP_BASE}/r/{lead['slug']} (asmeninė nuoroda su tokenu – laiške)")
     return True
@@ -917,7 +950,7 @@ def send_researched(brief_path: str, send: bool = False, test_to: str = None) ->
     conn.execute("INSERT INTO campaign_events (id, lead_id, event_type, details, created_at) VALUES (?, ?, 'sent', ?, ?)",
                  (str(uuid.uuid4()), lead_id, campaign, now_iso))
     conn.commit()
-    record_message(conn, lead_id, "E0", sender.last_message_id, subj)
+    record_message(conn, lead_id, "E0", sender.last_message_id, subj, sender=agent["email"])
     if not test_to:  # Etapas N: the researched company is one conversation (stops, cascade, owner panel)
         from core.company_groups import company_key as _ck, save_company, ensure_company_schema
         ensure_company_schema(conn)

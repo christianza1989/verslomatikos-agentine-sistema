@@ -243,6 +243,75 @@ def run_listener(target_sender: str = "lilijazap@gmail.com", poll_interval: int 
 
         time.sleep(poll_interval)
 
+def _plain_body(msg) -> str:
+    if msg.is_multipart():
+        for part in msg.walk():
+            if part.get_content_type() == "text/plain" and not part.get_filename():
+                payload = part.get_payload(decode=True)
+                if payload:
+                    return payload.decode(part.get_content_charset() or "utf-8", errors="ignore")
+        for part in msg.walk():
+            if part.get_content_type() == "text/html":
+                payload = part.get_payload(decode=True)
+                if payload:
+                    return re.sub(r"<[^>]+>", " ", payload.decode(part.get_content_charset() or "utf-8", errors="ignore"))
+        return ""
+    payload = msg.get_payload(decode=True)
+    return payload.decode(msg.get_content_charset() or "utf-8", errors="ignore") if payload else ""
+
+
+def run_campaign_inbox(cfg_path: str, poll_interval: int = 30):
+    """Other agents' mailboxes (2026-11-11: Marius). Only campaign replies: opt-out ("ne") or reply -> follow-ups stop.
+    Accounting and the sales agent stay on Tomas' mailbox (run_listener)."""
+    import json
+    cfg = json.load(open(cfg_path, encoding="utf-8"))
+    user, host, port = cfg["email"], cfg.get("imap_host", "imap.hostinger.com"), int(cfg.get("imap_port", 993))
+    context = ssl.create_default_context()
+    seen = None
+    print(f"[{datetime.now().strftime('%H:%M:%S')}] 🎧 Kampanijos atsakymai dėžutėje {user}...")
+    while True:
+        try:
+            with imaplib.IMAP4_SSL(host, port, ssl_context=context) as mail:
+                mail.login(user, cfg["password"])
+                mail.select("INBOX")
+                status, msgs = mail.search(None, "ALL")
+                ids = [m.decode() for m in msgs[0].split()] if status == "OK" and msgs[0] else []
+                if seen is None:
+                    seen = set(ids)
+                    print(f"[{datetime.now().strftime('%H:%M:%S')}] {user}: esami laiškai {len(seen)}, laukiami nauji.")
+                for mid in ids:
+                    if mid in seen:
+                        continue
+                    seen.add(mid)
+                    _, data = mail.fetch(mid.encode(), "(RFC822)")
+                    msg = email.message_from_bytes(data[0][1])
+                    sender_email = parseaddr(msg.get("From", ""))[1].lower()
+                    subject, enc = decode_header(msg.get("Subject", ""))[0]
+                    if isinstance(subject, bytes):
+                        subject = subject.decode(enc or "utf-8", errors="ignore")
+                    body = _plain_body(msg)
+                    low = f"{subject} {body}".lower()
+                    if any(k in low for k in ["automatinis atsakymas", "out of office", "auto-reply", "autoreply", "atostog",
+                                               "delivery status notification", "mail delivery subsystem"]):
+                        continue
+                    if sender_email in get_campaign_lead_emails() and sender_email != user.lower():
+                        record_inbound_reply(sender_email, body.strip())
+                        if is_opt_out(body):
+                            record_opt_out(sender_email, body.strip())
+                        else:
+                            print(f"[{datetime.now().strftime('%H:%M:%S')}] 🔥 [{user}] Atsakė {sender_email}: atsakykite asmeniškai.")
+        except Exception as e:
+            print(f"[{datetime.now().strftime('%H:%M:%S')}] [{user} klaida] {e}")
+        time.sleep(poll_interval)
+
+
 if __name__ == "__main__":
+    import threading
     target = sys.argv[1] if len(sys.argv) > 1 else "lilijazap@gmail.com"
+    # Every other active campaign agent with a real mailbox config gets its own reply watcher.
+    from core.morning_campaign_runner import AGENT_PROFILES
+    for a in AGENT_PROFILES:
+        cfg = a.get("config_path") or ""
+        if a.get("is_active") and a["email"] != "tomas@verslomatika.lt" and cfg.endswith(".json") and not cfg.endswith(".example.json"):
+            threading.Thread(target=run_campaign_inbox, args=(cfg,), daemon=True).start()
     run_listener(target)
