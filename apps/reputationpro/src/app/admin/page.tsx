@@ -65,8 +65,9 @@ export default async function Admin({
   const query = await searchParams;
   // Branches (filialai): a clinic login manages its main profile and all its branches (?clinic={slug}).
   const own = principal.role === 'clinic' ? getClientById(principal.clientId) : undefined;
+  // Owner: activated accounts first (the picker used to open on the newest outbound demo), demos after them.
   const clients = principal.role === 'owner'
-    ? getClients().filter((c) => !c.archived_at)
+    ? getClients().filter((c) => !c.archived_at).sort((a, b) => Number(!!a.is_demo) - Number(!!b.is_demo))
     : own ? (own.parent_id ? [own] : [own, ...getBranches(own.id)]) : [];
   // ROADMAP N7: a branch manager's login sees only its own branch.
   const isBranchLogin = principal.role === 'clinic' && !!own?.parent_id;
@@ -173,7 +174,7 @@ export default async function Admin({
             </span>
             <div className="owner-meta">
               <strong>{(root ?? clinic)?.business_name ?? 'Jūsų erdvė'}</strong>
-              <small>{principal.role === 'owner' ? 'Savininko prieiga' : 'Sertifikuota paskyra'}</small>
+              <small>{principal.role === 'owner' ? 'Savininko prieiga' : 'Kliento paskyra'}</small>
             </div>
           </div>
           <Logout />
@@ -229,7 +230,7 @@ export default async function Admin({
                 <ClinicPicker
                   label={principal.role === 'owner' ? 'Pasirinkite įmonę' : 'Pasirinkite filialą'}
                   clinics={principal.role === 'owner'
-                    ? clients.map((c) => ({ slug: c.slug, business_name: c.business_name, label: c.parent_id ? `↳ ${c.business_name}${rootNames.get(c.parent_id) ? ` (${rootNames.get(c.parent_id)})` : ''}` : c.business_name }))
+                    ? clients.map((c) => ({ slug: c.slug, business_name: c.business_name, label: `${c.parent_id ? `↳ ${c.business_name}${rootNames.get(c.parent_id) ? ` (${rootNames.get(c.parent_id)})` : ''}` : c.business_name}${c.is_demo ? ' · demo' : ' · aktyvuota'}` }))
                     : locations.map((l) => ({ slug: l.slug, business_name: l.business_name, label: `${l.is_root ? '★ ' : ''}${l.business_name}${l.location_label ? ` · ${l.location_label}` : ''}` }))}
                   current={clinic.slug}
                 />
@@ -345,8 +346,8 @@ export default async function Admin({
                     <p>Klientų įvertinimai Jūsų puslapyje.</p>
                     
                     <div className="average-value">
-                      <strong>{stats.ratings ? stats.average!.toFixed(1) : '–'}</strong>
-                      <span>{stats.ratings ? '/ 5.0' : 'Dar nėra įvertinimų'}</span>
+                      <strong>{stats.ratings ? stats.average!.toFixed(1).replace('.', ',') : '–'}</strong>
+                      <span>{stats.ratings ? '/ 5' : 'Dar nėra įvertinimų'}</span>
                     </div>
 
                     <div className="ratings-histogram">
@@ -448,7 +449,7 @@ export default async function Admin({
             <div>
               <strong>ReputationPro</strong> · Verslomatika B2B Reputacijos Ekosistema
             </div>
-            <span>Saugi SSL / AES-256 šifruota prieiga · MB „Pinet“</span>
+            <span>Saugus HTTPS ryšys · MB „Pinet“</span>
           </footer>
         </main>
       </div>

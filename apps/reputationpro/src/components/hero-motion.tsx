@@ -52,6 +52,8 @@ function channelsFor(industry: string): Channel[] {
   ];
 }
 
+// Lithuanian: 1/21 atsiliepimas, 2–9/22 atsiliepimai, 10–20/30 atsiliepimų.
+const reviewsWord = (n: number) => n % 10 === 0 || (n % 100 >= 11 && n % 100 <= 19) ? 'atsiliepimų' : n % 10 === 1 ? 'atsiliepimas' : 'atsiliepimai';
 const fmt1 = (n: number) => n.toLocaleString('lt-LT', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 
 // ---- scenes ----------------------------------------------------------------------------------
@@ -87,7 +89,7 @@ function GoodScene({ name, platform, rating, reviews, opened }: { name: string; 
       <b>{name}</b>
       <div className="hm-review-stars">{[0, 1, 2, 3, 4].map((i) => <Star key={i} size={15} fill="currentColor" strokeWidth={0} className="hm-star" style={{ animationDelay: `${0.6 + i * 0.12}s` }}/>)}</div>
       <i/><i/>
-      {rating && reviews ? <small>{fmt1(rating)}★ · {reviews} → <b className="hm-count">{reviews + 1}</b> atsiliepimų</small> : <small><b className="hm-count">+1</b> naujas atsiliepimas</small>}
+      {rating && reviews ? <small>{fmt1(rating)}★ · {reviews} → <b className="hm-count">{reviews + 1}</b> {reviewsWord(reviews + 1)}</small> : <small><b className="hm-count">+1</b> naujas atsiliepimas</small>}
     </div>
   </div>
     <p className="hm-note">{opened

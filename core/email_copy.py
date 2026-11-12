@@ -63,7 +63,7 @@ NICHE = {
     "auto":      ("vairuotojas", "vairuotojai", "prie kasos ar atsiėmus automobilį"),
     "horeca":    ("svečias", "svečiai", "ant sąskaitos ar staliuko"),
     "ecommerce": ("pirkėjas", "pirkėjai", "siuntinyje ar pristatymo laiške"),
-    "services":  ("klientas", "klientai", "prie kasos ar SMS žinute"),
+    "services":  ("klientas", "klientai", "prie kasos ar registratūroje"),
 }
 
 

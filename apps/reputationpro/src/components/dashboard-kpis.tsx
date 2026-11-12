@@ -26,19 +26,9 @@ export function DashboardKPIs({
   const unreadCount = stats.unread;
   const resolvedCount = Math.max(0, shieldedFeedback - unreadCount);
   
-  // Conversion rate of positive experiences routed to Google
-  const positiveRate = totalInteractions > 0 
-    ? Math.round((positiveRedirects / totalInteractions) * 100) 
-    : 100;
-
-  // Resolution rate of private feedback
-  const resolutionRate = shieldedFeedback > 0 
-    ? Math.round((resolvedCount / shieldedFeedback) * 100) 
-    : 100;
-
-  const displayAverage = stats.average 
-    ? stats.average.toFixed(1) 
-    : (totalInteractions > 0 ? '4.8' : '5.0');
+  // Only real numbers: with no ratings yet nothing is shown as "100 %" or "5.0" (2026-11-12 audit).
+  const positiveRate = totalInteractions > 0 ? Math.round((positiveRedirects / totalInteractions) * 100) : null;
+  const displayAverage = stats.average != null && totalInteractions > 0 ? stats.average.toFixed(1).replace('.', ',') : null;
 
   return (
     <div className="kpi-section">
@@ -76,16 +66,18 @@ export function DashboardKPIs({
         {/* Card 1: Google Maps Redirects */}
         <div className="stat-card stat-card-positive">
           <div className="stat-card-top">
-            <span className="stat-label">Google 5★ Nukreipimai</span>
+            <span className="stat-label">Nukreipta į Google (4–5★)</span>
             <div className="stat-icon-wrap icon-positive">
               <Star size={18} fill="currentColor" />
             </div>
           </div>
           <div className="stat-card-value">
             <strong>{positiveRedirects}</strong>
-            <span className="stat-trend trend-up">
-              <TrendingUp size={13} /> {positiveRate}% pasitenkinimas
-            </span>
+            {positiveRate != null && (
+              <span className="stat-trend trend-up">
+                <TrendingUp size={13} /> {positiveRate} % įvertinimų 4–5★
+              </span>
+            )}
           </div>
           <div className="stat-card-bottom">
             <span>Patenkinti klientai, nukreipti į Google atsiliepimų formą</span>
@@ -102,9 +94,7 @@ export function DashboardKPIs({
           </div>
           <div className="stat-card-value">
             <strong>{shieldedFeedback}</strong>
-            <span className="stat-badge-saved">
-              Išsaugota reputacija
-            </span>
+            {shieldedFeedback > 0 && <span className="stat-badge-saved">Pirmiausia Jūsų komandai</span>}
           </div>
           <div className="stat-card-bottom">
             <span>1–3★ pastabos, kurias klientai parašė pirmiausia Jūsų komandai</span>
@@ -114,48 +104,52 @@ export function DashboardKPIs({
         {/* Card 3: Experience Rating */}
         <div className="stat-card">
           <div className="stat-card-top">
-            <span className="stat-label">Klientų patirties indeksas</span>
+            <span className="stat-label">Vidutinis įvertinimas</span>
             <div className="stat-icon-wrap icon-neutral">
               <Sparkles size={18} />
             </div>
           </div>
           <div className="stat-card-value">
             <div className="average-rating-display">
-              <strong>{displayAverage}</strong>
-              <small>/ 5.0</small>
+              <strong>{displayAverage ?? '–'}</strong>
+              {displayAverage && <small>/ 5</small>}
             </div>
-            <div className="mini-star-row">
-              {[1, 2, 3, 4, 5].map((n) => (
-                <Star 
-                  key={n} 
-                  size={12} 
-                  fill={n <= Math.round(Number(displayAverage)) ? '#f59e0b' : 'none'} 
-                  color={n <= Math.round(Number(displayAverage)) ? '#f59e0b' : '#cbd5e1'} 
-                />
-              ))}
-            </div>
+            {displayAverage && (
+              <div className="mini-star-row">
+                {[1, 2, 3, 4, 5].map((n) => (
+                  <Star
+                    key={n}
+                    size={12}
+                    fill={n <= Math.round(stats.average ?? 0) ? '#f59e0b' : 'none'}
+                    color={n <= Math.round(stats.average ?? 0) ? '#f59e0b' : '#cbd5e1'}
+                  />
+                ))}
+              </div>
+            )}
           </div>
           <div className="stat-card-bottom">
-            <span>Iš viso registruota sąveikų registratūroje: {totalInteractions}</span>
+            <span>{totalInteractions > 0 ? `Iš viso įvertinimų: ${totalInteractions}` : 'Įvertinimų dar nėra'}</span>
           </div>
         </div>
 
         {/* Card 4: Incident Triage & Resolution */}
         <div className={`stat-card ${unreadCount > 0 ? 'stat-card-attention' : ''}`}>
           <div className="stat-card-top">
-            <span className="stat-label">Incidentų suvaldymas</span>
+            <span className="stat-label">Pastabų sprendimas</span>
             <div className={`stat-icon-wrap ${unreadCount > 0 ? 'icon-attention' : 'icon-resolved'}`}>
               {unreadCount > 0 ? <AlertTriangle size={18} /> : <CheckCircle2 size={18} />}
             </div>
           </div>
           <div className="stat-card-value">
             <strong>{unreadCount > 0 ? `${unreadCount} laukia` : shieldedFeedback > 0 ? 'Visos' : '–'}</strong>
-            <span className={`stat-badge-status ${unreadCount > 0 ? 'status-amber' : 'status-green'}`}>
-              {unreadCount > 0 ? 'Reikia skambučio' : 'Visi išspręsti'}
-            </span>
+            {shieldedFeedback > 0 && (
+              <span className={`stat-badge-status ${unreadCount > 0 ? 'status-amber' : 'status-green'}`}>
+                {unreadCount > 0 ? 'Laukia atsakymo' : 'Visos išspręstos'}
+              </span>
+            )}
           </div>
           <div className="stat-card-bottom">
-            <span>{resolvedCount} iš {shieldedFeedback} pastabų išspręsta</span>
+            <span>{shieldedFeedback > 0 ? `${resolvedCount} iš ${shieldedFeedback} pastabų išspręsta` : 'Pastabų dar nėra'}</span>
           </div>
         </div>
       </div>

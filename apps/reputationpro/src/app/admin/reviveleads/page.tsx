@@ -123,7 +123,7 @@ export default async function ReviveLeadsAdminPage({
             </span>
             <div className="owner-meta">
               <strong>{clinic.business_name}</strong>
-              <small>{principal.role === 'owner' ? 'Savininko prieiga' : 'Sertifikuota paskyra'}</small>
+              <small>{principal.role === 'owner' ? 'Savininko prieiga' : 'Kliento paskyra'}</small>
             </div>
           </div>
           <Logout />
@@ -174,7 +174,7 @@ export default async function ReviveLeadsAdminPage({
             <div>
               <strong>ReviveLeads™</strong> · Verslomatika B2B Duomenų Bazės Reaktyvavimo Ekosistema
             </div>
-            <span>Saugi SSL / AES-256 šifruota prieiga · MB „Pinet“</span>
+            <span>Saugus HTTPS ryšys · MB „Pinet“</span>
           </footer>
         </main>
       </div>

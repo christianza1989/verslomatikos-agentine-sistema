@@ -332,6 +332,60 @@ def places_lookup(business_name: str, city: str = "", website: str = "") -> dict
     return {}
 
 
+GENERIC = re.compile(r"^(odontologijos|dantų|veterinarijos|estetinės|akių|šeimos|medicinos|kineziterapij\w*|kineziterapeut\w*|reabilitacijos|grožio)\b", re.I)
+LEGAL = re.compile(r"(^|[\s,])(UAB|MB|VšĮ|VŠĮ|IĮ|AB|Ltd)(?=$|[\s,])", re.I)
+LOCATIVE = re.compile(r"^\S+(je|uose|yse)$|^(Kaune|Visagine)$", re.I)  # Vilniuje, Šiauliuose, Kaišiadoryse, Kaune
+CITY_SUFFIX = re.compile(r"\s+(Kaune|Vilniuje|Klaipėdoje|Šiauliuose|Panevėžyje|Alytuje|Marijampolėje|Utenoje|Jonavoje|Palangoje)$", re.I)
+# Public institutions do not buy marketing tools: polyclinics, municipal / university hospitals.
+PUBLIC = re.compile(r"poliklinik|savivaldyb|universiteto|ligonin|viešoji įstaiga|pirminės sveikatos|LUHSH|department", re.I)
+
+
+def clean_name(raw: str) -> str:
+    """Maps names carry SEO tails ("X | Dantų implantai Kaune", "Odontologijos klinika X", "X, UAB").
+    Keep the brand the owner would call their business: the email and the subject use it."""
+    name = re.sub(r"[„“\"”]", "", raw or "").strip()
+    name = re.sub(r"\s*\([^)]*\)", "", name)                       # "Lela (klinika)" -> "Lela"
+    name = re.sub(r"\s+\S+\s+filialas\b.*$", "", name, flags=re.I)  # "... Antakalnio Filialas, I..." -> drop
+    parts = [p.strip() for p in re.split(r"\s+[|–-]\s+|\s*\|\s*|:\s+|\s+I\s+(?=[A-ZĄČĘĖĮŠŲŪŽ])", name) if p.strip()]
+    if len(parts) > 1:
+        if all(len(p) <= 8 for p in parts):
+            name = " ".join(parts)                                   # "CLINIC | DPC" -> "CLINIC DPC"
+        else:
+            brand = [p for p in parts if not GENERIC.match(p)]
+            name = brand[0] if brand else parts[0]
+    if ", " in name:
+        head, tail = name.split(", ", 1)
+        if re.match(r"^[A-ZĄČĘĖĮŠŲŪŽ]\.\s", head) and re.search(r"kabinet|klinik", tail, re.I):
+            name = f"{LEGAL.sub(' ', head).strip()} {tail}"          # "A. Kasparavičiaus IĮ, odontologijos kabinetas"
+        elif re.search(r"klinik|odontolog|centr|kabinet|UAB|MB|VšĮ|stomatolog|veterinar", tail, re.I) and len(head) >= 3:
+            name = head
+    name = LEGAL.sub(" ", name).strip(" ,")
+    m = re.match(r"^(odontologijos|veterinarijos|dantų|estetinės medicinos|akių)\s+(klinika|centras|kabinetas)\s+(.+)$", name, re.I)
+    if m:
+        rest = m.group(3).split(" ")
+        if LOCATIVE.match(rest[0]) and len(rest) > 1:
+            rest = rest[1:]                                          # "... klinika Plungėje LUCIDA" -> "LUCIDA"
+        cand = " ".join(rest)
+        if cand[:1].isupper() and len(cand) >= 3 and not LOCATIVE.match(cand):
+            name = cand
+    name = CITY_SUFFIX.sub("", re.sub(r"\s{2,}", " ", name)).strip(" ,")
+    if len(name) > 55:
+        cut = re.search(r"\s(odontologijos|veterinarijos|implantologijos|estetinės|intervencinės)\b", name)
+        name = name[:cut.start()] if cut and cut.start() >= 3 else name[:55].rsplit(" ", 1)[0]
+    return name or (raw or "").strip()
+
+
+GENERIC_WORDS = {"odontologijos", "odontologija", "odontologas", "klinika", "klinikos", "centras", "kabinetas", "dantų", "protezavimas",
+                 "implantavimas", "implantai", "implantologijos", "veterinarijos", "veterinarija", "estetinės", "medicinos", "akių",
+                 "kineziterapija", "kineziterapijos", "kineziterapeutas", "reabilitacijos", "grožio", "studija", "gydymas", "ir"}
+
+
+def is_generic_name(name: str) -> bool:
+    """Only generic words (e.g. "Dantų protezavimas"): the email would not name a business."""
+    words = re.findall(r"\w+", name.lower())
+    return bool(words) and all(w in GENERIC_WORDS or LOCATIVE.match(w) for w in words)
+
+
 def import_maps_list(path: str, city: str, niche: str) -> dict:
     """Without a Places key: a list copied from Google Maps in a real browser (one line per place:
     name|place_id|rating|count|website|phone). Emails come from the business's own website, as in harvest()."""
@@ -342,32 +396,43 @@ def import_maps_list(path: str, city: str, niche: str) -> dict:
     used = {l["slug"] for l in leads}
     stats = {"rows": 0, "added": 0, "branches": 0, "no_email": 0, "no_site": 0, "dupes": 0}
     with open(path, encoding="utf-8") as f:
-        rows = [ln.rstrip("\r\n").split("|") for ln in f if ln.count("|") >= 5]
-    for row in rows:
-        name, pid, rating, count, site, phone = row[0], row[1], row[2], row[3], row[4], row[5]
-        stats["rows"] += 1
-        if not pid.startswith("ChIJ"):
-            stats["dupes"] += 1
+        lines = [ln.rstrip("\r\n") for ln in f if ln.count("|") >= 5]
+    rows = []
+    for ln in lines:  # the Maps name may itself contain "|": columns are located by the place ID
+        parts = ln.split("|")
+        i = next((k for k, v in enumerate(parts) if v.startswith("ChIJ")), None)
+        if i is None or len(parts) < i + 5:
             continue
-        email, kind, outcome = _resolve(known, pid, site, city)
+        rest = parts[i:] + ["", "", ""]
+        rows.append(["|".join(parts[:i])] + rest[:5] + [rest[5] or city, rest[6] or niche])
+    for row in rows:
+        name, pid, rating, count, site, phone, row_city, row_niche = row[:8]
+        stats["rows"] += 1
+        if PUBLIC.search(name):
+            stats["public"] = stats.get("public", 0) + 1
+            continue
+        email, kind, outcome = _resolve(known, pid, site, row_city)
         if not email:
             stats[{"dupe": "dupes"}.get(outcome, outcome)] += 1
             continue
         stats["branches"] += outcome == "branch"
-        clean = re.split(r"\s+[-|–]\s+", name)[0].strip().strip('"')
+        clean = clean_name(name)
+        if is_generic_name(clean) or LOCATIVE.match(clean):
+            host = _domain(site)
+            clean = host[:1].upper() + host[1:]  # "Dantuprotezai.lt" reads better than "Dantų protezavimas"
         slug = slugify(clean)
         if slug in used:
-            slug = f"{slug}-{slugify(city)}"
+            slug = f"{slug}-{slugify(row_city)}"
         used.add(slug)
         leads.append({
-            "business_name": clean, "city": city, "email": email, "email_kind": kind, "website": site, "phone": phone,
-            "niche": niche, "industry": ind, "slug": slug, "google_place_id": pid,
+            "business_name": clean, "city": row_city, "email": email, "email_kind": kind, "website": site, "phone": phone,
+            "niche": row_niche, "industry": NICHES.get(row_niche, (ind,))[0], "slug": slug, "google_place_id": pid,
             "google_review_url": f"https://search.google.com/local/writereview?placeid={pid}",
             "google_rating": float(rating) if rating else None, "google_reviews_count": int(count) if count else None,
             "source": "google_maps_browser", "harvested_at": datetime.date.today().isoformat(),
         })
         stats["added"] += 1
-        print(f"  + {clean} ({city}) {rating}★/{count} → {email}")
+        print(f"  + {clean} ({row_city}) {rating}★/{count} → {email}")
     _save(OUT_PATH, leads)
     stats["total"] = len(leads)
     return stats

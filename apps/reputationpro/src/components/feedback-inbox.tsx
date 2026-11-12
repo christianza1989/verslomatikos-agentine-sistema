@@ -199,7 +199,7 @@ export function FeedbackInbox({
                       <div className="patient-name-row">
                         <strong>{item.customer_name || 'Vardas nenurodytas'}</strong>
                         <span className={`urgency-pill ${isCritical ? 'urgency-critical' : isNotice ? 'urgency-notice' : 'urgency-positive'}`}>
-                          {isCritical ? '🔴 Kritinis nusiskundimas' : isNotice ? '🟡 Pastaba / Pasiūlymas' : '🟢 Pagyrimas'}
+                          {isCritical ? '🔴 Svarbu greitai susisiekti' : isNotice ? '🟡 Pastaba / pasiūlymas' : '🟢 Pagyrimas'}
                         </span>
                       </div>
                       <span className="incident-time-sub">

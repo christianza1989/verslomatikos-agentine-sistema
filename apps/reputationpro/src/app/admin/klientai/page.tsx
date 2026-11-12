@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { ArrowLeft, Building2, FlaskConical, Gift, MapPin, PackageCheck, Star, Truck, Users } from 'lucide-react';
-import { getActivatedClients, getCompanyCampaigns, getSubjectVariantStats, SUBJECT_CASES, SUBJECT_MIN_SAMPLE, type StandOrder } from '@/lib/db';
+import { ArrowLeft, Building2, Flame, FlaskConical, Gift, MapPin, PackageCheck, Phone, Star, Truck, Users } from 'lucide-react';
+import { getActivatedClients, getCompanyCampaigns, getHotLeads, getSubjectVariantStats, isTestAccount, SUBJECT_CASES, SUBJECT_MIN_SAMPLE, type StandOrder } from '@/lib/db';
 import { appUrl, currentPrincipal } from '@/lib/security';
 import { CompanyActions, CopyText, OrderActions } from '@/components/owner-orders';
 
@@ -13,8 +13,12 @@ export const metadata = { title: 'Klientai ir stoveliai · ReputationPro' };
 const STATUS: Record<StandOrder['status'], string> = { requested: 'Laukia išsiuntimo', sent: 'Išsiųsta', delivered: 'Pristatyta', canceled: 'Atšaukta' };
 const COMPANY_STATUS: Record<string, string> = { active: 'Vyksta', paused: 'Atsakė – atsakykite', stopped: 'Sustabdyta', converted: 'Aktyvavo' };
 const SUB: Record<string, string> = { trialing: '14 d. bandymas', active: 'Aktyvi prenumerata', past_due: 'Vėluoja mokėjimas', canceled: 'Atšaukta', pending: 'Laukia' };
-const day = (iso: string | null) => iso ? new Date(iso).toLocaleDateString('lt-LT') : '–';
-const dayTime = (iso: string | null) => iso ? new Date(iso).toLocaleString('lt-LT', { dateStyle: 'short', timeStyle: 'short' }) : '–';
+// The server PC clock is not in Lithuania (2026-11-12): always format in Europe/Vilnius.
+const TZ = 'Europe/Vilnius';
+const day = (iso: string | null) => iso ? new Date(iso).toLocaleDateString('lt-LT', { timeZone: TZ }) : '–';
+const dayTime = (iso: string | null) => iso ? new Date(iso).toLocaleString('lt-LT', { dateStyle: 'short', timeStyle: 'short', timeZone: TZ }) : '–';
+// Google shows Lithuanian numbers as "(0-699) 11198": dial as +370 699 11198.
+const tel = (p: string) => { const d = p.replace(/[^+\d]/g, ''); return d.startsWith('0') ? `+370${d.slice(1)}` : d.startsWith('8') && d.length === 9 ? `+370${d.slice(1)}` : d; };
 const pct = (v: number) => `${Math.round(v * 100)} %`;
 
 export default async function OwnerClients() {
@@ -23,6 +27,8 @@ export default async function OwnerClients() {
   if (principal.role !== 'owner') redirect('/admin');
 
   const rows = getActivatedClients();
+  const realRows = rows.filter((r) => !isTestAccount(r));
+  const hot = getHotLeads();
   const companies = getCompanyCampaigns();
   const subjects = getSubjectVariantStats();
   const base = appUrl();
@@ -44,7 +50,7 @@ export default async function OwnerClients() {
     </header>
 
     <section className="ok-kpis">
-      <div><Users size={18}/><strong>{rows.length}</strong><span>aktyvavo paskyrą{branchCount ? ` · ${branchCount} filialų` : ''}</span></div>
+      <div><Users size={18}/><strong>{realRows.length}</strong><span>aktyvavo paskyrą{branchCount ? ` · ${branchCount} filialų` : ''}{rows.length > realRows.length ? ` · +${rows.length - realRows.length} testinės` : ''}</span></div>
       <div className={toShip.length ? 'is-hot' : ''}><Gift size={18}/><strong>{toShip.length}</strong><span>stovelių laukia išsiuntimo</span></div>
       <div><Truck size={18}/><strong>{shipped.length}</strong><span>išsiųsta / pristatyta</span></div>
       <div><Star size={18}/><strong>{totalRatings}</strong><span>klientų įvertinimų iš viso</span></div>
@@ -73,6 +79,38 @@ export default async function OwnerClients() {
       </div>
     </section>
 
+    <section className="ok-panel">
+      <h2><Flame size={18}/> Karšti lead'ai: paspaudė arba atsakė</h2>
+      <p className="ok-empty">Paskambinkite per 24 val. „Demo veiksmai“ = žmogus spaudė žvaigždutes demo puslapyje (robotai to nedaro). Vien atidarymai neįtraukti: dalį jų padaro pašto programos.</p>
+      {hot.length === 0 ? <p className="ok-empty">Kol kas niekas nepaspaudė ir neatsakė.</p> :
+      <div className="ok-table-wrap"><table className="ok-table">
+        <thead><tr><th>Įmonė</th><th>Ką darė</th><th>Kontaktai</th><th>Paskutinis veiksmas</th></tr></thead>
+        <tbody>{hot.map((h) => <tr key={h.id}>
+          <td>{h.slug ? <Link href={`/r/${encodeURIComponent(h.slug)}`} target="_blank"><b>{h.business_name}</b></Link> : <b>{h.business_name}</b>}{h.is_demo === 0 ? <span className="ok-tag">aktyvavo</span> : null}<small>laiškas {day(h.sent_at)}</small></td>
+          <td>{h.replied_at ? <b>Atsakė</b> : null}{h.replied_at && h.last_reply_text ? <small>„{h.last_reply_text.slice(0, 140)}{h.last_reply_text.length > 140 ? '…' : ''}“</small> : null}
+            <small>{[h.demo_actions ? `demo veiksmų: ${h.demo_actions}` : '', h.clicks ? `paspaudimų: ${h.clicks}` : '', h.opens ? `atidarymų: ${h.opens}` : ''].filter(Boolean).join(' · ')}</small></td>
+          <td><a href={`mailto:${h.email}`}>{h.email}</a>{h.phone ? <small><a href={`tel:${tel(h.phone)}`}><Phone size={12}/> {tel(h.phone)}</a></small> : null}</td>
+          <td>{dayTime(h.replied_at || h.last_at)}</td>
+        </tr>)}</tbody>
+      </table></div>}
+    </section>
+
+    <section className="ok-panel">
+      <h2><Users size={18}/> Aktyvavę klientai</h2>
+      {rows.length === 0 ? <p className="ok-empty">Dar niekas neaktyvavo paskyros.</p> :
+      <div className="ok-table-wrap"><table className="ok-table">
+        <thead><tr><th>Įmonė</th><th>Kontaktai</th><th>Aktyvuota</th><th>Planas</th><th>Įvertinimai</th><th>Stovelis</th></tr></thead>
+        <tbody>{rows.map((r) => <tr key={r.id}>
+          <td><Link href={`/admin?clinic=${encodeURIComponent(r.slug)}`}><b>{r.business_name}</b></Link>{isTestAccount(r) ? <span className="ok-tag">testas</span> : null}{r.branches.length ? <span className="ok-tag">{r.branches.length} filial.</span> : null}<small>{r.slug}</small>
+            {r.branches.length > 0 && <div className="ok-branches">{r.branches.map((b) => <span key={b.id}>↳ <Link href={`/admin?clinic=${encodeURIComponent(b.slug)}`}>{b.business_name}</Link>{b.location_label ? ` · ${b.location_label}` : ''} · {b.ratings}★{b.unread ? ` · ${b.unread} neperskait.` : ''}{b.order ? ` · stovelis: ${STATUS[b.order.status].toLowerCase()}` : ''}</span>)}</div>}</td>
+          <td><a href={`mailto:${r.email}`}>{r.email}</a>{r.phone && <small>{r.phone}</small>}</td>
+          <td>{dayTime(r.activated_at)}</td>
+          <td>{SUB[r.subscription_status] || r.subscription_status}{r.trial_ends_at && r.subscription_status === 'trialing' ? <small>iki {day(r.trial_ends_at)}</small> : null}</td>
+          <td><b>{r.ratings + r.branches.reduce((n, b) => n + b.ratings, 0)}</b>{r.branches.length ? <small>pagrindinis: {r.ratings}</small> : null}{r.ratings ? <small>{r.positive} × 4–5★ · paskutinis {day(r.last_rating_at)}</small> : <small>dar nėra</small>}{r.unread ? <small className="ok-unread">{r.unread} neperskaitytos pastabos</small> : null}</td>
+          <td>{r.order ? <span className={`ok-pill is-${r.order.status}`}>{STATUS[r.order.status]}</span> : <small>neužsakė</small>}</td>
+        </tr>)}</tbody>
+      </table></div>}
+    </section>
     <section className="ok-panel">
       <h2><Building2 size={18}/> Kampanijos pagal įmones</h2>
       <p className="ok-empty">Viena įmonė = vienas pokalbis: pirmas laiškas pristato visus filialus, kitam filialo adresui rašoma tik jei tylima (kas 3 darbo d., iki 3 adresų).</p>
@@ -108,21 +146,5 @@ export default async function OwnerClients() {
       </table></div>}
     </section>
 
-    <section className="ok-panel">
-      <h2><Users size={18}/> Aktyvavę klientai</h2>
-      {rows.length === 0 ? <p className="ok-empty">Dar niekas neaktyvavo paskyros.</p> :
-      <div className="ok-table-wrap"><table className="ok-table">
-        <thead><tr><th>Įmonė</th><th>Kontaktai</th><th>Aktyvuota</th><th>Planas</th><th>Įvertinimai</th><th>Stovelis</th></tr></thead>
-        <tbody>{rows.map((r) => <tr key={r.id}>
-          <td><Link href={`/admin?clinic=${encodeURIComponent(r.slug)}`}><b>{r.business_name}</b></Link>{r.branches.length ? <span className="ok-tag">{r.branches.length} filial.</span> : null}<small>{r.slug}</small>
-            {r.branches.length > 0 && <div className="ok-branches">{r.branches.map((b) => <span key={b.id}>↳ <Link href={`/admin?clinic=${encodeURIComponent(b.slug)}`}>{b.business_name}</Link>{b.location_label ? ` · ${b.location_label}` : ''} · {b.ratings}★{b.unread ? ` · ${b.unread} neperskait.` : ''}{b.order ? ` · stovelis: ${STATUS[b.order.status].toLowerCase()}` : ''}</span>)}</div>}</td>
-          <td><a href={`mailto:${r.email}`}>{r.email}</a>{r.phone && <small>{r.phone}</small>}</td>
-          <td>{dayTime(r.activated_at)}</td>
-          <td>{SUB[r.subscription_status] || r.subscription_status}{r.trial_ends_at && r.subscription_status === 'trialing' ? <small>iki {day(r.trial_ends_at)}</small> : null}</td>
-          <td><b>{r.ratings + r.branches.reduce((n, b) => n + b.ratings, 0)}</b>{r.branches.length ? <small>pagrindinis: {r.ratings}</small> : null}{r.ratings ? <small>{r.positive} × 4–5★ · paskutinis {day(r.last_rating_at)}</small> : <small>dar nėra</small>}{r.unread ? <small className="ok-unread">{r.unread} neperskaitytos pastabos</small> : null}</td>
-          <td>{r.order ? <span className={`ok-pill is-${r.order.status}`}>{STATUS[r.order.status]}</span> : <small>neužsakė</small>}</td>
-        </tr>)}</tbody>
-      </table></div>}
-    </section>
   </main>;
 }

@@ -141,7 +141,9 @@ ECOMMERCE_KEYWORDS = ["shop", "parduotuv", "prekyb", "mada", "drabuž", "avalyn"
 
 def detect_industry(lead: dict) -> str:
     explicit = (lead.get("industry") or lead.get("niche") or "").lower()
-    if explicit in ("clinic", "dental", "odontologija", "veterinarija"):
+    if explicit in ("veterinarija", "vet"):
+        return "services"  # 2026-11-12: a vet clinic's "patient" is the animal – write "klientai"
+    if explicit in ("clinic", "dental", "odontologija"):
         return "clinic"
     if explicit in ("beauty", "estetika", "grozis", "spa"):
         return "beauty"
@@ -348,6 +350,8 @@ def build_tracked_email(lead: dict, lead_id: str, demo_url: str = None, google_s
         paragraphs = [f"{name} klientai dažnai būna patenkinti, bet atsiliepimą Google palieka retai: niekas jų nepaprašo tinkamu momentu. "
                       f"Paruošėme sprendimą, kuris tai pakeičia."]
         platform = "Google"
+    if len(cities) > 1 and lead.get("_root_city") and paragraphs and paragraphs[0].startswith(f"{name} turi"):
+        paragraphs[0] = paragraphs[0].replace(f"{name} turi", f"{name} ({lead['_root_city']}) turi", 1)
     if len(cities) > 1:  # Etapas N: one offer for all branches
         paragraphs.insert(1, f"Puslapiai paruošti visiems Jūsų filialams: {', '.join(cities)}. Kiekvienas turi savo QR kodą, o aktyvuoti užtenka vieną kartą.")
     if cascade_city:
@@ -417,6 +421,23 @@ def _fetch_candidates(target_ind: str, needed: int, agent_id: str = "") -> list:
         return get_uncontacted_dental_leads(limit=pool)
 
 
+def _common_brand(names: list) -> str:
+    """Common leading words of branch names: "Clinic DPC Alytus" + "CLINIC DPC" -> "Clinic DPC". "" if none."""
+    split = [n.split() for n in names if n]
+    if len(split) < 2:
+        return ""
+    base = next((ws for ws in split if not " ".join(ws).isupper()), split[0])  # prefer "Clinic DPC" to "CLINIC DPC"
+    split = [base] + [ws for ws in split if ws is not base]
+    out = []
+    for i, w in enumerate(split[0]):
+        if all(len(ws) > i and ws[i].lower() == w.lower() for ws in split[1:]):
+            out.append(w)
+        else:
+            break
+    brand = " ".join(out).strip(" ,|-")
+    return brand if len(brand) >= 3 else ""
+
+
 def _company_candidates(conn: sqlite3.Connection, agent: dict, needed: int) -> list:
     """Etapas N: one primary lead per company; the other branches travel with it (`_branches`).
     Companies already known (campaign_companies) or with any address already written to are skipped:
@@ -458,6 +479,11 @@ def _company_candidates(conn: sqlite3.Connection, agent: dict, needed: int) -> l
                 b["slug"] = f"{b['slug']}-{slugify(b.get('city') or 'filialas')}"
             used.add(b["slug"])
             branches.append(b)
+        if branches:  # 2026-11-12: a chain is addressed by its brand, the rating sentence names the branch
+            brand = _common_brand([primary["business_name"]] + [b.get("business_name") or "" for b in branches])
+            primary["_root_city"] = primary.get("city") or ""
+            if brand:
+                primary["business_name"] = brand
         primary["_company_key"], primary["_branches"], primary["_members"] = key, branches, members
         out.append(primary)
         if len(out) >= needed * 2:
@@ -664,10 +690,12 @@ def dispatch_daily_quota(target_agent_id: str = "agent-tomas", force_count: int 
                 raise RuntimeError("SMTP serveris laiško nepriėmė")
             print("    ✓ Išsiųsta")
             conn.execute("""
-                INSERT INTO campaign_leads (id, campaign_id, business_name, email, slug, city, status, sent_at, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, 'sent', ?, ?, ?)
-                ON CONFLICT(email) DO UPDATE SET status='sent', sent_at=excluded.sent_at, slug=excluded.slug, updated_at=excluded.updated_at
-            """, (lead_id, campaign_id, b_name, to_email, slug, city, now_iso, now_iso, now_iso))
+                INSERT INTO campaign_leads (id, campaign_id, business_name, email, slug, city, website, phone, status, sent_at, created_at, updated_at, company_key)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'sent', ?, ?, ?, ?)
+                ON CONFLICT(email) DO UPDATE SET status='sent', sent_at=excluded.sent_at, slug=excluded.slug, website=excluded.website,
+                    company_key=COALESCE(excluded.company_key, campaign_leads.company_key), updated_at=excluded.updated_at
+            """, (lead_id, campaign_id, b_name, to_email, slug, city, lead.get("website") or "", lead.get("phone") or "",
+                  now_iso, now_iso, now_iso, lead.get("_company_key")))
             conn.execute("INSERT INTO campaign_events (id, lead_id, event_type, created_at) VALUES (?, ?, 'sent', ?)",
                          (str(uuid.uuid4()), lead_id, now_iso))
             conn.commit()

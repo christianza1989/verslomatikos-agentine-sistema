@@ -162,15 +162,15 @@ def build_followup(step: str, lead: dict, links: dict, expiry: datetime.datetime
 
     if step == "B1":
         return ([
-            f"gal mano laiškas pateko ne tam žmogui? Jei atsiliepimais {'internete' if rk else '„Google“'} rūpinasi kolega ar vadovas, būsiu dėkingas, jei persiųsite.",
-            f"Trumpai: paruošėme „{name}“ atsiliepimų puslapį {niche['asset']}. Patenkinti {niche['people']} nukreipiami palikti atsiliepimą {'Rekvizitai.lt' if rk else '„Google“'}, o pastabos pirmiausia ateina Jūsų komandai, kad darbuotojai galėtų greitai sureaguoti.",
+            f"gal mano laiškas pateko ne tam žmogui? Jei atsiliepimais {'internete' if rk else 'Google'} rūpinasi kolega ar vadovas, būsiu dėkingas, jei persiųsite.",
+            f"Trumpai: paruošėme „{name}“ atsiliepimų puslapį {niche['asset']}. Patenkinti {niche['people']} nukreipiami palikti atsiliepimą {'Rekvizitai.lt' if rk else 'Google'}, o pastabos pirmiausia ateina Jūsų komandai, kad darbuotojai galėtų greitai sureaguoti.",
         ], "Peržiūrėti puslapį (30 s)", links["demo"])
 
     if step == "F":
         return ([
             "daugiau nerašysiu, kad neužimčiau Jūsų laiko.",
             f"„{name}“ puslapis lieka paruoštas, o aktyvavimo nuoroda galioja iki {lt_date(expiry)}",
-            f"Jei atsiliepimai {'internete' if rk else '„Google“'} taps aktualūs vėliau, tiesiog atsakykite į šį laišką.",
+            f"Jei atsiliepimai {'internete' if rk else 'Google'} taps aktualūs vėliau, tiesiog atsakykite į šį laišką.",
         ], "Aktyvuoti paskyrą", links["activate"])
 
     raise ValueError(step)

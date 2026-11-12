@@ -94,7 +94,7 @@ def get_uncontacted_leads_for_agent(target_industry: str, limit: int = 25, agent
             "pain_point": item.get("pain_point", "klientų atsiliepimai"),
             "hook": item.get("hook", "kaip padidinti 5.0★ Google reitingą"),
             "niche": item.get("niche") or ind,
-            "industry": ind,
+            "industry": "veterinarija" if item.get("niche") == "veterinarija" else ind,
             "slug": slug,
             "preview_url": f"https://reputacija.verslomatika.lt/r/{slug}",
             "qr_url": f"https://reputacija.verslomatika.lt/api/qr?slug={slug}",

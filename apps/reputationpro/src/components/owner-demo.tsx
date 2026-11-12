@@ -55,6 +55,12 @@ function audience(_industry: string) {
 }
 
 const fmt = (n: number) => n.toLocaleString('lt-LT', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+// Lithuanian number agreement (same rules as core/email_copy.py): 10–20 and round tens take the genitive plural.
+// Lithuanian: 1/21 atsiliepimas, 2–9/22 atsiliepimai, 10–20/30 atsiliepimų.
+const reviewsWord = (n: number) => n % 10 === 0 || (n % 100 >= 11 && n % 100 <= 19) ? 'atsiliepimų' : n % 10 === 1 ? 'atsiliepimas' : 'atsiliepimai';
+const genPl = (n: number) => n % 10 === 0 || (n % 100 >= 11 && n % 100 <= 19);
+const ofReviews = (n: number) => `iš ${n} ${n % 10 === 1 && n % 100 !== 11 ? 'atsiliepimo' : 'atsiliepimų'}`;
+const satisfiedClients = (n: number) => genPl(n) ? `${n} patenkintų klientų` : `${n} patenkinti klientai`;
 
 export function OwnerDemo(p: Props) {
   const who = audience(p.industry);
@@ -220,7 +226,7 @@ export function OwnerDemo(p: Props) {
         {rk
           ? <span className="odh-chip is-warn"><MapPinned size={15}/> Google žemėlapiuose Jūsų dar nėra: pradėsime nuo Rekvizitai.lt</span>
           : p.googleRating && p.googleReviews
-            ? <span className="odh-chip"><Star size={15} fill="currentColor" strokeWidth={0}/> Google šiandien: <b>{fmt(p.googleRating)}★</b> · {p.googleReviews} atsiliepimų</span>
+            ? <span className="odh-chip"><Star size={15} fill="currentColor" strokeWidth={0}/> Google šiandien: <b>{fmt(p.googleRating)}★</b> · {p.googleReviews} {reviewsWord(p.googleReviews)}</span>
             : null}
         <div className="odh-cta-row">
           <a className="btn btn-primary" href={p.claimHref} onClick={() => track('cta')}>{ctaLabel} <ArrowRight size={18}/></a>
@@ -339,10 +345,10 @@ export function OwnerDemo(p: Props) {
     </section>}
 
     {projection && <section className="od-section od-numbers">
-      <div><span className="od-kicker"><TrendingUp size={15}/> Jūsų Google profilis šiandien</span><strong>{fmt(p.googleRating!)}★</strong><small>iš {p.googleReviews} atsiliepimų</small></div>
+      <div><span className="od-kicker"><TrendingUp size={15}/> Jūsų Google profilis šiandien</span><strong>{fmt(p.googleRating!)}★</strong><small>{ofReviews(p.googleReviews!)}</small></div>
       <ArrowRight size={26} className="od-numbers-arrow"/>
-      <div><span className="od-kicker">Po 3 mėn. (prognozė)</span><strong>{fmt(projection.rating)}★</strong><small>iš {projection.reviews} atsiliepimų</small></div>
-      <p>Jei kas mėnesį tik {monthly} patenkinti {who.many} paliktų atsiliepimą. Daugiau atsiliepimų reiškia didesnį pasitikėjimą tų, kurie Jus renkasi Google Maps.</p>
+      <div><span className="od-kicker">Po 3 mėn. (prognozė)</span><strong>{fmt(projection.rating)}★</strong><small>{ofReviews(projection.reviews)}</small></div>
+      <p>Prognozė, jei kas mėnesį atsiliepimą paliktų tik {satisfiedClients(monthly)}. Daugiau atsiliepimų reiškia didesnį pasitikėjimą tų, kurie Jus renkasi Google Maps.</p>
     </section>}
 
     <section className="od-section od-steps">

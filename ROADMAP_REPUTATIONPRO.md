@@ -287,6 +287,13 @@ Kodėl: senuose kataloguose (326 įrašai) **115 adresų yra neegzistuojančiuos
 - [x] **L2. Prijungta:** `multi_niche_lead_pool` ima surinktus pirmiausia (klinikoms nišos odontologija/veterinarija/medicina); `provision_lead_in_db` įrašo reitingą ir skaičių (→ segmento laiškas C6); seniems įrašams be place ID `places_lookup()` (priimama tik sutapus svetainės domenui). Demonas kartą per parą (nuo 03:00) paleidžia `harvest()` (`HARVEST_MAX_REQUESTS`, numatyta 40).
 - [x] **L3. Apsauga nuo atšokusių laiškų:** `email_domain_exists()` prieš siuntimą; neegzistuojantis domenas → `campaign_suppressions.reason='bad_address'`.
 - [x] **L3b. 2026-11-11 vakaras:** be Places rakto 63 klinikos surinktos naršykle iš Google Maps (`lead_harvester.py import <failas> --city= --niche=`, eilutė `pavadinimas|place_id|reitingas|kiekis|svetainė|telefonas`). Siunčiama TIK įmonėms su patikrintu place ID (`ALLOW_UNVERIFIED_CATALOG=1` grąžina seną elgesį). Ta pati svetainė kitame mieste = filialas (viena gija, savo place ID). Dienos limitas skaičiuojamas kiekvienai pašto dėžutei (`campaign_messages.sender`), follow-up'ai siunčiami nuo to paties agento, kuris rašė pirmą laišką. Visas siuntimo kelias patikrintas DB kopijoje: 50 laiškų, 100 puslapių, aktyvavimas.
+- [x] **L3c. 2026-11-12 auditas:**
+  - pirmas tikras siuntimas (50 laiškų, 0 atšokusių);
+  - gmail lead'ų dvigubos įmonės sujungtos (backfill nebekuria `e:` dvynių, `campaign_leads` saugo website ir company_key);
+  - savininko skydelis: „Karšti lead'ai“ (paspaudė / demo veiksmai / atsakė + telefonas), testinės paskyros pažymėtos ir neįskaičiuojamos, laikai Europe/Vilnius;
+  - kliento KPI be išgalvotų skaičių („100 %“, „5.0“), nebėra „Sertifikuota paskyra“ / „AES-256“ / „AI patarimas“;
+  - lietuviški skaičiai demo (atsiliepimas / atsiliepimai / atsiliepimų);
+  - Maps sąrašų importas: robust parsing, `clean_name()`, viešos įstaigos praleidžiamos.
 - [ ] **L4. Savininkas:** Google Cloud įjungti „Places API (New)“, sukurti atskirą raktą (apriboti tik Places API), `setx GOOGLE_PLACES_API_KEY "..."`. Tada `python core/lead_harvester.py run --target=1100`. Kaina: Text Search su reitingu/svetaine = Enterprise SKU, ~1 000 užklausų/mėn. nemokamai; mėnesio atsargai reikia ~200–400 užklausų.
 - [ ] **L5. Agentai kitoms nišoms** (grožis, auto, horeca): aktyvuoti Kamilę/Justą `AGENT_PROFILES`, kai bus jų pašto dėžučių configai.
 

@@ -861,6 +861,31 @@ export function recordDemoEvent(slug: string, event: DemoEventName) {
   return true;
 }
 
+// 2026-11-12 audit: prospects worth a phone call today – clicked the email, used the demo or replied.
+// Demo actions ("demo:*") are real people: link scanners do not tap stars.
+export type HotLead = { id: string; business_name: string; email: string; slug: string | null; status: string; sent_at: string;
+  replied_at: string | null; last_reply_text: string | null; opens: number; clicks: number; demo_actions: number;
+  last_at: string | null; phone: string | null; is_demo: number | null };
+export function getHotLeads(limit = 40): HotLead[] {
+  try {
+    return db().prepare(`SELECT l.id, l.business_name, l.email, l.slug, l.status, l.sent_at, l.replied_at, l.last_reply_text,
+        (SELECT COUNT(*) FROM campaign_events e WHERE e.lead_id = l.id AND e.event_type = 'open') AS opens,
+        (SELECT COUNT(*) FROM campaign_events e WHERE e.lead_id = l.id AND e.event_type = 'click' AND COALESCE(e.details, '') NOT LIKE 'demo:%') AS clicks,
+        (SELECT COUNT(*) FROM campaign_events e WHERE e.lead_id = l.id AND e.details LIKE 'demo:%') AS demo_actions,
+        (SELECT MAX(e.created_at) FROM campaign_events e WHERE e.lead_id = l.id AND e.event_type IN ('click', 'reply')) AS last_at,
+        c.phone, c.is_demo
+      FROM campaign_leads l LEFT JOIN clients c ON c.slug = l.slug
+      WHERE l.sent_at IS NOT NULL AND l.email NOT LIKE '%.invalid'
+        AND (l.replied_at IS NOT NULL OR EXISTS (SELECT 1 FROM campaign_events e WHERE e.lead_id = l.id AND e.event_type = 'click'))
+      ORDER BY COALESCE(l.replied_at, last_at, l.sent_at) DESC LIMIT ?`).all(limit) as unknown as HotLead[];
+  } catch { return []; }
+}
+
+/** Owner's own test accounts (research --to profiles, .invalid record emails): never counted as real clients. */
+export function isTestAccount(c: { slug: string; email: string }) {
+  return /\.invalid$/i.test(c.email) || /-(testas|bandymas)(-|$)/.test(c.slug);
+}
+
 // Etapas N9: outbound campaigns grouped by company (table written by core/company_groups.py).
 export type CompanyCampaign = { company_key: string; name: string; agent_id: string | null; root_slug: string | null; status: string;
   reason: string | null; members: { email: string; business_name: string; city: string; slug: string }[]; contacted: string[]; updated_at: string };

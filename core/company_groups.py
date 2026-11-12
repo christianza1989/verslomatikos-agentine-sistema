@@ -249,13 +249,15 @@ def backfill_companies(conn: sqlite3.Connection, agent_profiles: List[Dict]) -> 
     sent), so their other branches are never treated as new companies. No new members are added:
     legacy companies get no cascade emails."""
     ensure_company_schema(conn)
-    rows = conn.execute("""SELECT email, business_name, city, slug, website, sent_at FROM campaign_leads
+    rows = conn.execute("""SELECT email, business_name, city, slug, website, sent_at, company_key FROM campaign_leads
                            WHERE sent_at IS NOT NULL ORDER BY sent_at""").fetchall()
     groups: Dict[str, List] = {}
     for r in rows:
         lead = {"email": r[0], "business_name": r[1], "city": r[2], "slug": r[3], "website": r[4]}
         if (r[0] or "").endswith(".invalid"):
             continue
+        if r[6] and get_company(conn, r[6]):
+            continue  # already one conversation (2026-11-12: a gmail lead got a 2nd company under "e:" key)
         groups.setdefault(company_key(lead), []).append(lead)
     agents = [a["agent_id"] for a in agent_profiles if a.get("is_active")]
     added = 0

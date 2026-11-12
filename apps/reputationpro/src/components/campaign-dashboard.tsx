@@ -266,7 +266,7 @@ export function CampaignDashboard({ initialStats, initialLeads, initialEvents, i
         {repliedLeads.length === 0 ? (
           <div style={{ padding: '28px', textAlign: 'center', background: '#f8fafc', borderRadius: '8px', border: '1px dashed #cbd5e1' }}>
             <p style={{ margin: 0, fontSize: '14px', color: '#64748b' }}>
-              Kol kas atsakymų negauta. Kai klinika atrašys į laišką, jos žinutė akimirksniu atsiras čia kartu su AI kalibravimo patarimu.
+              Kol kas atsakymų negauta. Kai klinika atrašys į laišką, jos žinutė atsiras čia. Atsakykite asmeniškai tą pačią dieną.
             </p>
           </div>
         ) : (
@@ -279,7 +279,7 @@ export function CampaignDashboard({ initialStats, initialLeads, initialEvents, i
                     <span style={{ fontSize: '12px', color: '#64748b' }}>({lead.email})</span>
                   </div>
                   <span style={{ fontSize: '11px', color: '#94a3b8' }}>
-                    {lead.replied_at ? new Intl.DateTimeFormat('lt-LT', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(lead.replied_at)) : 'Ką tik'}
+                    {lead.replied_at ? new Intl.DateTimeFormat('lt-LT', { timeZone: 'Europe/Vilnius', dateStyle: 'short', timeStyle: 'short' }).format(new Date(lead.replied_at)) : 'Ką tik'}
                   </span>
                 </div>
                 <div style={{ background: '#ffffff', padding: '12px 16px', borderRadius: '6px', border: '1px solid #e2e8f0', fontSize: '13px', color: '#1e293b', whiteSpace: 'pre-wrap' }}>
@@ -287,7 +287,7 @@ export function CampaignDashboard({ initialStats, initialLeads, initialEvents, i
                 </div>
                 <div style={{ marginTop: '10px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: '#5636E8' }}>
                   <Sparkles size={14} />
-                  <span><strong>AI Kalibravimo patarimas:</strong> Jei klausia apie Google taisykles – pabrėžkite, kad sistema nenaudoja nelegalaus filtravimo, o suteikia pacientui laisvą pasirinkimą išsakyti pastabas privačiai vadovui.</span>
+                  <span><strong>Patarimas:</strong> jei klausia apie Google taisykles – paaiškinkite, kad klientas visada gali rašyti viešai, o sistema tik suteikia galimybę pastabą pirmiausia perduoti įmonės komandai.</span>
                 </div>
               </div>
             ))}
@@ -382,7 +382,7 @@ export function CampaignDashboard({ initialStats, initialLeads, initialEvents, i
                     <td style={{ padding: '14px' }}>
                       {lead.open_count > 0 ? (
                         <span style={{ fontWeight: 700, color: '#d97706' }}>
-                          {lead.open_count} × <small style={{ fontWeight: 400, color: '#94a3b8' }}>({lead.opened_at ? new Intl.DateTimeFormat('lt-LT', { hour: '2-digit', minute: '2-digit' }).format(new Date(lead.opened_at)) : ''})</small>
+                          {lead.open_count} × <small style={{ fontWeight: 400, color: '#94a3b8' }}>({lead.opened_at ? new Intl.DateTimeFormat('lt-LT', { timeZone: 'Europe/Vilnius', hour: '2-digit', minute: '2-digit' }).format(new Date(lead.opened_at)) : ''})</small>
                         </span>
                       ) : (
                         <span style={{ color: '#cbd5e1' }}>—</span>
@@ -391,14 +391,14 @@ export function CampaignDashboard({ initialStats, initialLeads, initialEvents, i
                     <td style={{ padding: '14px' }}>
                       {lead.click_count > 0 ? (
                         <span style={{ fontWeight: 700, color: '#7c3aed' }}>
-                          {lead.click_count} × <small style={{ fontWeight: 400, color: '#94a3b8' }}>({lead.clicked_at ? new Intl.DateTimeFormat('lt-LT', { hour: '2-digit', minute: '2-digit' }).format(new Date(lead.clicked_at)) : ''})</small>
+                          {lead.click_count} × <small style={{ fontWeight: 400, color: '#94a3b8' }}>({lead.clicked_at ? new Intl.DateTimeFormat('lt-LT', { timeZone: 'Europe/Vilnius', hour: '2-digit', minute: '2-digit' }).format(new Date(lead.clicked_at)) : ''})</small>
                         </span>
                       ) : (
                         <span style={{ color: '#cbd5e1' }}>—</span>
                       )}
                     </td>
                     <td style={{ padding: '14px', fontSize: '11px', color: '#64748b' }}>
-                      {lead.updated_at ? new Intl.DateTimeFormat('lt-LT', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(lead.updated_at)) : '—'}
+                      {lead.updated_at ? new Intl.DateTimeFormat('lt-LT', { timeZone: 'Europe/Vilnius', dateStyle: 'short', timeStyle: 'short' }).format(new Date(lead.updated_at)) : '—'}
                     </td>
                     <td style={{ padding: '14px', textAlign: 'right' }}>
                       <div style={{ display: 'inline-flex', gap: '8px' }}>
@@ -448,7 +448,7 @@ export function CampaignDashboard({ initialStats, initialLeads, initialEvents, i
                   {e.details && <span style={{ color: '#94a3b8', maxWidth: '300px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>• {e.details}</span>}
                 </div>
                 <div style={{ color: '#94a3b8', fontSize: '11px' }}>
-                  {new Intl.DateTimeFormat('lt-LT', { dateStyle: 'short', timeStyle: 'medium' }).format(new Date(e.created_at))}
+                  {new Intl.DateTimeFormat('lt-LT', { timeZone: 'Europe/Vilnius', dateStyle: 'short', timeStyle: 'medium' }).format(new Date(e.created_at))}
                 </div>
               </div>
             ))}
